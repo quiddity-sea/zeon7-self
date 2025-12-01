@@ -1,0 +1,55 @@
+<?php
+/**
+ * API: Update Configuration
+ * Endpoint: POST /api/config/update.php
+ */
+
+require_once __DIR__ . '/../../../src/core/BaseController.php';
+require_once __DIR__ . '/../../../src/services/ConfigService.php';
+require_once __DIR__ . '/../../../src/middleware/CsrfMiddleware.php';
+
+class ConfigUpdateController extends BaseController {
+    private ConfigService $configService;
+    
+    public function __construct() {
+        parent::__construct();
+        $this->configService = new ConfigService();
+        
+        // Protect with CSRF
+        CsrfMiddleware::handle();
+    }
+    
+    public function handleRequest(): void {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->sendError('Method not allowed', 405);
+        }
+        
+        $data = $this->getJsonBody();
+        
+        try {
+            if (isset($data['provider'])) {
+                $this->configService->setProvider($data['provider']);
+            }
+            
+            if (isset($data['model'])) {
+                $this->configService->setModel($data['provider'] ?? 'gemini', $data['model']);
+            }
+            
+            if (!empty($data['api_key'])) {
+                $this->configService->setApiKey($data['provider'] ?? 'gemini', $data['api_key']);
+            }
+            
+            $this->sendResponse([
+                'success' => true,
+                'message' => 'Configuration updated successfully',
+                'config' => $this->configService->getAll()
+            ]);
+            
+        } catch (Exception $e) {
+            $this->sendError($e->getMessage(), 500);
+        }
+    }
+}
+
+$controller = new ConfigUpdateController();
+$controller->handleRequest();

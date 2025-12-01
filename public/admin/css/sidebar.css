@@ -1,0 +1,138 @@
+/* --- SIDEBAR COMPONENT --- */
+/* Independent component styling - Overrides main theme defaults where necessary */
+
+.sidebar * {
+    box-sizing: border-box;
+}
+
+.sidebar a {
+    text-decoration: none;
+    border: none;
+    outline: none;
+}
+
+.sidebar ul,
+.sidebar li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar {
+    width: 3rem;
+    background: var(--bg-void);
+    border-right: var(--border-hairline);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0;
+    z-index: 10;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.sidebar:hover {
+    width: 16.25rem;
+    /* 260px */
+}
+
+.brand-container {
+    height: 3.125rem;
+    /* 50px */
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    justify-content: center;
+    width: 100%;
+}
+
+.sidebar:hover .brand-container {
+    justify-content: center;
+}
+
+.brand-logo {
+    width: 2.5rem;
+    /* 40px */
+    height: 2.5rem;
+    /* 40px */
+    object-fit: fill;
+    transition: all 0.3s;
+}
+
+.sidebar:hover .brand-logo {
+    width: auto;
+    height: auto;
+    max-width: 9.375rem;
+    /* 150px */
+    max-height: 3.125rem;
+    /* 50px */
+    object-fit: contain;
+    margin-right: 0;
+}
+
+.brand-text {
+    display: none;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+    white-space: nowrap;
+    opacity: 0.7;
+    transition: all 0.2s;
+    padding: 0.8rem 0.5rem;
+    border-left: 0.2rem solid transparent;
+    /* 3px approx */
+    width: 100%;
+    justify-content: center;
+}
+
+.nav-text {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-in;
+}
+
+.sidebar:hover .nav-text {
+    display: inline-block;
+    opacity: 1;
+}
+
+.sidebar:hover .nav-item {
+    justify-content: flex-start;
+    padding-left: 1.5rem;
+    /* 24px */
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: var(--cyan);
+    opacity: 1;
+    background: linear-gradient(90deg, rgba(77, 238, 234, 0.05) 0%, transparent 100%);
+    text-shadow: 0 0 0.5rem var(--cyan-dim);
+    /* 8px */
+}
+
+.nav-item.active {
+    border-left-color: var(--cyan);
+}
+
+.nav-item i {
+    font-style: normal;
+    font-size: 1.2rem;
+    width: 1.5rem;
+    /* 24px */
+    text-align: center;
+    flex-shrink: 0;
+    /* Prevent icon from shrinking */
+}

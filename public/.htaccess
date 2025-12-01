@@ -1,0 +1,18 @@
+RewriteEngine On
+RewriteBase /
+
+# Handle API requests
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^api/(.*)$ api/$1.php [L,QSA]
+
+# Handle Admin routes (if using pushState)
+RewriteCond %{REQUEST_URI} ^/admin
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^admin/(.*)$ admin/index.php [L]
+
+# Handle Public routes (if using pushState)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L]

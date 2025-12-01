@@ -1,0 +1,218 @@
+/* --- ZEON7 TV STUDIO THEME (Shared) --- */
+:root {
+    /* Palette */
+    --bg-void: #050a10;
+    --bg-body: #0b1219;
+    --bg-panel: rgba(20, 30, 40, 0.7);
+
+    --border-hairline: 1px solid rgba(77, 238, 234, 0.1);
+    /* Cyan Hint */
+    --border-active: 1px solid var(--cyan);
+
+    /* Accents */
+    --cyan: #4deeea;
+    --cyan-dim: #2da8a5;
+    --orange: #FF4500;
+
+    --text-main: #eefbff;
+    --text-muted: #8faab9;
+
+    /* Typography */
+    --font-head: 'Montserrat', sans-serif;
+    --font-ui: 'Ubuntu', sans-serif;
+    --font-body: 'Maven Pro', sans-serif;
+}
+
+/* --- RESET & LAYOUT --- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--bg-body);
+    background-image: radial-gradient(circle at 50% 50%, #16222e 0%, var(--bg-body) 90%);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    font-size: 15px;
+}
+
+/* --- SIDEBAR --- */
+/* Moved to css/sidebar.css */
+
+/* --- MAIN CONTENT AREA --- */
+.main-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow-y: auto;
+}
+
+/* --- COMMON COMPONENTS --- */
+.header-bar {
+    height: 80px;
+    padding: 0 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--border-hairline);
+    background: rgba(11, 18, 25, 0.8);
+}
+
+.page-title {
+    font-family: var(--font-head);
+    font-weight: 900;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+    color: var(--text-main);
+}
+
+.page-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: 1rem;
+}
+
+.btn-primary {
+    background: var(--orange);
+    color: #050a10;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 2px;
+    font-family: var(--font-head);
+    font-weight: 800;
+    text-transform: uppercase;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%);
+}
+
+.btn-primary:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px rgba(255, 69, 0, 0.4);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    padding: 0.7rem 1.5rem;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(77, 238, 234, 0.1);
+    box-shadow: 0 0 10px rgba(77, 238, 234, 0.2);
+}
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    background: #0f172a;
+    border: 1px solid var(--cyan);
+    width: 600px;
+    max-width: 90%;
+    padding: 2rem;
+    box-shadow: 0 0 30px rgba(77, 238, 234, 0.2);
+    transform: translateY(20px);
+    transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-family: var(--font-head);
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: var(--orange);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+}
+
+.input-box {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #334155;
+    padding: 1rem;
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 1rem;
+}
+
+.input-box:focus {
+    outline: none;
+    border-color: var(--cyan);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
