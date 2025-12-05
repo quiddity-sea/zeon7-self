@@ -25,7 +25,8 @@ class ConfigGetController extends BaseController {
             
             $this->sendResponse([
                 'success' => true,
-                'config' => $config
+                'config' => $config,
+                'total_tokens' => $this->configService->getTotalTokens()
             ]);
             
         } catch (Exception $e) {

@@ -1,0 +1,47 @@
+/* --- HEADER ROW STYLES --- */
+
+.header-bar {
+    min-height: 80px;
+    padding: 1.5rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--border-hairline);
+    background: rgba(11, 18, 25, 0.8);
+}
+
+.page-title {
+    font-family: var(--font-head);
+    font-weight: 900;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+    color: var(--text-main);
+}
+
+.page-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: 1rem;
+}
+
+/* --- HEADER BADGE 1 (Operator & Tokens) --- */
+.header-badge-1 {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    background: rgba(77, 238, 234, 0.1);
+    white-space: nowrap;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.header-badge-1:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border-color: transparent;
+}

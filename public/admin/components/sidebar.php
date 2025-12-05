@@ -10,7 +10,7 @@ $menu_items = [
     ['label' => 'Settings', 'icon' => '⚙️', 'href' => 'settings.php']
 ];
 ?>
-<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/components/sidebar.css">
 <nav class="sidebar">
     <div class="brand-container">
         <img src="assets/logo_1759683970.png" class="brand-logo" alt="ZEON7">

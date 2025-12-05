@@ -5,6 +5,7 @@
     <title>Zeon7 Lore Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
+    <link rel="stylesheet" href="css/components/header-row.css">
     <style>
         .lore-container { padding: 3rem; max-width: 1400px; }
         
@@ -35,14 +36,20 @@
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <div class="header-bar">
-            <div><span class="page-title">MEMORY BANK</span></div><button id="addBtn" class="btn-primary">+ ADD LORE</button>
-        </div>
+        <?php
+        $pageTitle = 'MEMORY BANK';
+        $pageSubtitle = 'LORE & FACTS';
+        include 'components/header.php';
+        ?>
+        
         <div class="lore-container">
             <table class="lore-table">
                 <thead><tr><th>KEY</th><th>VALUE</th><th>UPDATED</th><th></th></tr></thead>
                 <tbody id="loreList"><!-- JS fills this --></tbody>
             </table>
+            <div style="margin-top: 2rem; text-align: right;">
+                <button id="addBtn" class="btn-primary">+ ADD LORE</button>
+            </div>
         </div>
 
         <!-- Modal -->

@@ -21,6 +21,9 @@ class NotFoundException extends Zeon7Exception {}
 // Gemini API failures
 class GeminiApiException extends Zeon7Exception {}
 
+// Generic API failures
+class ApiException extends Zeon7Exception {}
+
 // File operation failures
 class FileException extends Zeon7Exception {}
 

@@ -6,6 +6,7 @@
     <title>Knowledge Manager - Zeon7 Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
+    <link rel="stylesheet" href="css/components/header-row.css">
     <style>
         .knowledge-content { padding: 3rem; max-width: 1400px; }
         .upload-card { 
@@ -48,6 +49,7 @@
             color: var(--text-muted); 
             cursor: pointer; 
             transition: color 0.2s; 
+            
         }
         .action-btn:hover { color: var(--orange); }
     </style>
@@ -56,12 +58,11 @@
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <div class="header-bar">
-            <div>
-                <span class="page-title">KNOWLEDGE BASE</span>
-                <span class="page-subtitle">CONTEXT FILE MANAGEMENT</span>
-            </div>
-        </div>
+        <?php
+        $pageTitle = 'KNOWLEDGE BASE';
+        $pageSubtitle = 'CONTEXT FILE MANAGEMENT';
+        include 'components/header.php';
+        ?>
 
         <div class="knowledge-content">
             <!-- Upload Zone -->

@@ -66,4 +66,54 @@ class InstructionService extends BaseService {
         $current = $this->getCurrentVersion();
         return $current['content'] ?? null;
     }
+    /**
+     * Ingest instructions from file system
+     * Scans the instructions/ directory for the most recent .md file
+     */
+    public function ingestFromFolder(string $directoryPath): array {
+        if (!is_dir($directoryPath)) {
+            return ['success' => false, 'message' => "Directory not found: $directoryPath"];
+        }
+
+        // 1. Find most recent .md file
+        $files = glob($directoryPath . '/*.md');
+        if (empty($files)) {
+            return ['success' => false, 'message' => "No .md files found in instructions/"];
+        }
+
+        // Sort by modification time (newest first)
+        usort($files, function($a, $b) {
+            return filemtime($b) - filemtime($a);
+        });
+
+        $latestFile = $files[0];
+        $content = file_get_contents($latestFile);
+        $filename = basename($latestFile);
+
+        if ($content === false) {
+            return ['success' => false, 'message' => "Failed to read file: $filename"];
+        }
+
+        // 2. Compare with current DB version
+        $current = $this->getCurrentVersion();
+        $currentContent = $current['content'] ?? '';
+
+        // Normalize line endings for comparison
+        $content = str_replace("\r\n", "\n", $content);
+        $currentContent = str_replace("\r\n", "\n", $currentContent);
+
+        if (trim($content) !== trim($currentContent)) {
+            // 3. Create new version
+            $newVersion = $this->createVersion($content, "ingest:$filename");
+            return [
+                'success' => true, 
+                'ingested' => true, 
+                'version' => $newVersion, 
+                'file' => $filename,
+                'message' => "Ingested new version from $filename"
+            ];
+        }
+
+        return ['success' => true, 'ingested' => false, 'message' => "Database is up to date with $filename"];
+    }
 }

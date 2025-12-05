@@ -164,6 +164,12 @@ class GeminiService extends BaseService {
             $status,
             $error
         ]);
+
+        // Log to generic token_usage table (for persistent counter)
+        if ($totalTokens > 0) {
+            $sqlToken = "INSERT INTO token_usage (prompt_tokens, response_tokens, total_tokens) VALUES (?, ?, ?)";
+            $this->executeQuery($sqlToken, [$promptTokens, $responseTokens, $totalTokens]);
+        }
     }
     /**
      * Scan news using Google Search Grounding
@@ -171,7 +177,7 @@ class GeminiService extends BaseService {
     public function scanNews(string $topic, string $angle): string {
         $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
         
-        $prompt = "Find recent news about $topic. Focus on $angle. Return 3 distinct headlines and summaries.";
+        $prompt = "Find 4-6 recent news stories about $topic. Focus on $angle. Return a JSON array of objects. Each object must have: 'title' (string), 'summary' (80-120 words), 'angles' (array of 3-5 strings), 'sources' (array of strings). Do not use Markdown formatting, just raw JSON.";
         
         $requestBody = [
             'contents' => [

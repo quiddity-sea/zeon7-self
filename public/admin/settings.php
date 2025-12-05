@@ -6,8 +6,18 @@
     <title>Settings - Zeon7 Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
+    <link rel="stylesheet" href="css/components/sidebar.css">
+    <link rel="stylesheet" href="css/components/header-row.css">
+    <link rel="stylesheet" href="css/components/terminal.css?v=1">
     <style>
-        .settings-container { padding: 3rem; max-width: 800px; }
+        .settings-container { 
+            padding: 3rem; 
+            max-width: 100%; /* Updated to 100% */
+            margin: 0 auto; /* Center container */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
         
         /* Form Card */
         .settings-card {
@@ -16,7 +26,53 @@
             padding: 3rem;
             border-radius: 4px;
             position: relative;
+            height: 100%; /* Match height */
         }
+        
+        /* Terminal Card */
+        .terminal-card {
+            background: rgba(11, 18, 25, 0.9);
+            /* border: 1px solid var(--cyan-dim); Removed as requested */
+            padding: 3rem; /* Updated to 3rem */
+            border-radius: 4px;
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 3rem; /* Updated to 3rem */
+        }
+
+        .terminal-window {
+            flex-grow: 1;
+            background: #000;
+            border: 1px solid #333;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #00ff00;
+            overflow-y: auto;
+            max-height: none; /* Allow it to grow */
+            height: 100%;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            margin-bottom: 0;
+        }
+
+        .log-line { margin-bottom: 0.25rem; word-break: break-all; }
+        .log-line.error { color: #ff3333; }
+        .log-line.success { color: #00ff00; }
+        .log-line.info { color: #00ccff; }
+        .log-line.system { color: #888; font-style: italic; }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: #00ff00;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
         
         /* Section Title */
         .section-title {
@@ -43,6 +99,9 @@
             margin-bottom: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .form-control {
@@ -94,22 +153,41 @@
             border-top: 1px solid rgba(255,255,255,0.05);
             padding-top: 2rem;
         }
+
+        /* Status Badges */
+        .status-badge {
+            font-family: var(--font-ui);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <div class="header-bar">
-            <div>
-                <span class="page-title">SYSTEM SETTINGS</span>
-                <span class="page-subtitle">CONFIGURE AI PROVIDERS & KEYS</span>
-            </div>
-        </div>
+        <?php
+        $pageTitle = 'SYSTEM SETTINGS';
+        $pageSubtitle = 'CONFIGURE AI PROVIDERS & KEYS';
+        include 'components/header.php';
+        ?>
 
         <div class="settings-container">
+            <!-- Left Column: Config Form -->
             <div class="settings-card">
-                <h3 class="section-title">AI Configuration</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--cyan-dim); margin-bottom: 2rem; padding-bottom: 1rem;">
+                    <h3 class="section-title" style="border: none; margin: 0; padding: 0;">AI Configuration</h3>
+                    <div style="display: flex; gap: 1rem;">
+                        <span id="keyStatus" class="status-badge">KEY: CHECKING...</span>
+                        <span id="aiStatus" class="status-badge">AI: WAITING...</span>
+                    </div>
+                </div>
                 
                 <form id="settingsForm">
                     <div class="form-group">
@@ -123,13 +201,28 @@
 
                     <div class="form-group">
                         <label for="model" class="form-label">Model Name</label>
-                        <input type="text" id="model" class="form-control" placeholder="e.g. gemini-1.5-pro">
-                        <span class="helper-text">Leave empty to use default provider model.</span>
+                        
+                        <!-- Gemini Dropdown -->
+                        <select id="geminiModel" class="form-control" style="display: none;">
+                            <option value="gemini-pro-latest">Gemini Pro (Latest)</option>
+                            <option value="gemini-flash-latest">Gemini Flash (Latest)</option>
+                        </select>
+
+                        <!-- OpenRouter/Custom Input -->
+                        <input type="text" id="customModel" class="form-control" placeholder="e.g. openai/gpt-4" style="display: none;">
+                        
+                        <span class="helper-text" id="modelHelp">Select the AI model version.</span>
                     </div>
 
                     <div class="form-group">
                         <label for="apiKey" class="form-label">API Key</label>
-                        <input type="password" id="apiKey" class="form-control" placeholder="••••••••••••••••">
+                        <div style="position: relative;">
+                            <input type="password" id="apiKey" class="form-control" placeholder="••••••••••••••••" style="padding-right: 40px;">
+                            <button type="button" id="toggleKeyBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; z-index: 10;">
+                                <!-- Eye Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
                         <span class="helper-text">Enter new key to update. Leave empty to keep current key.</span>
                     </div>
 
@@ -138,6 +231,9 @@
                     </div>
                 </form>
             </div>
+
+            <!-- Right Column: Terminal -->
+            <?php include 'components/terminal-panel.php'; ?>
         </div>
     </div>
 

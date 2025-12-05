@@ -1,3 +1,22 @@
+<?php
+require_once __DIR__ . '/../../src/Services/DashboardService.php';
+require_once __DIR__ . '/../../src/Services/ConfigService.php';
+
+// Initialize services
+$dashboardService = new DashboardService();
+$configService = new ConfigService();
+
+// Fetch Data
+$totalTokens = $configService->getTotalTokens();
+$apiRequests = $dashboardService->getApiRequestCount();
+$knowledgeCount = $dashboardService->getKnowledgeCount();
+$instructionPreview = $dashboardService->getActiveInstructionPreview();
+$dailyTheme = $dashboardService->getDailyTheme();
+$scannedLeads = $dashboardService->getScannedLeads();
+
+// User Name (Mock for now, or pull from session if available)
+$operatorName = $_SESSION['user_name'] ?? 'MERRILL LEO'; 
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,75 +24,150 @@
     <title>Zeon7 Mission Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
-    <style>
-        .dashboard-content { padding: 3rem; max-width: 1600px; }
-        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 4rem; }
-        .stat-card { background: var(--bg-panel); border: 1px solid var(--border-hairline); padding: 2rem; border-radius: 4px; position: relative; }
-        .stat-val { font-family: var(--font-head); font-size: 2.5rem; font-weight: 900; color: var(--text-main); }
-        .stat-label { font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem; }
-        .stat-icon { position: absolute; top: 1.5rem; right: 1.5rem; font-size: 1.5rem; opacity: 0.5; }
-        .grid-header { font-family: var(--font-ui); color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--cyan-dim); padding-bottom: 0.5rem; display: inline-block; }
-        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
-        .action-card {
-            background: rgba(11, 18, 25, 0.6); border: 1px solid var(--border-hairline); padding: 2.5rem; text-align: center; text-decoration: none;
-            transition: all 0.3s; position: relative; overflow: hidden; display: block;
-        }
-        .action-card:hover { border-color: var(--orange); transform: translateY(-5px); background: linear-gradient(180deg, rgba(255,69,0,0.05) 0%, transparent 100%); }
-        .card-icon { font-size: 2.5rem; margin-bottom: 1.5rem; display: block; filter: grayscale(1); transition: filter 0.3s; }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Zeon7 Mission Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
-    <style>
-        .dashboard-content { padding: 3rem; max-width: 1600px; }
-        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 4rem; }
-        .stat-card { background: var(--bg-panel); border: 1px solid var(--border-hairline); padding: 2rem; border-radius: 4px; position: relative; }
-        .stat-val { font-family: var(--font-head); font-size: 2.5rem; font-weight: 900; color: var(--text-main); }
-        .stat-label { font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem; }
-        .stat-icon { position: absolute; top: 1.5rem; right: 1.5rem; font-size: 1.5rem; opacity: 0.5; }
-        .grid-header { font-family: var(--font-ui); color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--cyan-dim); padding-bottom: 0.5rem; display: inline-block; }
-        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
-        .action-card {
-            background: rgba(11, 18, 25, 0.6); border: 1px solid var(--border-hairline); padding: 2.5rem; text-align: center; text-decoration: none;
-            transition: all 0.3s; position: relative; overflow: hidden; display: block;
-        }
-        .action-card:hover { border-color: var(--orange); transform: translateY(-5px); background: linear-gradient(180deg, rgba(255,69,0,0.05) 0%, transparent 100%); }
-        .card-icon { font-size: 2.5rem; margin-bottom: 1.5rem; display: block; filter: grayscale(1); transition: filter 0.3s; }
-        .action-card:hover .card-icon { filter: grayscale(0) drop-shadow(0 0 10px var(--orange)); }
-        .card-title { font-family: var(--font-head); font-weight: 800; font-size: 1.1rem; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 0.5rem; }
-        .card-desc { font-family: var(--font-body); font-size: 0.9rem; color: var(--text-muted); line-height: 1.4; }
-    </style>
+    <link rel="stylesheet" href="css/components/sidebar.css">
+    <link rel="stylesheet" href="css/components/header-row.css">
 </head>
 <body>
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <div class="header-bar">
-            <div><span class="page-title">MISSION CONTROL</span><span class="page-subtitle">SYSTEM STATUS: OPTIMAL</span></div>
-            <div style="font-family:var(--font-ui); color:var(--cyan); font-weight:700;">USER: MERRILL LEO</div>
-        </div>
-        <div class="dashboard-content">
-            <div class="stats-row">
-                <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">45%</div><div class="stat-label">Context Load</div><div class="stat-icon">🧠</div></div>
-                <div class="stat-card"><div class="stat-val" style="color:var(--orange)">12</div><div class="stat-label">Images Pending</div><div class="stat-icon">👁</div></div>
-                <div class="stat-card"><div class="stat-val">148</div><div class="stat-label">API Requests</div><div class="stat-icon">⚡</div></div>
+        <?php
+        $pageTitle = 'MISSION CONTROL';
+        $pageSubtitle = 'SYSTEM OVERVIEW';
+        include 'components/header.php';
+        ?>
+
+        <div class="dashboard-container">
+            
+            <!-- Row 2: Metrics & Status -->
+            <div class="row-metrics-status">
+                <!-- Col 1: System Metrics -->
+                <div>
+                    <div class="section-header">System Metrics</div>
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-val" style="color:var(--cyan)"><?php echo number_format($totalTokens); ?></div>
+                            <div class="stat-label">Total Tokens</div>
+                            <div class="stat-icon">🧠</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-val" style="color:var(--orange)">0</div>
+                            <div class="stat-label">Images Pending</div>
+                            <div class="stat-icon">👁</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-val"><?php echo number_format($apiRequests); ?></div>
+                            <div class="stat-label">API Requests</div>
+                            <div class="stat-icon">⚡</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Col 2: System Status -->
+                <div>
+                    <div class="section-header">System Status</div>
+                    <div class="stat-card" style="background: rgba(11, 18, 25, 0.4); height: auto;">
+                        <div style="font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-muted);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                <span>Database</span><span style="color:#00ff00">ONLINE</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                <span>AI Core</span><span style="color:#00ff00">ONLINE</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Memory Bank</span><span style="color:#00ff00">SYNCED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="grid-header">Operational Modules</div>
-            <div class="action-grid">
-                <a href="news-desk.php" class="action-card"><span class="card-icon">📰</span><span class="card-title">Open News Desk</span><span class="card-desc">Drafting cockpit. Active Theme: <strong>Survival Monday</strong>.</span></a>
-                <a href="vision.php" class="action-card"><span class="card-icon">👁</span><span class="card-title">Vision Studio</span><span class="card-desc">Process incoming visuals and manage portfolios.</span></a>
-                <a href="lore.php" class="action-card"><span class="card-icon">📚</span><span class="card-title">Lore Manager</span><span class="card-desc">Edit deep memory and biography facts.</span></a>
-                <a href="settings.php" class="action-card"><span class="card-icon">⚙️</span><span class="card-title">Settings</span><span class="card-desc">Configure AI Provider and API Keys.</span></a>
+
+            <!-- Row 3: Modules & Terminal -->
+            <div class="row-modules-terminal">
+                <!-- Col 1: Operational Modules -->
+                <div class="col-modules">
+                    <div class="section-header">Operational Modules</div>
+                    <div class="action-grid">
+                        <!-- News Desk Card -->
+                        <a href="news-desk.php" class="action-card">
+                            <span class="card-icon">📰</span>
+                            <span class="card-title">News Desk</span>
+                            <div class="card-desc">
+                                Active Theme: <strong style="color:var(--cyan)"><?php echo $dailyTheme; ?></strong><br>
+                                <?php if (empty($scannedLeads)): ?>
+                                    Leads Scanned: <span style="color:var(--text-muted)">No</span>
+                                <?php else: ?>
+                                    Leads Scanned: <span style="color:var(--cyan)">YES</span><br>
+                                    <ul style="margin:0.5rem 0 0 1rem; font-size:0.8rem;">
+                                        <?php foreach ($scannedLeads as $lead): ?>
+                                            <li><?php echo htmlspecialchars($lead); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        </a>
+
+                        <!-- Vision Studio Card -->
+                        <a href="vision.php" class="action-card">
+                            <span class="card-icon">👁</span>
+                            <span class="card-title">Vision Studio</span>
+                            <div class="card-desc">
+                                Process incoming visuals and manage portfolios.
+                            </div>
+                        </a>
+
+                        <!-- Lore Manager Card -->
+                        <a href="lore.php" class="action-card">
+                            <span class="card-icon">📚</span>
+                            <span class="card-title">Lore Manager</span>
+                            <div class="card-desc">
+                                Edit deep memory and biography facts.
+                            </div>
+                        </a>
+
+                        <!-- Settings Card -->
+                        <a href="settings.php" class="action-card">
+                            <span class="card-icon">⚙️</span>
+                            <span class="card-title">Settings</span>
+                            <div class="card-desc">
+                                Configure AI Provider and API Keys.
+                            </div>
+                        </a>
+
+                        <!-- Instructions Card -->
+                        <a href="instructions.php" class="action-card">
+                            <span class="card-icon">📝</span>
+                            <span class="card-title">Instructions</span>
+                            <div class="card-desc">
+                                "Zeon7 AI Prompt - CRISPE Framework (V3.7 - Sourcing & Production Split) C - Context: The "Why" Goal: To deploy an AI persona, Zeon7, that perfectly emulates..."
+                            </div>
+                        </a>
+
+                        <!-- Knowledge Card -->
+                        <a href="knowledge.php" class="action-card">
+                            <span class="card-icon">🧠</span>
+                            <span class="card-title">Knowledge Base</span>
+                            <div class="card-desc">
+                                Files Processed: <strong style="color:var(--cyan)"><?php echo $knowledgeCount; ?></strong>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Col 2: Terminal Output -->
+                <div class="col-terminal">
+                    <div class="section-header">
+                        <span>ZEON7 - SYSTEM TERMINAL</span>
+                        <span style="font-size:0.7rem; color:var(--text-muted)">TOKENS USED: <?php echo number_format($totalTokens); ?></span>
+                    </div>
+                    <div class="terminal-window" style="flex:1; background:#000; border:1px solid #333; padding:1rem; font-family:'Courier New', monospace; font-size:0.9rem; color:#0f0; overflow-y:auto;">
+                        <div>Initializing Zeon7 Interface...</div>
+                        <div>Loading modules...</div>
+                        <div style="color:var(--cyan)">> SYSTEM READY.</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <script src="js/app.js"></script>
-    <script src="js/components.js"></script>
-    <script>
-        // Sidebar now handled by PHP
-    </script>
 </body>
 </html>

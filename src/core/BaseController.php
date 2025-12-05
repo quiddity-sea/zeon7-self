@@ -13,9 +13,11 @@ abstract class BaseController {
     
     public function __construct() {
         // Enable error reporting if debug mode is on
+        // Enable error reporting if debug mode is on
         if (isset($_ENV['APP_DEBUG']) && $_ENV['APP_DEBUG'] === 'true') {
-            ini_set('display_errors', 1);
-            ini_set('display_startup_errors', 1);
+            // ini_set('display_errors', 1); // Corrupts JSON
+            ini_set('display_errors', 0);
+            ini_set('display_startup_errors', 0);
             error_reporting(E_ALL);
         }
 

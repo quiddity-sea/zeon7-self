@@ -3,6 +3,12 @@
 ## Goal
 Build a responsive, modern Admin Dashboard to manage the Zeon7 platform. This includes a secure authentication system, a main dashboard overview, and dedicated management pages for Knowledge, Instructions, Lore, and Posts.
 
+## Coding Standards (STRICT)
+*   **DRY Principles:** All code pages, components, and styling MUST follow DRY (Don't Repeat Yourself) principles.
+*   **No Inline Styling:** No page should contain any in-page styling (`<style>` blocks or `style="..."` attributes).
+*   **Exceptions:** Inline styling is permitted ONLY if specifically authorized by **Merrill Leo**.
+*   **Authorization Protocol:** You must check with Merrill Leo before applying any inline styles. If approved, the code must be commented with: `<!-- Authorized by Merrill Leo -->` or `/* Authorized by Merrill Leo */`.
+
 ## User Review Required
 > [!IMPORTANT]
 > **Authentication**: I will implement a simple session-based authentication using an `ADMIN_PASSWORD` stored in your `.env` file. This avoids the need for a users table for a single-user system.

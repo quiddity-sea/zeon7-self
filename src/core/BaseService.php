@@ -3,6 +3,9 @@
  * BaseService - Foundation for all service layer classes
  * Provides common database operations and transaction management
  */
+
+require_once __DIR__ . '/DatabaseService.php';
+
 abstract class BaseService {
     protected PDO $db;
     

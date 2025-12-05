@@ -8,6 +8,7 @@ const NewsDesk = {
         this.cacheDOM();
         this.bindEvents();
         this.initTabs();
+        this.updateTonePreview(); // Init preview
     },
 
     cacheDOM() {
@@ -41,11 +42,19 @@ const NewsDesk = {
             sliders: {
                 satire: document.getElementById('toneSatire'),
                 hope: document.getElementById('toneHope')
-            }
+            },
+            tonePreview: document.getElementById('tonePreview')
         };
     },
 
     bindEvents() {
+        // Tone Sliders
+        if (this.dom.sliders.satire && this.dom.sliders.hope) {
+            const updatePreview = () => this.updateTonePreview();
+            this.dom.sliders.satire.addEventListener('input', updatePreview);
+            this.dom.sliders.hope.addEventListener('input', updatePreview);
+        }
+
         // Tab Switching
         if (this.dom.tabs) {
             this.dom.tabs.forEach(tab => {
@@ -202,32 +211,48 @@ const NewsDesk = {
         const container = this.dom.generatedContent;
         const results = this.dom.resultsContainer;
 
+        // 1. Get Selected Leads
+        const selectedCheckboxes = document.querySelectorAll('.lead-checkbox:checked');
+        const selectedLeads = Array.from(selectedCheckboxes).map(cb => JSON.parse(decodeURIComponent(cb.value)));
+
+        // 2. Get User Direction
+        const userDirection = document.getElementById('userDirection')?.value || '';
+
+        if (selectedLeads.length === 0) {
+            alert("Please select at least one lead to generate content.");
+            return;
+        }
+
         // UI State: Loading
         btn.disabled = true;
         btn.innerHTML = 'GENERATING... <span class="blink">_</span>';
         container.style.display = 'block';
-        results.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-muted);">Zeon7 is drafting content based on active context...</div>';
+        results.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-muted);">Zeon7 is drafting content based on selected leads...</div>';
 
         try {
-            // Simulate API call (Replace with actual endpoint /api/ai/generate.php later)
-            // const res = await fetch('/api/ai/generate.php', { method: 'POST', ... });
+            // Real API call
+            const res = await fetch('/api/ai/generate.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    leads: selectedLeads,
+                    direction: userDirection,
+                    context: {
+                        tone: {
+                            satire: this.dom.sliders.satire.value,
+                            hope: this.dom.sliders.hope.value
+                        }
+                    }
+                })
+            });
 
-            // Simulation delay
-            await new Promise(r => setTimeout(r, 2000));
+            const data = await res.json();
 
-            // Simulated Data
-            const mockData = {
-                success: true,
-                posts: [
-                    { type: 'Article', title: 'The Signal in the Noise', content: 'In a world saturated with static, finding the true signal becomes an act of rebellion...' },
-                    { type: 'Social', title: 'Tweet', content: 'Static is just a frequency you haven\'t tuned out yet. #Zeon7 #SurvivalMonday' },
-                    { type: 'Prompt', title: 'Image Gen', content: 'Cyberpunk city street, rain slicked, neon reflection, solitary figure tuning a radio device, cinematic lighting.' }
-                ]
-            };
-
-            if (mockData.success) {
-                this.renderResults(mockData.posts);
+            if (data.success) {
+                this.renderResults(data.posts);
                 this.appendMessage('ai', "Content suite generated. Review the output below.");
+            } else {
+                throw new Error(data.error || 'Generation failed');
             }
 
         } catch (e) {
@@ -260,16 +285,32 @@ const NewsDesk = {
             const res = await fetch('/api/ai/scan.php');
             const data = await res.json();
 
-            if (data.success) {
-                this.dom.leadContainer.innerHTML = `
-                    <div class="lead-card">
-                        <div class="lead-meta">INTELLIGENCE REPORT</div>
-                        <div class="lead-head" style="font-size:0.9rem; white-space: pre-wrap;">${data.leads}</div>
+            if (data.success && Array.isArray(data.leads)) {
+                // Render Selectable Lead Cards
+                const html = data.leads.map((lead, index) => `
+                    <div class="lead-card" style="display:flex; gap:1rem; align-items:start;">
+                        <input type="checkbox" class="lead-checkbox" value="${encodeURIComponent(JSON.stringify(lead))}" id="lead-${index}" style="margin-top:5px;">
+                        <div style="flex:1;">
+                            <div class="lead-meta" style="margin-bottom:0.2rem;">${lead.sources ? lead.sources[0] : 'Unknown Source'}</div>
+                            <div class="lead-head" style="font-size:1rem; font-weight:700; margin-bottom:0.5rem;">${lead.title}</div>
+                            <div style="font-size:0.9rem; opacity:0.8; margin-bottom:0.5rem;">${lead.summary}</div>
+                            <div style="font-size:0.8rem; color:var(--cyan);">Angles: ${lead.angles ? lead.angles.join(', ') : 'General'}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Add Direction Input
+                const directionHtml = `
+                    <div style="margin-top:1rem; padding:1rem; background:rgba(0,0,0,0.2); border:1px solid var(--border-hairline);">
+                        <label style="display:block; color:var(--cyan); font-size:0.8rem; margin-bottom:0.5rem;">MERRILL'S DIRECTION (OPTIONAL):</label>
+                        <input type="text" id="userDirection" placeholder="e.g., Focus on the housing angle..." style="width:100%; background:transparent; border:none; color:white; border-bottom:1px solid var(--text-muted); padding:0.5rem 0;">
                     </div>
                 `;
-                this.appendMessage('ai', "Scan complete. Intelligence report acquired.");
+
+                this.dom.leadContainer.innerHTML = html + directionHtml;
+                this.appendMessage('ai', "Scan complete. Select leads to develop.");
             } else {
-                this.dom.leadContainer.innerHTML = '<div class="lead-card" style="color:var(--orange)">Scan Failed</div>';
+                this.dom.leadContainer.innerHTML = '<div class="lead-card" style="color:var(--orange)">Scan Failed or Invalid Format</div>';
             }
         } catch (e) {
             console.error(e);
@@ -320,7 +361,7 @@ const NewsDesk = {
                 this.dom.brainFileList.innerHTML = data.files.map(f => `
                     <div style="padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
                         <span style="color:var(--cyan); font-family:var(--font-ui); font-size:0.9rem;">${f.filename}</span>
-                        <span style="color:var(--text-muted); font-size:0.75rem;">${(f.size / 1024).toFixed(1)} KB</span>
+                        <span style="color:var(--text-muted); font-size:0.75rem;">${(f.file_size / 1024).toFixed(1)} KB</span>
                     </div>
                 `).join('');
             } else {
@@ -344,8 +385,8 @@ const NewsDesk = {
             if (data.success && data.lore) {
                 const html = data.lore.map(item => `
                     <div style="padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05);">
-                        <div style="color:var(--cyan); font-weight:700; margin-bottom:0.3rem;">${item.key}</div>
-                        <div style="color:var(--text-main); opacity:0.8;">${item.value.substring(0, 100)}${item.value.length > 100 ? '...' : ''}</div>
+                        <div style="color:var(--cyan); font-weight:700; margin-bottom:0.3rem;">${item.type}</div>
+                        <div style="color:var(--text-main); opacity:0.8;">${item.content.substring(0, 100)}${item.content.length > 100 ? '...' : ''}</div>
                         <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">UPDATED: ${item.updated_at || 'Unknown'}</div>
                     </div>
                 `).join('');
@@ -356,6 +397,13 @@ const NewsDesk = {
         } catch (e) {
             this.dom.memoryLogContainer.innerHTML = 'Failed to access memory banks.';
         }
+    },
+
+    updateTonePreview() {
+        if (!this.dom.tonePreview) return;
+        const satire = this.dom.sliders.satire.value;
+        const hope = this.dom.sliders.hope.value;
+        this.dom.tonePreview.textContent = `SETTINGS: Satire ${satire}%, Hope ${hope}%`;
     }
 };
 

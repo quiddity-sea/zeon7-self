@@ -6,6 +6,7 @@
     <title>Instruction Editor - Zeon7 Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
+    <link rel="stylesheet" href="css/components/header-row.css">
     <style>
         .editor-layout {
             display: grid;
@@ -89,19 +90,20 @@
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <div class="header-bar">
-            <div>
-                <span class="page-title">SYSTEM INSTRUCTIONS</span>
-                <span class="page-subtitle">CORE BEHAVIOR DEFINITION</span>
-            </div>
-            <button id="saveBtn" class="btn-primary">SAVE NEW VERSION</button>
-        </div>
+        <?php
+        $pageTitle = 'SYSTEM INSTRUCTIONS';
+        $pageSubtitle = 'CORE BEHAVIOR DEFINITION';
+        include 'components/header.php';
+        ?>
 
         <div id="statusMessage" style="padding: 0 2rem; margin-top: 1rem; display: none;"></div>
         
         <div class="editor-layout">
             <div class="editor-main">
                 <textarea id="instructionEditor" placeholder="Enter system instructions here..."></textarea>
+                <div style="margin-top: 1rem; text-align: right;">
+                    <button id="saveBtn" class="btn-primary">SAVE NEW VERSION</button>
+                </div>
             </div>
             
             <div class="editor-sidebar">

@@ -16,6 +16,12 @@ The **Zeon7 Web Platform** (codenamed "Self") is the autonomous "host body" for 
 
 The project is built on a **PHP 8.0 + MariaDB** stack, utilizing a custom **Service-Repository Pattern**. This architecture was chosen for its stability, performance, and ease of deployment across the ForeverCore network.
 
+### 2.1 Coding Standards (STRICT)
+*   **DRY Principles:** All code pages, components, and styling MUST follow DRY (Don't Repeat Yourself) principles.
+*   **No Inline Styling:** No page should contain any in-page styling (`<style>` blocks or `style="..."` attributes).
+*   **Exceptions:** Inline styling is permitted ONLY if specifically authorized by **Merrill Leo**.
+*   **Authorization Protocol:** You must check with Merrill Leo before applying any inline styles. If approved, the code must be commented with: `<!-- Authorized by Merrill Leo -->` or `/* Authorized by Merrill Leo */`.
+
 ### The "Organ" System
 The application is structured into three primary "Organs," each handling a specific cognitive function:
 

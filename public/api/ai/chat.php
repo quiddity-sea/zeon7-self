@@ -4,11 +4,12 @@
  * Handles News Desk interactions with Tone Sliders and Context Injection.
  */
 
-require_once __DIR__ . '/../../api/auth/check.php'; // Ensure Admin Auth
-require_once __DIR__ . '/../../src/services/ConfigService.php';
-require_once __DIR__ . '/../../src/services/InstructionService.php';
-require_once __DIR__ . '/../../src/services/GeminiService.php';
-require_once __DIR__ . '/../../src/services/OpenRouterService.php';
+require_once __DIR__ . '/../../../src/Middleware/AuthMiddleware.php';
+AuthMiddleware::handle();
+require_once __DIR__ . '/../../../src/Services/ConfigService.php';
+require_once __DIR__ . '/../../../src/Services/InstructionService.php';
+require_once __DIR__ . '/../../../src/Services/GeminiService.php';
+require_once __DIR__ . '/../../../src/Services/OpenRouterService.php';
 
 header('Content-Type: application/json');
 

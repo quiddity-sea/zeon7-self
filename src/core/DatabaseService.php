@@ -21,13 +21,17 @@ class DatabaseService {
      * Create new PDO connection
      */
     private static function createConnection(): PDO {
-        $host = $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST') ?? 'localhost';
-        $name = $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME') ?? 'zeon7';
-        $user = $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER') ?? 'root';
-        $pass = $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? getenv('DB_PASS') ?? '';
+        $host = $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST');
+        $name = $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME');
+        $user = $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER');
+        $pass = $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? getenv('DB_PASS');
+
+        if (!$host || !$name || !$user) {
+            throw new DatabaseException("Database configuration missing. Check .env file.", 500);
+        }
         
         // Debug logging
-        error_log("Connecting to DB: host=$host, name=$name, user=$user");
+        // error_log("Connecting to DB: host=$host, name=$name, user=$user");
         
         $dsn = "mysql:host={$host};dbname={$name};charset=utf8mb4";
         

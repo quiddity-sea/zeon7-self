@@ -1,28 +1,53 @@
 <?php
 /**
- * ConfigService - Manage API configuration settings
+ * ConfigService - Manage API configuration settings via Database
  */
 
+require_once __DIR__ . '/../core/BaseService.php';
 require_once __DIR__ . '/../config/env.php';
 
-class ConfigService {
-    private string $configFile;
+class ConfigService extends BaseService {
     private array $config = [];
 
     public function __construct() {
-        $this->configFile = __DIR__ . '/../../config/settings.json';
+        parent::__construct();
         $this->loadConfig();
     }
 
     private function loadConfig(): void {
-        if (file_exists($this->configFile)) {
-            $json = file_get_contents($this->configFile);
-            $this->config = json_decode($json, true) ?? [];
+        $rows = $this->fetchAll("SELECT key_name, value FROM config");
+        $this->config = [];
+        foreach ($rows as $row) {
+            $this->config[$row['key_name']] = $row['value'];
         }
     }
 
-    private function saveConfig(): void {
-        file_put_contents($this->configFile, json_encode($this->config, JSON_PRETTY_PRINT));
+    private function saveConfigValue(string $key, string $value): void {
+        $sql = "INSERT INTO config (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?";
+        $this->executeQuery($sql, [$key, $value, $value]);
+        $this->config[$key] = $value;
+    }
+
+    /**
+     * Generic get method for backward compatibility and dynamic access
+     */
+    public function get(string $key, $default = null) {
+        // Map legacy/generic keys to specific methods
+        if ($key === 'ai_provider') {
+            return $this->getCurrentProvider();
+        }
+        
+        if ($key === 'ai_api_key') {
+             $provider = $this->getCurrentProvider();
+             return $this->getApiKey($provider);
+        }
+        
+        if ($key === 'ai_model') {
+             $provider = $this->getCurrentProvider();
+             return $this->getModel($provider);
+        }
+
+        return $this->config[$key] ?? $default;
     }
 
     public function getCurrentProvider(): string {
@@ -33,22 +58,21 @@ class ConfigService {
         if (!in_array($provider, ['gemini', 'openrouter'])) {
             throw new InvalidArgumentException("Invalid provider: $provider");
         }
-        $this->config['provider'] = $provider;
-        $this->saveConfig();
+        $this->saveConfigValue('provider', $provider);
     }
 
     public function getApiKey(string $provider): ?string {
-        // Check local config first, then ENV
+        // Check DB config first
         if (!empty($this->config[$provider . '_api_key'])) {
             return $this->config[$provider . '_api_key'];
         }
+        // Fallback to ENV
         $key = strtoupper($provider) . '_API_KEY';
         return $_ENV[$key] ?? null;
     }
 
     public function setApiKey(string $provider, string $key): void {
-        $this->config[$provider . '_api_key'] = $key;
-        $this->saveConfig();
+        $this->saveConfigValue($provider . '_api_key', $key);
     }
 
     public function getModel(string $provider): string {
@@ -57,15 +81,14 @@ class ConfigService {
         }
         
         $defaults = [
-            'gemini' => $_ENV['GEMINI_MODEL'] ?? 'gemini-pro',
+            'gemini' => $_ENV['GEMINI_MODEL'] ?? 'gemini-pro-latest',
             'openrouter' => $_ENV['OPENROUTER_MODEL'] ?? 'openai/gpt-4'
         ];
         return $defaults[$provider] ?? '';
     }
 
     public function setModel(string $provider, string $model): void {
-        $this->config[$provider . '_model'] = $model;
-        $this->saveConfig();
+        $this->saveConfigValue($provider . '_model', $model);
     }
 
     public function getAll(): array {
@@ -75,5 +98,10 @@ class ConfigService {
             'gemini_key_set' => !empty($this->getApiKey('gemini')),
             'openrouter_key_set' => !empty($this->getApiKey('openrouter')),
         ];
+    }
+    public function getTotalTokens(): int {
+        $result = $this->fetchOne("SELECT SUM(total_tokens) as total FROM token_usage");
+        if (!$result) return 0;
+        return (int)($result['total'] ?? 0);
     }
 }

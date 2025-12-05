@@ -4,9 +4,10 @@
  * Uses Gemini Grounding to fetch real-time news.
  */
 
-require_once __DIR__ . '/../../api/auth/check.php';
-require_once __DIR__ . '/../../src/services/ConfigService.php';
-require_once __DIR__ . '/../../src/services/GeminiService.php';
+require_once __DIR__ . '/../../../src/Middleware/AuthMiddleware.php';
+AuthMiddleware::handle();
+require_once __DIR__ . '/../../../src/Services/ConfigService.php';
+require_once __DIR__ . '/../../../src/Services/GeminiService.php';
 
 header('Content-Type: application/json');
 
@@ -24,11 +25,20 @@ try {
     $angle = "Survival, Adaptation, and Future Tech";
 
     // 3. Execute Scan
-    $result = $gemini->scanNews($topic, $angle);
+    $rawResult = $gemini->scanNews($topic, $angle);
+
+    // Clean Markdown if present (```json ... ```)
+    $cleanJson = preg_replace('/^```json\s*|\s*```$/', '', trim($rawResult));
+    $leads = json_decode($cleanJson, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        // Fallback: Return raw text if JSON parsing fails
+        $leads = [['title' => 'Error Parsing Leads', 'summary' => $rawResult, 'angles' => [], 'sources' => []]];
+    }
 
     echo json_encode([
         'success' => true,
-        'leads' => $result // The raw text/JSON from Gemini
+        'leads' => $leads
     ]);
 
 } catch (Exception $e) {

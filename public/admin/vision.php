@@ -5,6 +5,7 @@
     <title>Zeon7 Vision Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/zeon7-theme.css?v=3">
+    <link rel="stylesheet" href="css/components/header-row.css">
     <style>
         .vision-layout { display: flex; height: calc(100vh - 80px); }
         .queue-panel { 
@@ -60,16 +61,11 @@
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <div class="header-bar">
-            <div>
-                <span class="page-title">VISION STUDIO</span>
-                <span class="page-subtitle">VISUAL ANALYSIS & PORTFOLIO</span>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-secondary">SYNC DB</button>
-                <button class="btn-primary">ANALYZE BATCH</button>
-            </div>
-        </div>
+        <?php
+        $pageTitle = 'VISION STUDIO';
+        $pageSubtitle = 'VISUAL ANALYSIS & PORTFOLIO';
+        include 'components/header.php';
+        ?>
 
         <div class="vision-layout">
             <!-- Left: Incoming Queue -->
@@ -82,6 +78,10 @@
                     <div class="img-card"></div>
                     <div class="img-card"></div>
                     <div class="img-card"></div>
+                </div>
+                <div style="margin-top: 2rem; display: flex; gap: 10px; flex-direction: column;">
+                    <button class="btn-secondary" style="width:100%">SYNC DB</button>
+                    <button class="btn-primary" style="width:100%">ANALYZE BATCH</button>
                 </div>
             </div>
 

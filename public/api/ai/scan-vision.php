@@ -4,11 +4,12 @@
  * Handles Image Upload -> Analysis -> DB Storage
  */
 
-require_once __DIR__ . '/../../api/auth/check.php';
-require_once __DIR__ . '/../../src/services/ConfigService.php';
-require_once __DIR__ . '/../../src/services/GeminiService.php';
-require_once __DIR__ . '/../../src/services/InstructionService.php';
-require_once __DIR__ . '/../../src/services/KnowledgeService.php'; // Reuse for DB saving
+require_once __DIR__ . '/../../../src/Middleware/AuthMiddleware.php';
+AuthMiddleware::handle();
+require_once __DIR__ . '/../../../src/Services/ConfigService.php';
+require_once __DIR__ . '/../../../src/Services/GeminiService.php';
+require_once __DIR__ . '/../../../src/Services/InstructionService.php';
+require_once __DIR__ . '/../../../src/Services/KnowledgeService.php'; // Reuse for DB saving
 
 header('Content-Type: application/json');
 

@@ -14,7 +14,7 @@ class AIServiceFactory {
     public static function create(string $provider, string $apiKey, string $model = ''): GeminiService|OpenRouterService {
         switch (strtolower($provider)) {
             case 'gemini':
-                $defaultModel = $model ?: 'gemini-pro';
+                $defaultModel = $model ?: 'gemini-pro-latest';
                 return new GeminiService($apiKey, $defaultModel);
                 
             case 'openrouter':
