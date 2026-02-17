@@ -25,7 +25,7 @@ abstract class BaseService {
             error_log("Query execution failed: " . $e->getMessage());
             error_log("SQL: " . $sql);
             error_log("Params: " . json_encode($params));
-            throw new DatabaseException("Database query failed", 500, $e);
+            throw new DatabaseException("Database query failed: " . $e->getMessage(), 500, $e);
         }
     }
     

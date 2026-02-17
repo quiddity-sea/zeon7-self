@@ -1,0 +1,666 @@
+/**
+ * ZEON7 MASTER THEME
+ * Unifies Public (Light/Dark) and Admin (Cyber-Noir) styles.
+ */
+
+:root {
+  /* =========================================
+     1. Brand Palette (Cyber-Noir & Signal)
+     ========================================= */
+  --color-void: #050a10;
+  --color-void-deep: #0b1219;
+  --color-panel: rgba(20, 30, 40, 0.7);
+
+  --color-cyan: #4deeea;
+  --color-cyan-dim: #2da8a5;
+  --color-orange: #FF4500;
+  --color-orange-bright: #FF5722;
+
+  --color-white: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* =========================================
+     2. Typography
+     ========================================= */
+  --font-headline: 'Montserrat', sans-serif;
+  --font-body: 'Maven Pro', 'Source Sans Pro', sans-serif;
+  --font-ui: 'Ubuntu', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Type Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 3rem;
+  --text-4xl: 4rem;
+
+  /* =========================================
+     3. Dark Mode (Default / Cyber-Noir)
+     ========================================= */
+  --bg-primary: var(--color-void-deep);
+  --bg-secondary: #16222e;
+  /* Radial gradient blend */
+  --bg-card: rgba(11, 18, 25, 0.6);
+  --bg-hover: rgba(77, 238, 234, 0.1);
+  --bg-panel: var(--color-panel);
+
+  --text-primary: #eefbff;
+  --text-secondary: #b0c4cf;
+  --text-muted: #8faab9;
+  --text-inverse: #050a10;
+
+  --accent-primary: var(--color-cyan);
+  --accent-secondary: var(--color-orange);
+  --accent-hover: var(--color-cyan-dim);
+
+  --border-subtle: rgba(77, 238, 234, 0.1);
+  --border-medium: rgba(77, 238, 234, 0.3);
+  --border-strong: var(--color-cyan);
+  --border-hairline: 1px solid rgba(77, 238, 234, 0.1);
+  --border-active: 1px solid var(--color-cyan);
+
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 0 20px rgba(77, 238, 234, 0.2);
+  --shadow-modal: 0 0 50px rgba(0, 0, 0, 0.8);
+
+  /* Spacing */
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Container */
+  --container-max: 1200px;
+
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Logo branding */
+  --logo-color-primary: var(--text-primary);
+  --logo-color-accent: var(--accent-primary);
+}
+
+/* =========================================
+   4. Light Mode (Override)
+   ========================================= */
+:root[data-theme='light'] {
+  --bg-primary: var(--color-white);
+  --bg-secondary: var(--color-gray-50);
+  --bg-card: var(--color-white);
+  --bg-hover: var(--color-gray-100);
+  --bg-panel: var(--color-gray-50);
+
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-700);
+  --text-muted: var(--color-gray-500);
+  --text-inverse: var(--color-white);
+
+  --accent-primary: var(--color-orange-bright);
+  --accent-secondary: var(--color-cyan-dim);
+  --accent-hover: #B71C1C;
+
+  --border-subtle: var(--color-gray-200);
+  --border-medium: var(--color-gray-300);
+  --border-strong: var(--color-gray-900);
+  --border-hairline: 1px solid var(--color-gray-200);
+  --border-active: 1px solid var(--color-orange-bright);
+
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 20px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================
+   5. Base Reset & Structure
+   ========================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: 15px;
+  transition: background-color 0.3s, color 0.3s;
+
+  /* CRITICAL FOR SIDEBAR LAYOUT */
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Special Background for Dark Mode (Default) */
+body {
+  background-image: radial-gradient(circle at 50% 50%, #16222e 0%, #0b1219 90%);
+  background-attachment: fixed;
+}
+
+/* Override for light mode background */
+:root[data-theme='light'] body {
+  background-image: none;
+}
+
+/* =========================================
+   6. Shared Components
+   ========================================= */
+
+/* --- MAIN CONTENT AREA --- */
+.main-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+  background: var(--accent-secondary);
+  color: #050a10;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 2px;
+  font-family: var(--font-headline);
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  /* Cyber Cut Corner */
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 15px rgba(255, 69, 0, 0.4);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+  padding: 0.7rem 1.5rem;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  box-shadow: 0 0 10px rgba(77, 238, 234, 0.2);
+}
+
+/* --- SECTION HEADERS --- */
+.section-title,
+.section-header {
+  font-family: var(--font-ui);
+  color: var(--accent-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-medium);
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+}
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: var(--bg-card);
+  border: var(--border-active);
+  width: 600px;
+  max-width: 90%;
+  padding: 2rem;
+  box-shadow: var(--shadow-modal);
+  transform: translateY(20px);
+  transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1rem;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-family: var(--font-headline);
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--accent-secondary);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+}
+
+.input-box {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-medium);
+  padding: 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+:root[data-theme='light'] .input-box {
+  background: #fff;
+  color: #000;
+}
+
+.input-box:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+/* =========================================
+   7. Dashboard Layout (Admin Specific)
+   ========================================= */
+.dashboard-container {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 2rem;
+  padding: 3rem;
+  max-width: 100%;
+  min-height: 100vh;
+}
+
+.row-metrics-status {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.row-modules-terminal {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  min-height: 0;
+}
+
+.col-modules {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.col-terminal {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: var(--border-hairline);
+  padding: 1.5rem;
+  border-radius: 4px;
+  position: relative;
+  transition: border-color 0.3s;
+}
+
+.stat-card:hover {
+  border-color: var(--accent-primary);
+}
+
+.stat-val {
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-icon {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  font-size: 1.2rem;
+  opacity: 0.5;
+  filter: grayscale(1);
+  color: var(--text-primary);
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 0.5rem;
+  padding-bottom: 2rem;
+}
+
+.action-card {
+  background: var(--bg-card);
+  border: var(--border-hairline);
+  padding: 2rem 2rem 2.5rem 2rem !important;
+  text-decoration: none;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.action-card:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+  filter: grayscale(1);
+  transition: filter 0.3s;
+  color: var(--accent-primary);
+}
+
+.action-card:hover .card-icon {
+  filter: grayscale(0);
+}
+
+.card-title {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.card-desc {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* =========================================
+   8. HEADER ROW (Consolidated)
+   ========================================= */
+.header-bar {
+  min-height: 80px;
+  padding: 1.5rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: var(--border-hairline);
+  background: var(--bg-card);
+}
+
+.page-title {
+  font-family: var(--font-headline);
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 1rem;
+}
+
+.header-badge-1 {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--accent-hover);
+  color: var(--accent-primary);
+  background: var(--bg-hover);
+  white-space: nowrap;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.header-badge-1:hover {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+/* =========================================
+   9. SIDEBAR (Consolidated)
+   ========================================= */
+.sidebar * {
+  box-sizing: border-box;
+}
+
+.sidebar a {
+  text-decoration: none;
+  border: none;
+  outline: none;
+}
+
+.sidebar ul,
+.sidebar li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar {
+  width: 3rem;
+  background: black;
+  /* Hardcoded for deep void effect or use var(--bg-primary) but darker */
+  border-right: var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+  z-index: 10;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  height: 100vh;
+  /* Ensure full height */
+}
+
+/* Light mode override for sidebar background */
+:root[data-theme='light'] .sidebar {
+  background: var(--color-gray-50);
+}
+
+.sidebar:hover {
+  width: 16.25rem;
+  /* 260px */
+}
+
+.brand-container {
+  height: 3.125rem;
+  /* 50px */
+  margin-bottom: 3rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar:hover .brand-container {
+  justify-content: center;
+}
+
+.brand-logo {
+  width: 2.5rem;
+  /* 40px */
+  height: 2.5rem;
+  /* 40px */
+  object-fit: fill;
+  transition: all 0.3s;
+}
+
+.sidebar:hover .brand-logo {
+  width: auto;
+  height: auto;
+  max-width: 9.375rem;
+  /* 150px */
+  max-height: 3.125rem;
+  /* 50px */
+  object-fit: contain;
+  margin-right: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+  white-space: nowrap;
+  opacity: 0.7;
+  transition: all 0.2s;
+  padding: 0.8rem 0.5rem;
+  border-left: 0.2rem solid transparent;
+  /* 3px approx */
+  width: 100%;
+  justify-content: center;
+}
+
+.nav-text {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+.sidebar:hover .nav-text {
+  display: inline-block;
+  opacity: 1;
+}
+
+.sidebar:hover .nav-item {
+  justify-content: flex-start;
+  padding-left: 1.5rem;
+  /* 24px */
+}
+
+.nav-item:hover,
+.nav-item.active {
+  color: var(--accent-primary);
+  opacity: 1;
+  background: linear-gradient(90deg, rgba(77, 238, 234, 0.05) 0%, transparent 100%);
+  text-shadow: 0 0 0.5rem var(--accent-hover);
+}
+
+.nav-item.active {
+  border-left-color: var(--accent-primary);
+}
+
+.nav-item i {
+  font-style: normal;
+  font-size: 1.2rem;
+  width: 1.5rem;
+  /* 24px */
+  text-align: center;
+  flex-shrink: 0;
+  /* Prevent icon from shrinking */
+}

@@ -1,0 +1,62 @@
+/* --- LORE MANAGER --- */
+.lore-container {
+    padding: 3rem;
+    max-width: 1400px;
+}
+
+/* Table Styles */
+.lore-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+}
+
+.lore-table th {
+    text-align: left;
+    padding: 1rem;
+    color: var(--accent-primary);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-medium);
+}
+
+.lore-table td {
+    padding: 1.2rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    /* or var(--border-hairline) */
+    font-family: var(--font-body);
+    color: var(--text-primary);
+}
+
+.lore-key {
+    font-family: var(--font-mono);
+    color: var(--accent-secondary);
+    background: rgba(255, 69, 0, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-mini {
+    background: transparent;
+    border: 1px solid var(--border-hairline);
+    color: var(--text-muted);
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.btn-mini:hover {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: var(--bg-hover);
+}

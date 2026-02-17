@@ -1,165 +1,116 @@
-# Phase 3: Admin Dashboard Implementation Plan
+# Implementation Plan - Zeon7 Self V2
 
 ## Goal
-Build a responsive, modern Admin Dashboard to manage the Zeon7 platform. This includes a secure authentication system, a main dashboard overview, and dedicated management pages for Knowledge, Instructions, Lore, and Posts.
-
-## Coding Standards (STRICT)
-*   **DRY Principles:** All code pages, components, and styling MUST follow DRY (Don't Repeat Yourself) principles.
-*   **No Inline Styling:** No page should contain any in-page styling (`<style>` blocks or `style="..."` attributes).
-*   **Exceptions:** Inline styling is permitted ONLY if specifically authorized by **Merrill Leo**.
-*   **Authorization Protocol:** You must check with Merrill Leo before applying any inline styles. If approved, the code must be commented with: `<!-- Authorized by Merrill Leo -->` or `/* Authorized by Merrill Leo */`.
+Execute the comprehensive completion plan for the Zeon7-Self repository as outlined in `ZEON7-SELF-ANALYSIS-v2_Version2.md`. This involves restructuring the project for shared hosting compatibility, unifying the design system (including light mode), securing API keys, cleaning up the codebase, completing the News Desk UI, and preparing for deployment.
 
 ## User Review Required
 > [!IMPORTANT]
-> **Authentication**: I will implement a simple session-based authentication using an `ADMIN_PASSWORD` stored in your `.env` file. This avoids the need for a users table for a single-user system.
+> **Directory Restructuring**: Phase A involves moving all contents of the `public/` directory to the repository root. This is a significant structural change to support Hostinger shared hosting.
+> **Database Changes**: Phase C involves creating a new `api_keys` table and storing keys in the database instead of the `.env` file.
 
 ## Proposed Changes
 
-### 1. Authentication System (Completed)
-Secure the admin area to prevent unauthorized access.
+### Phase A: Restructure for Hostinger Deployment (Priority 1)
+#### [MODIFY] [Directory Structure]
+- Move all files/folders from `public/` to the repository root.
+- Delete the empty `public/` folder.
+- Update `require_once` paths in PHP files (e.g., change `__DIR__ . '/../../src/` to `__DIR__ . '/../src/`).
+- Update `.htaccess` if needed.
 
-> [!NOTE]
-> **Restructuring**: To align with the Apache configuration (`DocumentRoot /public`), the `admin` and `api` directories have been moved into `public`.
+#### [NEW] [assets/images/]
+- Create `assets/images/` folder at the root.
+- Move `admin/assets/logo_1759683970.png` to `assets/images/`.
+- Update all image references in PHP/HTML files.
 
-#### [NEW] [src/services/AuthService.php](file:///e:/Dev/Projects/zeon7/self/src/services/AuthService.php)
-- `login(string $password): bool` - Verifies password against `.env` and starts session.
-- `logout(): void` - Destroys session.
-- `isAuthenticated(): bool` - Checks if session is active.
+### Phase B: Unify CSS/Design System (Priority 2)
+#### [MODIFY] [css/zeon7-theme.css]
+- Make `css/zeon7-theme.css` the base for BOTH public and admin.
+- Move relevant variables from `admin/css/zeon7-theme.css` to root `css/`.
+- Refactor public pages (`index.php`, `blog.php`, `post.php`) to use the admin theme structure.
+- Remove duplicate CSS files.
 
-#### [NEW] [src/middleware/AuthMiddleware.php](file:///e:/Dev/Projects/zeon7/self/src/middleware/AuthMiddleware.php)
-- `handle()` - Redirects to `/admin/login.html` if not authenticated.
+#### [NEW] [Light Mode Support]
+- Design light mode color palette (Light slate grays, Dark grays/blacks text).
+- Add light mode CSS variables to `:root`.
+- Ensure theme toggle works across all pages.
 
-#### [NEW] [api/auth/login.php](file:///e:/Dev/Projects/zeon7/self/api/auth/login.php)
-- POST endpoint for login.
+### Phase C: Security - API Key Encryption (Priority 3)
+#### [NEW] [Database Table: api_keys]
+- Create `api_keys` table with columns: `id`, `provider`, `encrypted_key`, `created_at`, `updated_at`.
 
-#### [NEW] [api/auth/logout.php](file:///e:/Dev/Projects/zeon7/self/api/auth/logout.php)
-- POST endpoint for logout.
+#### [NEW] [src/services/EncryptionService.php]
+- Create functions for encryption/decryption using `openssl_encrypt`/`openssl_decrypt`.
 
-#### [NEW] [api/auth/check.php](file:///e:/Dev/Projects/zeon7/self/api/auth/check.php)
-- GET endpoint to check auth status (for frontend).
+#### [MODIFY] [src/services/ConfigService.php]
+- Update to read/write encrypted keys from the database.
 
----
+#### [MODIFY] [admin/settings.php]
+- Update Settings UI to save keys to the database (encrypted).
 
-### 2. Admin UI Structure (Completed)
-Modern, dark-themed dashboard using Vanilla CSS and JS.
+#### [MODIFY] [.env]
+- Remove `GEMINI_API_KEY` and `OPENROUTER_API_KEY`.
 
-#### [NEW] [admin/index.html](file:///e:/Dev/Projects/zeon7/self/admin/index.html)
-- Main entry point.
-- Sidebar navigation.
-- Dashboard widgets (Quick stats: Total Posts, Knowledge Docs, API Usage).
+### Phase D: Code Cleanup (Priority 4)
+#### [DELETE] [Redundant Files]
+- `public/admin/daschboard-index.php`
+- `public/admin/new-design.php`
+- `public/admin/lore-manager.php` (keep `lore.php`)
+- `public/design-demo.php`
+- `public/test.php`
+- `zeon7-ssl.conf` (keep `docs/zeon7-ssl.conf`)
+- `token_counter.js`
 
-#### [NEW] [admin/login.html](file:///e:/Dev/Projects/zeon7/self/admin/login.html)
-- Simple, secure login page.
+#### [MOVE]
+- `public/test_runner.php` -> `tests/`
+- `setup_token_db.php` -> `scripts/`
 
-#### [NEW] [admin/css/style.css](file:///e:/Dev/Projects/zeon7/self/admin/css/style.css)
-- Dark mode variables.
-- Layout styles (Sidebar + Content).
-- Component styles (Cards, Tables, Forms, Buttons).
+#### [NEW] [System Restart Functionality]
+Create `src/Services/SystemResetService.php` to:
+- Clear `lore`, `knowledge_doc`, `knowledge_chunk`, `system_instructions` tables.
+- Read files from `instructions/restart/`, `lore/restart/`, `knowledge/restart/`.
+- Parse and seed data into respective tables.
 
-#### [NEW] [admin/js/app.js](file:///e:/Dev/Projects/zeon7/self/admin/js/app.js)
-- Global state management.
-- API client wrapper (fetch with auth checks).
-- Navigation handling.
+Create `admin/api/system-reset.php` endpoint.
+Update `admin/settings.php` with a "Factory Reset" button.
 
----
+#### [MODIFY] [Code Issues]
+- Provide clean implementation for `lore.php` to replace `lore-manager.php`.
+- Extract inline styles from public pages into CSS files.
+- Add theme toggle to `post.php` nav.
 
+#### [MODIFY] [news-desk.php]
+- Add missing DOM elements (`brainDropzone`, `brainFileList`, `brainPublicFlag`, `memoryLogContainer`, `generatedContent`, `resultsContainer`).
 
-#### [NEW] [admin/instructions.html](file:///e:/Dev/Projects/zeon7/self/admin/instructions.html)
-- **Current Instruction**: Display current system instruction.
-- **Editor**: Textarea to modify instruction.
-- **History**: List of previous versions with timestamps.
-- **Actions**: Save New Version.
+### Phase E: Testing & Polish (Priority 5)
+#### [VERIFY] [Workflows]
+- Test Centaur Protocol end-to-end (Scan -> Leads -> Generate).
+- Test public chat widget.
+- Verify `is_public` flags.
+- Test mobile responsiveness and light/dark mode.
 
-#### [MODIFY] [admin/js/app.js](file:///e:/Dev/Projects/zeon7/self/admin/js/app.js)
-- Add `loadInstruction()`: Fetch from `/api/instruction/current.php`.
-- Add `saveInstruction()`: POST to `/api/instruction/create.php`.
-- Add `loadInstructionHistory()`: Fetch from `/api/instruction/versions.php`.
+#### [MODIFY] [Database & Performance]
+- Add indexes: `lore.is_public`, `knowledge_doc.is_public`, `posts.status`.
+- Implement response caching for repeated AI queries.
+- Add HTTP caching headers.
 
----
-
-### 4. Lore Manager (Completed)
-#### [NEW] [admin/lore.html](file:///e:/Dev/Projects/zeon7/self/admin/lore.html)
-- List, Add, Edit, Delete lore entries.
-#### [NEW] [admin/js/lore.js](file:///e:/Dev/Projects/zeon7/self/admin/js/lore.js)
-- Frontend logic for lore management.
-
-### 5. Posts Manager (Completed)
-#### [NEW] [admin/posts.html](file:///e:/Dev/Projects/zeon7/self/admin/posts.html)
-- List of posts with status.
-#### [NEW] [admin/post-editor.html](file:///e:/Dev/Projects/zeon7/self/admin/post-editor.html)
-- Markdown editor with preview.
-#### [NEW] [admin/js/posts.js](file:///e:/Dev/Projects/zeon7/self/admin/js/posts.js)
-- Frontend logic for posts.
-
-### 6. Generation Workflow (Completed)
-#### [NEW] [admin/generate.html](file:///e:/Dev/Projects/zeon7/self/admin/generate.html)
-- Input news URL and theme.
-- Generate Blog, Twitter, LinkedIn content.
-#### [NEW] [admin/js/generate.js](file:///e:/Dev/Projects/zeon7/self/admin/js/generate.js)
-- Frontend logic for generation.
-
-### 7. Settings (Completed)
-#### [NEW] [admin/settings.html](file:///e:/Dev/Projects/zeon7/self/admin/settings.html)
-- Configure AI Provider, Model, API Key.
-#### [NEW] [admin/js/settings.js](file:///e:/Dev/Projects/zeon7/self/admin/js/settings.js)
-- Frontend logic for settings.
-
-### 8. Public Interface (Phase 4)
-#### [NEW] [public/index.html](file:///e:/Dev/Projects/zeon7/self/public/index.html)
-- **Hero**: Branding and introduction.
-- **Latest News**: Grid of 3 most recent published posts.
-- **Chat Widget**: Floating chat button.
-
-#### [NEW] [public/blog.html](file:///e:/Dev/Projects/zeon7/self/public/blog.html)
-- **List**: All published posts with pagination (or load more).
-
-#### [NEW] [public/post.html](file:///e:/Dev/Projects/zeon7/self/public/post.html)
-- **View**: Single post content (Markdown rendered).
-
-#### [NEW] [public/js/public.js](file:///e:/Dev/Projects/zeon7/self/public/js/public.js)
-- Shared logic for fetching posts and rendering Markdown.
-
-#### [NEW] [public/js/chat-widget.js](file:///e:/Dev/Projects/zeon7/self/public/js/chat-widget.js)
-- Floating chat UI and API integration.
+### Phase F: Deployment Preparation (Priority 6)
+#### [NEW] [Documentation]
+- `DEPLOYMENT.md` for Hostinger setup.
+- Document Unprocessed → Processed folder workflow.
+- Create API endpoint documentation.
+- Create `scripts/migrate.php` and `scripts/seed.php`.
+- Create `/api/health.php`.
 
 ## Verification Plan
 
 ### Automated Tests
-- Test Auth API (Login success/fail, Logout).
-- Test Middleware (Access protected route without session).
+- Verification of successful build/lint (if applicable).
+- Testing of critical paths (Login, News Desk flow) via Browser tool.
 
 ### Manual Verification
-1. **Login Flow**:
-   - Try accessing `/admin/index.html` -> Should redirect to login.
-   - Enter wrong password -> Show error.
-   - Enter correct password -> Redirect to dashboard.
-2. **Dashboard**:
-   - Verify stats load correctly.
-3. **Knowledge**:
-   - Upload a file -> Verify it appears in list.
-   - Delete a file -> Verify removal.
-4. **Instructions**:
-   - View current instruction -> Verify it loads.
-   - Edit and Save -> Verify new version is created and displayed.
-   - Check History -> Verify new version appears in list.
-5. **Lore**:
-   - Add new lore -> Verify persistence.
-6. **Posts**:
-   - Create post -> Verify in list.
-   - Publish post -> Verify status change.
-7. **Generation**:
-   - Run generation -> Verify content output.
-8. **Public Site**:
-   - Visit `/index.html` -> Check hero and latest posts.
-   - Click post -> Check `/post.html` content.
-   - Use Chat -> Verify AI response.
-
-## Implementation Order
-1. **Auth System** (Backend + Login Page)
-2. **Dashboard Skeleton** (Layout + CSS)
-3. **Knowledge Manager**
-4. **Instruction Editor**
-5. **Lore Manager**
-6. **Posts Manager**
-7. **Generation Workflow**
-
+- Deploy to local test environment (WSL).
+- Verify directory structure matches the new "Hostinger-ready" layout.
+- Verify Admin Dashboard loads correctly with the unified theme.
+- Toggle Light/Dark mode and check for visual consistency.
+- Perform a News Desk scan and generation cycle.
+- Verify API keys are stored encrypted in the DB.

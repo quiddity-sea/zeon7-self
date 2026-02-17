@@ -6,11 +6,16 @@
 require_once __DIR__ . '/../core/BaseService.php';
 require_once __DIR__ . '/../config/env.php';
 
+
+require_once __DIR__ . '/EncryptionService.php';
+
 class ConfigService extends BaseService {
     private array $config = [];
+    private EncryptionService $encryption;
 
     public function __construct() {
         parent::__construct();
+        $this->encryption = new EncryptionService();
         $this->loadConfig();
     }
 
@@ -62,7 +67,21 @@ class ConfigService extends BaseService {
     }
 
     public function getApiKey(string $provider): ?string {
-        // Check DB config first
+        // Check api_keys table first (Encrypted)
+        $sql = "SELECT encrypted_key, iv FROM api_keys WHERE provider = ?";
+        $row = $this->fetchOne($sql, [$provider]);
+
+        if ($row) {
+            try {
+                return $this->encryption->decrypt($row['encrypted_key'], $row['iv']);
+            } catch (Exception $e) {
+                error_log("Failed to decrypt API key for $provider: " . $e->getMessage());
+                // Fallthrough to Env/Config table if decrypt fails? Or return null?
+                // Let's fallthrough to ENV just in case of migration overlap.
+            }
+        }
+
+        // Check Legacy DB config
         if (!empty($this->config[$provider . '_api_key'])) {
             return $this->config[$provider . '_api_key'];
         }
@@ -72,7 +91,22 @@ class ConfigService extends BaseService {
     }
 
     public function setApiKey(string $provider, string $key): void {
-        $this->saveConfigValue($provider . '_api_key', $key);
+        try {
+            $encrypted = $this->encryption->encrypt($key);
+            $sql = "INSERT INTO api_keys (provider, encrypted_key, iv) VALUES (?, ?, ?) 
+                    ON DUPLICATE KEY UPDATE encrypted_key = ?, iv = ?";
+            
+            $this->executeQuery($sql, [
+                $provider, 
+                $encrypted['data'], 
+                $encrypted['iv'],
+                $encrypted['data'],
+                $encrypted['iv']
+            ]);
+        } catch (Exception $e) {
+            error_log("Failed to encrypt API key for $provider: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function getModel(string $provider): string {

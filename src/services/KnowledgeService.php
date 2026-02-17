@@ -23,7 +23,7 @@ class KnowledgeService extends BaseService {
      * Store file chunks for selective retrieval
      */
     public function chunkFile(int $docId, array $chunks): void {
-        $sql = "INSERT INTO knowledge_chunk (doc_id, heading, content, chunk_order) 
+        $sql = "INSERT INTO knowledge_chunk (doc_id, heading, content, chunk_index) 
                 VALUES (?, ?, ?, ?)";
         
         $this->beginTransaction();
@@ -42,33 +42,14 @@ class KnowledgeService extends BaseService {
             throw $e;
         }
     }
-    
-    /**
-     * Get file metadata by ID
-     */
-    public function getFileById(int $id): ?array {
-        $sql = "SELECT * FROM knowledge_doc WHERE id = ?";
-        return $this->fetchOne($sql, [$id]);
-    }
-    
-    /**
-     * Get all knowledge files
-     */
-    public function getAllFiles(): array {
-        $sql = "SELECT id, filename, file_size, is_public, created_at, updated_at 
-                FROM knowledge_doc 
-                ORDER BY created_at DESC";
-        return $this->fetchAll($sql);
-    }
-    
-    /**
-     * Get all chunks for a specific document
-     */
+
+    // ... (skipping unchanged)
+
     public function getChunksByDocId(int $docId): array {
-        $sql = "SELECT heading, content, chunk_order 
+        $sql = "SELECT heading, content, chunk_index 
                 FROM knowledge_chunk 
                 WHERE doc_id = ? 
-                ORDER BY chunk_order ASC";
+                ORDER BY chunk_index ASC";
         return $this->fetchAll($sql, [$docId]);
     }
     
