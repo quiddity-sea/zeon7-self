@@ -9,25 +9,28 @@ require_once __DIR__ . '/../../src/services/AuthService.php';
 
 class AuthCheckController extends BaseController {
     private AuthService $authService;
-    
+
     public function __construct() {
         parent::__construct();
         $this->authService = new AuthService();
     }
-    
+
     public function handleRequest(): void {
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             $this->sendError('Method not allowed', 405);
         }
-        
+
         require_once __DIR__ . '/../../src/middleware/CsrfMiddleware.php';
-        
+
         $isAuthenticated = $this->authService->isAuthenticated();
         $csrfToken = $isAuthenticated ? CsrfMiddleware::getToken() : null;
-        
+        $user = $isAuthenticated ? $this->authService->getCurrentUser() : [];
+
         $this->sendResponse([
             'authenticated' => $isAuthenticated,
-            'csrf_token' => $csrfToken
+            'csrf_token'    => $csrfToken,
+            'username'      => $user['username'] ?? null,
+            'first_name'    => $user['first_name'] ?? null,
         ]);
     }
 }

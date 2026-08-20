@@ -1,6 +1,6 @@
 const Lore = {
     async init() {
-        console.log('Lore Manager Initializing...');
+        console.log('Lore Manager Initialising...');
         this.listContainer = document.getElementById('loreList');
         this.modal = document.getElementById('loreModal');
         this.form = document.getElementById('loreForm');
@@ -209,7 +209,7 @@ const Lore = {
     }
 };
 
-// Initialize when DOM is ready
+// Initialise when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     Lore.init();
 });

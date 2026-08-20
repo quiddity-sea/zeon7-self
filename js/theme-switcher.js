@@ -87,7 +87,7 @@
     }
 
     /**
-     * Initialize theme on page load
+     * Initialise theme on page load
      */
     function init() {
         const initialTheme = getInitialTheme();
@@ -113,7 +113,7 @@
         }
     }
 
-    // Initialize immediately to avoid flash of wrong theme
+    // Initialise immediately to avoid flash of wrong theme
     if (document.readyState === 'loading') {
         // Apply theme as early as possible
         applyTheme(getInitialTheme());

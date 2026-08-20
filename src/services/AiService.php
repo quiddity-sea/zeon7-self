@@ -1,7 +1,7 @@
 <?php
 /**
- * AiService - Wrapper for AI Providers
- * Handles provider selection and delegates calls.
+ * AiService - Unified AI Orchestration Service
+ * Handles provider selection (Gemini, Ollama Brain32, OpenRouter) and delegates calls.
  */
 
 require_once __DIR__ . '/ConfigService.php';
@@ -21,38 +21,41 @@ class AiService {
         $apiKey = $this->configService->getApiKey($provider);
         $model = $this->configService->getModel($provider);
 
-        if (!$apiKey) {
+        if ($provider !== 'ollama' && empty($apiKey)) {
             throw new Exception("API key not configured for provider: $provider");
         }
 
-        $this->providerService = AIServiceFactory::create($provider, $apiKey, $model);
+        $this->providerService = AIServiceFactory::create($provider, $apiKey ?? '', $model);
     }
 
     /**
-     * Chat with the AI
-     * @param array $messages List of messages [['role' => 'user', 'content' => '...'], ...]
-     * @return string AI response
+     * Chat with the active AI Provider
+     * @param array $messages List of messages [['role' => 'user'|'system'|'assistant', 'content' => '...'], ...]
+     * @return string AI response text
      */
     public function chat(array $messages): string {
-        // Map 'chat' call to specific provider implementation
-        // Assuming providers have a generateContent or similar method
-        // We might need to adapt the interface here.
-        
-        // For now, let's assume providers implement a common interface or we adapt.
-        // Looking at previous generate.php, it used generateContent($prompt).
-        // Chat is different. Let's check GeminiService/OpenRouterService.
-        
-        if (method_exists($this->providerService, 'chat')) {
-            return $this->providerService->chat($messages);
+        if (empty($messages)) {
+            return '';
         }
-        
-        // Fallback for providers that only support simple generation (convert chat to prompt)
-        $prompt = "";
-        foreach ($messages as $msg) {
-            $prompt .= ucfirst($msg['role']) . ": " . $msg['content'] . "\n\n";
+
+        $lastMsg = end($messages);
+        $userPrompt = $lastMsg['content'] ?? '';
+        $history = array_slice($messages, 0, count($messages) - 1);
+
+        $res = $this->providerService->chat($userPrompt, $history);
+        if (is_array($res)) {
+            return $res['reply'] ?? '';
         }
-        $prompt .= "Assistant:";
-        
-        return $this->providerService->generateContent($prompt);
+        return (string)$res;
+    }
+    
+    /**
+     * Scan News with Grounding / Local LLM
+     */
+    public function scanNews(string $topic, string $angle): string {
+        if (method_exists($this->providerService, 'scanNews')) {
+            return $this->providerService->scanNews($topic, $angle);
+        }
+        return '[]';
     }
 }

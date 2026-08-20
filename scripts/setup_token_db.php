@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/src/config/env.php';
-require_once __DIR__ . '/src/core/DatabaseService.php';
+require_once __DIR__ . '/../src/config/env.php';
+require_once __DIR__ . '/../src/core/DatabaseService.php';
 
 try {
     $pdo = DatabaseService::getInstance();

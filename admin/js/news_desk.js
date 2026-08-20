@@ -4,7 +4,7 @@
  */
 const NewsDesk = {
     init() {
-        console.log('Zeon7 Cockpit: Initializing...');
+        console.log('Zeon7 Cockpit: Initialising...');
         this.cacheDOM();
         this.bindEvents();
         this.initTabs();

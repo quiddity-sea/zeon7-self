@@ -38,12 +38,12 @@ const App = {
         return headers;
     },
 
-    async login(password) {
+    async login(username, password) {
         try {
             const res = await fetch(`${API_BASE}/auth/login.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
+                body: JSON.stringify({ username, password })
             });
             const text = await res.text();
             const data = JSON.parse(text);

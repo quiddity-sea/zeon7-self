@@ -1,126 +1,183 @@
+<?php
+require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
+AuthMiddleware::enforcePageAuth();
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="hud-scanline">
 <head>
     <meta charset="UTF-8">
-    <title>Zeon7 Vision Studio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/zeon7-theme.css?v=4">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeon7 Vision Studio ? Visual Matrix</title>
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=14.0">
     <style>
-        .vision-layout { display: flex; height: calc(100vh - 80px); }
-        .queue-panel { 
-            flex: 1; border-right: var(--border-hairline); padding: 2rem; 
-            overflow-y: auto; background: rgba(0,0,0,0.2); 
+        .vision-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            height: calc(100vh - 80px);
         }
-        .gallery-panel { flex: 3; padding: 2rem; overflow-y: auto; }
-
-        .section-head { 
-            font-family: var(--font-ui); color: var(--orange); font-weight: 700; 
-            letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1.5rem; font-size: 0.8rem; 
+        .queue-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 1rem; 
+            margin-top: 1rem;
         }
-        
-        /* Queue Grid */
-        .queue-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .img-card { 
-            aspect-ratio: 1; background: var(--bg-panel); border: 1px solid var(--border-hairline); 
-            position: relative; cursor: pointer; transition: border 0.2s; overflow: hidden;
+            aspect-ratio: 1; 
+            background: rgba(3, 6, 9, 0.7); 
+            border: 1px solid rgba(34, 211, 238, 0.2); 
+            position: relative; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .img-card:hover { border-color: var(--cyan); box-shadow: 0 0 10px rgba(77, 238, 234, 0.1); }
-        /* Placeholder for image logic */
+        .img-card:hover { 
+            border-color: var(--color-cyan); 
+            box-shadow: 0 0 15px rgba(var(--color-cyan-rgb), 0.3);
+            transform: scale(1.02);
+        }
         .img-card::before {
-            content: 'IMG'; display: flex; align-items: center; justify-content: center;
-            height: 100%; color: var(--text-muted); font-family: var(--font-ui); font-size: 0.8rem;
+            content: '?? RAW_IMG';
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
         }
         
-        /* Folders */
-        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2rem; }
-        .folder { 
-            text-align: center; cursor: pointer; padding: 1rem; 
-            border: 1px solid transparent; border-radius: 4px; transition: all 0.2s; 
+        .folder-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 1.25rem; 
+            margin-top: 1rem;
         }
-        .folder:hover { background: rgba(255, 255, 255, 0.03); border-color: var(--border-hairline); }
-        
+        .folder-card { 
+            text-align: center; 
+            cursor: pointer; 
+            padding: 1.5rem 1rem; 
+            background: rgba(13, 20, 30, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: var(--radius-sm); 
+            transition: all 0.25s ease; 
+        }
+        .folder-card:hover { 
+            background: rgba(20, 30, 45, 0.9); 
+            border-color: var(--color-cyan);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4), 0 0 15px rgba(var(--color-cyan-rgb), 0.2);
+            transform: translateY(-3px);
+        }
         .folder-icon { 
-            font-size: 3rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem; transition: color 0.2s; 
+            font-size: 2.5rem; 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            transition: transform 0.2s ease; 
         }
-        .folder:hover .folder-icon { color: var(--cyan); text-shadow: 0 0 10px var(--cyan-dim); }
-        
+        .folder-card:hover .folder-icon { 
+            transform: scale(1.1); 
+        }
         .folder-name { 
-            font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-main); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; 
+            font-family: var(--font-mono); 
+            font-size: 0.8rem; 
+            color: var(--text-primary); 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.08em; 
         }
-
-        .dropzone {
-            border: 2px dashed var(--border-hairline); padding: 3rem; text-align: center;
-            margin-bottom: 2rem; color: var(--text-muted); font-family: var(--font-ui);
-            transition: all 0.2s; cursor: pointer;
-        }
-        .dropzone:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(77, 238, 234, 0.05); }
     </style>
 </head>
 <body>
+<div class="app-wrapper">
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
         <?php
         $pageTitle = 'VISION STUDIO';
-        $pageSubtitle = 'VISUAL ANALYSIS & PORTFOLIO';
+        $pageSubtitle = 'MULTIMODAL VISUAL SCANNING & ARCHIVE';
         include 'components/header.php';
         ?>
 
         <div class="vision-layout">
-            <!-- Left: Incoming Queue -->
-            <div class="queue-panel">
-                <div class="dropzone">DROP INCOMING VISUALS</div>
-                <div class="section-head">UNPROCESSED (12)</div>
+            <!-- Left: Incoming Visual Queue -->
+            <div class="hud-border" style="display: flex; flex-direction: column; overflow-y: auto;" data-tilt>
+                <div class="hud-corner-tr"></div>
+                <div class="hud-corner-bl"></div>
+
+                <div style="border: 2px dashed rgba(34, 211, 238, 0.3); padding: 1.5rem; text-align: center; border-radius: var(--radius-sm); cursor: pointer; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.25rem;">??</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-cyan); font-weight: 700;">
+                        INGEST VISUAL ASSETS
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-bottom: 1px solid rgba(34, 211, 238, 0.2); padding-bottom: 0.4rem;">
+                    <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-cyan); font-weight: 700;">
+                        UNPROCESSED QUEUE (4)
+                    </span>
+                    <span class="hud-badge orange" style="font-size: 0.65rem;">PENDING OCR</span>
+                </div>
+
                 <div class="queue-grid">
-                    <!-- Mock Images (Grid of 4) -->
                     <div class="img-card"></div>
                     <div class="img-card"></div>
                     <div class="img-card"></div>
                     <div class="img-card"></div>
                 </div>
-                <div style="margin-top: 2rem; display: flex; gap: 10px; flex-direction: column;">
-                    <button class="btn-secondary" style="width:100%">SYNC DB</button>
-                    <button class="btn-primary" style="width:100%">ANALYZE BATCH</button>
+
+                <div style="margin-top: auto; padding-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <button class="btn btn-secondary" style="width:100%">SYNC VISION MATRIX</button>
+                    <button class="btn btn-primary" style="width:100%">? ANALYSE MULTIMODAL BATCH</button>
                 </div>
             </div>
 
-            <!-- Right: Processed Gallery -->
-            <div class="gallery-panel">
-                <div class="section-head">LIVE PORTFOLIOS</div>
+            <!-- Right: Processed Portfolio Galleries -->
+            <div class="hud-border" style="overflow-y: auto;" data-tilt>
+                <div class="hud-corner-tr"></div>
+                <div class="hud-corner-bl"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(34, 211, 238, 0.2); padding-bottom: 0.5rem;">
+                    <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--color-cyan);">
+                        CURATED PORTFOLIO MATRICES
+                    </span>
+                    <span class="hud-badge green" style="font-size: 0.65rem;">SYNCED</span>
+                </div>
+
                 <div class="folder-grid">
-                    <!-- Categories from your Dev Version -->
-                    <div class="folder">
-                        <i class="folder-icon">📁</i>
-                        <span class="folder-name">Architecture</span>
+                    <div class="folder-card">
+                        <span class="folder-icon">???</span>
+                        <div class="folder-name">Architecture</div>
                     </div>
-                    <div class="folder">
-                        <i class="folder-icon">📁</i>
-                        <span class="folder-name">Portrait</span>
+                    <div class="folder-card">
+                        <span class="folder-icon">??</span>
+                        <div class="folder-name">Portraiture</div>
                     </div>
-                    <div class="folder">
-                        <i class="folder-icon">📁</i>
-                        <span class="folder-name">Nature</span>
+                    <div class="folder-card">
+                        <span class="folder-icon">??</span>
+                        <div class="folder-name">Nature & Bot</div>
                     </div>
-                    <div class="folder">
-                        <i class="folder-icon">📁</i>
-                        <span class="folder-name">Experimental</span>
+                    <div class="folder-card">
+                        <span class="folder-icon">??</span>
+                        <div class="folder-name">Experimental</div>
                     </div>
-                    <!-- Added for completeness based on your structure -->
-                    <div class="folder">
-                        <i class="folder-icon">📁</i>
-                        <span class="folder-name">Documentary</span>
+                    <div class="folder-card">
+                        <span class="folder-icon">??</span>
+                        <div class="folder-name">Documentary</div>
                     </div>
-                    <div class="folder">
-                        <i class="folder-icon">📁</i>
-                        <span class="folder-name">Seascapes</span>
+                    <div class="folder-card">
+                        <span class="folder-icon">??</span>
+                        <div class="folder-name">Seascapes</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <script src="js/app.js"></script>
-    <script>
-        App.requireAuth();
-    </script>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+    App.requireAuth();
+</script>
 </body>
 </html>

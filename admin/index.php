@@ -1,171 +1,248 @@
 <?php
+require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
+AuthMiddleware::enforcePageAuth();
+
 require_once __DIR__ . '/../src/Services/DashboardService.php';
 require_once __DIR__ . '/../src/Services/ConfigService.php';
 
-// Initialize services
+// Initialise services
 $dashboardService = new DashboardService();
 $configService = new ConfigService();
 
 // Fetch Data
 $totalTokens = $configService->getTotalTokens();
-$apiRequests = $dashboardService->getApiRequestCount();
 $knowledgeCount = $dashboardService->getKnowledgeCount();
-$instructionPreview = $dashboardService->getActiveInstructionPreview();
 $dailyTheme = $dashboardService->getDailyTheme();
+$apiRequests = $dashboardService->getApiRequestCount();
 $scannedLeads = $dashboardService->getScannedLeads();
 
-// User Name (Mock for now, or pull from session if available)
 $operatorName = $_SESSION['user_name'] ?? 'MERRILL LEO'; 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="hud-scanline">
 <head>
     <meta charset="UTF-8">
-    <title>Zeon7 Mission Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/zeon7-theme.css?v=4">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeon7 Mission Control ? Cybernetic Matrix</title>
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=14.0">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-header-hud {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--color-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+            padding-bottom: 0.4rem;
+        }
+        .status-table {
+            width: 100%;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+        .status-table td {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
 </head>
 <body>
+<div class="app-wrapper">
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
         <?php
         $pageTitle = 'MISSION CONTROL';
-        $pageSubtitle = 'SYSTEM OVERVIEW';
+        $pageSubtitle = 'CYBERNETIC COCKPIT';
         include 'components/header.php';
         ?>
 
         <div class="dashboard-container">
             
-            <!-- Row 2: Metrics & Status -->
-            <div class="row-metrics-status">
-                <!-- Col 1: System Metrics -->
-                <div>
-                    <div class="section-header">System Metrics</div>
-                    <div class="stats-row">
-                        <div class="stat-card">
-                            <div class="stat-val" style="color:var(--cyan)"><?php echo number_format($totalTokens); ?></div>
-                            <div class="stat-label">Total Tokens</div>
-                            <div class="stat-icon">🧠</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-val" style="color:var(--orange)">0</div>
-                            <div class="stat-label">Images Pending</div>
-                            <div class="stat-icon">👁</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-val"><?php echo number_format($apiRequests); ?></div>
-                            <div class="stat-label">API Requests</div>
-                            <div class="stat-icon">⚡</div>
-                        </div>
+            <!-- Top Metrics Row -->
+            <div class="metrics-grid">
+                <!-- Total Tokens -->
+                <div class="hud-border stat-card" data-tilt>
+                    <div class="hud-corner-tr"></div>
+                    <div class="hud-corner-bl"></div>
+                    <div class="stat-icon">??</div>
+                    <div class="stat-label">Neural Tokens Fired</div>
+                    <div class="stat-val text-cyan" data-val="<?php echo (int)$totalTokens; ?>">
+                        <?php echo number_format((int)$totalTokens); ?>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--color-primary); font-family: var(--font-mono);">
+                        ? ACTIVE STREAMING
                     </div>
                 </div>
 
-                <!-- Col 2: System Status -->
-                <div>
-                    <div class="section-header">System Status</div>
-                    <div class="stat-card" style="background: rgba(11, 18, 25, 0.4); height: auto;">
-                        <div style="font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-muted);">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                                <span>Database</span><span style="color:#00ff00">ONLINE</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                                <span>AI Core</span><span style="color:#00ff00">ONLINE</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between;">
-                                <span>Memory Bank</span><span style="color:#00ff00">SYNCED</span>
-                            </div>
-                        </div>
+                <!-- Knowledge Documents -->
+                <div class="hud-border stat-card" data-tilt>
+                    <div class="hud-corner-tr"></div>
+                    <div class="hud-corner-bl"></div>
+                    <div class="stat-icon">??</div>
+                    <div class="stat-label">Knowledge Docs & Chunks</div>
+                    <div class="stat-val text-green" data-val="<?php echo (int)$knowledgeCount; ?>">
+                        <?php echo (int)$knowledgeCount; ?>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">
+                        SYNCHRONISED WITH DB
+                    </div>
+                </div>
+
+                <!-- API Operations -->
+                <div class="hud-border stat-card" data-tilt>
+                    <div class="hud-corner-tr"></div>
+                    <div class="hud-corner-bl"></div>
+                    <div class="stat-icon">?</div>
+                    <div class="stat-label">API Invocations</div>
+                    <div class="stat-val text-orange" data-val="<?php echo (int)$apiRequests; ?>">
+                        <?php echo number_format((int)$apiRequests); ?>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--color-orange); font-family: var(--font-mono);">
+                        LATENCY: ~14MS (NOMINAL)
                     </div>
                 </div>
             </div>
 
-            <!-- Row 3: Modules & Terminal -->
-            <div class="row-modules-terminal">
-                <!-- Col 1: Operational Modules -->
-                <div class="col-modules">
-                    <div class="section-header">Operational Modules</div>
+            <!-- Main Dual Column HUD Layout -->
+            <div class="dashboard-grid">
+                
+                <!-- Left Column: Operational Matrix Modules -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="section-header-hud">
+                        <span>OPERATIONAL SUBSYSTEMS</span>
+                        <span style="font-size: 0.7rem; color: var(--color-primary);">6 MATRIX CORES ACTIVE</span>
+                    </div>
+
                     <div class="action-grid">
                         <!-- News Desk Card -->
-                        <a href="news-desk.php" class="action-card">
-                            <span class="card-icon">📰</span>
+                        <a href="news-desk.php" class="hud-border action-card" data-tilt>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <span class="card-icon">??</span>
                             <span class="card-title">News Desk</span>
                             <div class="card-desc">
-                                Active Theme: <strong style="color:var(--cyan)"><?php echo is_array($dailyTheme) ? htmlspecialchars($dailyTheme['theme']) : htmlspecialchars($dailyTheme); ?></strong><br>
+                                Active Protocol: <strong class="text-cyan"><?php echo is_array($dailyTheme) ? htmlspecialchars($dailyTheme['theme'] ?? 'Standard') : htmlspecialchars($dailyTheme); ?></strong><br>
                                 <?php if (empty($scannedLeads)): ?>
-                                    Leads Scanned: <span style="color:var(--text-muted)">No</span>
+                                    Lead Scanner: <span class="text-muted">Awaiting Dispatch</span>
                                 <?php else: ?>
-                                    Leads Scanned: <span style="color:var(--cyan)">YES</span><br>
-                                    <ul style="margin:0.5rem 0 0 1rem; font-size:0.8rem;">
-                                        <?php foreach ($scannedLeads as $lead): ?>
-                                            <li><?php echo htmlspecialchars($lead); ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
+                                    Lead Scanner: <span class="text-green">ONLINE (<?php echo count($scannedLeads); ?> LEADS)</span>
                                 <?php endif; ?>
                             </div>
                         </a>
 
                         <!-- Vision Studio Card -->
-                        <a href="vision.php" class="action-card">
-                            <span class="card-icon">👁</span>
+                        <a href="vision.php" class="hud-border action-card" data-tilt>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <span class="card-icon">??</span>
                             <span class="card-title">Vision Studio</span>
                             <div class="card-desc">
-                                Process incoming visuals and manage portfolios.
+                                Multimodal visual scanning, image processing, and prompt portfolio asset curation.
                             </div>
                         </a>
 
-                        <!-- Lore Manager Card -->
-                        <a href="lore.php" class="action-card">
-                            <span class="card-icon">📚</span>
-                            <span class="card-title">Lore Manager</span>
+                        <!-- Memory Lore Card -->
+                        <a href="lore.php" class="hud-border action-card" data-tilt>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <span class="card-icon">?</span>
+                            <span class="card-title">Memory Bank (Lore)</span>
                             <div class="card-desc">
-                                Edit deep memory and biography facts.
-                            </div>
-                        </a>
-
-                        <!-- Settings Card -->
-                        <a href="settings.php" class="action-card">
-                            <span class="card-icon">⚙️</span>
-                            <span class="card-title">Settings</span>
-                            <div class="card-desc">
-                                Configure AI Provider and API Keys.
+                                Edit immutable core facts, biographical anchors, and contextual personas.
                             </div>
                         </a>
 
                         <!-- Instructions Card -->
-                        <a href="instructions.php" class="action-card">
-                            <span class="card-icon">📝</span>
-                            <span class="card-title">Instructions</span>
+                        <a href="instructions.php" class="hud-border action-card" data-tilt>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <span class="card-icon">?</span>
+                            <span class="card-title">CRISPE Instructions</span>
                             <div class="card-desc">
-                                "Zeon7 AI Prompt - CRISPE Framework (V3.7 - Sourcing & Production Split) C - Context: The "Why" Goal: To deploy an AI persona, Zeon7, that perfectly emulates..."
+                                Versioned AI prompt architectures, sourcing frameworks, and behaviour policies.
                             </div>
                         </a>
 
-                        <!-- Knowledge Card -->
-                        <a href="knowledge.php" class="action-card">
-                            <span class="card-icon">🧠</span>
-                            <span class="card-title">Knowledge Base</span>
+                        <!-- Knowledge Base Card -->
+                        <a href="knowledge.php" class="hud-border action-card" data-tilt>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <span class="card-icon">??</span>
+                            <span class="card-title">Knowledge Engine</span>
                             <div class="card-desc">
-                                Files Processed: <strong style="color:var(--cyan)"><?php echo $knowledgeCount; ?></strong>
+                                Ingest markdown corpus with full-text chunking & neural vector readiness.
+                            </div>
+                        </a>
+
+                        <!-- Settings & Keyring Card -->
+                        <a href="settings.php" class="hud-border action-card" data-tilt>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <span class="card-icon">??</span>
+                            <span class="card-title">System Settings</span>
+                            <div class="card-desc">
+                                Gemini / OpenRouter API configurations and AES-256 encrypted key management.
                             </div>
                         </a>
                     </div>
                 </div>
 
-                <!-- Col 2: Terminal Output -->
-                <div class="col-terminal">
-                    <div class="section-header">
-                        <span>ZEON7 - SYSTEM TERMINAL</span>
-                        <span style="font-size:0.7rem; color:var(--text-muted)">TOKENS USED: <?php echo number_format($totalTokens); ?></span>
+                <!-- Right Column: System Status Matrix & Live Terminal -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <!-- System Health HUD Panel -->
+                    <div class="hud-border" data-tilt>
+                        <div class="hud-corner-tr"></div>
+                        <div class="hud-corner-bl"></div>
+                        <div class="section-header-hud">
+                            <span>SYSTEM MATRIX STATUS</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <table class="status-table">
+                            <tr>
+                                <td style="color:var(--text-muted);">MariaDB Database</td>
+                                <td style="text-align:right;"><span class="hud-badge green" style="padding:2px 6px;">ONLINE</span></td>
+                            </tr>
+                            <tr>
+                                <td style="color:var(--text-muted);">GSAP Kinetic Engine</td>
+                                <td style="text-align:right;"><span class="hud-badge green" style="padding:2px 6px;">ACTIVE</span></td>
+                            </tr>
+                            <tr>
+                                <td style="color:var(--text-muted);">AI Neural Core</td>
+                                <td style="text-align:right;"><span class="hud-badge green" style="padding:2px 6px;">READY</span></td>
+                            </tr>
+                            <tr>
+                                <td style="color:var(--text-muted);">SSL Subdomain Layer</td>
+                                <td style="text-align:right;"><span class="hud-badge green" style="padding:2px 6px;">VALID</span></td>
+                            </tr>
+                        </table>
                     </div>
-                    <div class="terminal-window" style="flex:1; background:#000; border:1px solid #333; padding:1rem; font-family:'Courier New', monospace; font-size:0.9rem; color:#0f0; overflow-y:auto;">
-                        <div>Initializing Zeon7 Interface...</div>
-                        <div>Loading modules...</div>
-                        <div style="color:var(--cyan)">> SYSTEM READY.</div>
-                    </div>
+
+                    <!-- Live Terminal Panel -->
+                    <?php include 'components/terminal-panel.php'; ?>
+
                 </div>
             </div>
+
         </div>
     </div>
+</div>
 </body>
 </html>

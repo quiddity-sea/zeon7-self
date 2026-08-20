@@ -164,7 +164,7 @@ const Knowledge = {
     }
 };
 
-// Initialize when DOM is ready
+// Initialise when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     Knowledge.init();
 });

@@ -15,10 +15,10 @@ class GeminiService extends BaseService {
     /**
      * Initialize with API key and model
      */
-    public function __construct(string $apiKey, string $model = 'gemini-pro') {
+    public function __construct(string $apiKey, string $model = 'gemini-2.5-flash') {
         parent::__construct();
         $this->apiKey = $apiKey;
-        $this->model = $model;
+        $this->model = !empty($model) ? $model : 'gemini-2.5-flash';
     }
     
     /**
@@ -27,7 +27,6 @@ class GeminiService extends BaseService {
     public function generateContent(string $prompt, array $context = []): string {
         $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
         
-        // Build request body
         $requestBody = [
             'contents' => [
                 [
@@ -38,16 +37,12 @@ class GeminiService extends BaseService {
             ]
         ];
         
-        // Add context if provided
         if (!empty($context)) {
             $contextText = $this->formatContext($context);
             $requestBody['contents'][0]['parts'][] = ['text' => $contextText];
         }
         
-        // Make API request
         $response = $this->makeRequest($url, $requestBody);
-        
-        // Extract and return text
         return $this->extractText($response);
     }
     
@@ -57,16 +52,15 @@ class GeminiService extends BaseService {
     public function chat(string $message, array $history = []): array {
         $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
         
-        // Build conversation history
         $contents = [];
         foreach ($history as $turn) {
+            $role = (isset($turn['role']) && ($turn['role'] === 'assistant' || $turn['role'] === 'model')) ? 'model' : 'user';
             $contents[] = [
-                'role' => $turn['role'] ?? 'user',
-                'parts' => [['text' => $turn['content']]]
+                'role' => $role,
+                'parts' => [['text' => $turn['content'] ?? '']]
             ];
         }
         
-        // Add current message
         $contents[] = [
             'role' => 'user',
             'parts' => [['text' => $message]]
@@ -79,7 +73,9 @@ class GeminiService extends BaseService {
         
         // Log usage
         $tokens = $this->extractTokenUsage($response);
-        $this->logUsage($tokens['prompt'], $tokens['response'], 'success');
+        try {
+            $this->logUsage($tokens['prompt'], $tokens['response'], 'success');
+        } catch (Exception $e) {}
         
         return [
             'reply' => $reply,
@@ -95,22 +91,31 @@ class GeminiService extends BaseService {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json'
         ]);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
+        
+        if (!empty($curlError)) {
+            throw new ApiException("Network error connecting to Gemini API: $curlError", 500);
+        }
         
         if ($httpCode !== 200) {
             $error = json_decode($response, true);
             $errorMsg = $error['error']['message'] ?? 'Unknown error';
-            $this->logUsage(0, 0, 'error', $errorMsg);
+            try {
+                $this->logUsage(0, 0, 'error', $errorMsg);
+            } catch (Exception $e) {}
             throw new ApiException("Gemini API error: $errorMsg", $httpCode);
         }
         
-        return json_decode($response, true);
+        return json_decode($response, true) ?? [];
     }
     
     /**
@@ -138,11 +143,9 @@ class GeminiService extends BaseService {
      */
     private function formatContext(array $context): string {
         $formatted = "\n\n--- Context ---\n";
-        
         foreach ($context as $key => $value) {
             $formatted .= "$key: $value\n";
         }
-        
         return $formatted;
     }
     
@@ -165,12 +168,12 @@ class GeminiService extends BaseService {
             $error
         ]);
 
-        // Log to generic token_usage table (for persistent counter)
         if ($totalTokens > 0) {
             $sqlToken = "INSERT INTO token_usage (prompt_tokens, response_tokens, total_tokens) VALUES (?, ?, ?)";
             $this->executeQuery($sqlToken, [$promptTokens, $responseTokens, $totalTokens]);
         }
     }
+
     /**
      * Scan news using Google Search Grounding
      */

@@ -35,22 +35,24 @@ const Public = {
     renderPostCard(post) {
         const date = new Date(post.published_at || post.created_at).toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'long',
+            month: 'short',
             day: 'numeric'
         });
 
-        // Extract a snippet (first 150 chars)
-        const snippet = post.content.replace(/[#*`]/g, '').substring(0, 150) + '...';
+        // Extract a snippet (first 140 chars)
+        const snippet = (post.content || '').replace(/[#*`]/g, '').substring(0, 140) + '...';
 
         return `
-            <article class="post-card">
-                <div class="post-meta">${date}</div>
-                <h3 class="post-title">
-                    <a href="post.php?slug=${post.slug}">${this.escapeHtml(post.title)}</a>
-                </h3>
-                <p class="post-snippet">${this.escapeHtml(snippet)}</p>
-                <a href="post.php?slug=${post.slug}" class="read-more">Read Article →</a>
-            </article>
+            <a href="post.php?slug=${encodeURIComponent(post.slug)}" class="hud-border post-card" data-tilt>
+                <div class="hud-corner-tr"></div>
+                <div class="hud-corner-bl"></div>
+                <div>
+                    <div class="post-card-date">// ${date}</div>
+                    <div class="post-card-title">${this.escapeHtml(post.title)}</div>
+                    <div class="post-card-snippet">${this.escapeHtml(snippet)}</div>
+                </div>
+                <div class="post-card-action">READ FULL INTEL ?</div>
+            </a>
         `;
     },
 

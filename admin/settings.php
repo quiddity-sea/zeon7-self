@@ -1,263 +1,172 @@
+<?php
+require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
+AuthMiddleware::enforcePageAuth();
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="hud-scanline">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Zeon7 Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&family=Montserrat:wght@400;600;800;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/zeon7-theme.css?v=4">
-    <link rel="stylesheet" href="css/components/terminal.css?v=1">
+    <title>Settings & Keyring — Zeon7 Admin</title>
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=15.0">
     <style>
         .settings-container { 
-            padding: 3rem; 
-            max-width: 100%; /* Updated to 100% */
-            margin: 0 auto; /* Center container */
+            padding: 1.5rem 2rem; 
+            max-width: 1600px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
         }
-        
-        /* Form Card */
-        .settings-card {
-            background: rgba(11, 18, 25, 0.6);
-            border: 1px solid var(--border-hairline);
-            padding: 3rem;
-            border-radius: 4px;
-            position: relative;
-            height: 100%; /* Match height */
-        }
-        
-        /* Terminal Card */
-        .terminal-card {
-            background: rgba(11, 18, 25, 0.9);
-            /* border: 1px solid var(--cyan-dim); Removed as requested */
-            padding: 3rem; /* Updated to 3rem */
-            border-radius: 4px;
-            position: relative;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 3rem; /* Updated to 3rem */
-        }
-
-        .terminal-window {
-            flex-grow: 1;
-            background: #000;
-            border: 1px solid #333;
-            padding: 1rem;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.85rem;
-            color: #00ff00;
-            overflow-y: auto;
-            max-height: none; /* Allow it to grow */
-            height: 100%;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-            margin-bottom: 0;
-        }
-
-        .log-line { margin-bottom: 0.25rem; word-break: break-all; }
-        .log-line.error { color: #ff3333; }
-        .log-line.success { color: #00ff00; }
-        .log-line.info { color: #00ccff; }
-        .log-line.system { color: #888; font-style: italic; }
-
-        .cursor {
-            display: inline-block;
-            width: 8px;
-            height: 14px;
-            background: #00ff00;
-            animation: blink 1s step-end infinite;
-            vertical-align: middle;
-        }
-
-        @keyframes blink { 50% { opacity: 0; } }
-        
-        /* Section Title */
-        .section-title {
-            font-family: var(--font-ui);
-            color: var(--cyan);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--cyan-dim);
-            padding-bottom: 1rem;
-            font-size: 1.1rem;
-        }
-
-        /* Form Groups */
-        .form-group { margin-bottom: 2rem; }
-        
-        .form-label {
-            display: block;
-            font-family: var(--font-ui);
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-bottom: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .form-control {
-            width: 100%;
-            background: var(--bg-void);
-            border: 1px solid var(--border-hairline);
-            color: var(--text-main);
-            padding: 1rem;
-            font-family: var(--font-body);
-            font-size: 1rem;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--cyan);
-            box-shadow: 0 0 10px rgba(77, 238, 234, 0.1);
-        }
-
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234deeea%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 12px;
-        }
-
+        .form-group { margin-bottom: 1.5rem; }
         .helper-text {
             display: block;
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
+            margin-top: 0.35rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            font-style: italic;
+            font-family: var(--font-mono);
         }
-
-        /* Toggle Switch (Checkbox) */
-        .toggle-wrapper {
+        .hud-toggle-container {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            cursor: pointer;
-        }
-        
-        /* Save Button Container */
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 3rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            padding-top: 2rem;
-        }
-
-        /* Status Badges */
-        .status-badge {
-            font-family: var(--font-ui);
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.05);
-            color: var(--text-muted);
-            border: 1px solid transparent;
-            white-space: nowrap;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(34, 211, 238, 0.05);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: var(--radius-sm);
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
+<div class="app-wrapper">
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
         <?php
         $pageTitle = 'SYSTEM SETTINGS';
-        $pageSubtitle = 'CONFIGURE AI PROVIDERS & KEYS';
+        $pageSubtitle = 'AI PROVIDER & ENCRYPTION CONFIGURATION';
         include 'components/header.php';
         ?>
 
         <div class="settings-container">
             <!-- Left Column: Config Form -->
-            <div class="settings-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--cyan-dim); margin-bottom: 2rem; padding-bottom: 1rem;">
-                    <h3 class="section-title" style="border: none; margin: 0; padding: 0;">AI Configuration</h3>
-                    <div style="display: flex; gap: 1rem;">
-                        <span id="keyStatus" class="status-badge">KEY: CHECKING...</span>
-                        <span id="aiStatus" class="status-badge">AI: WAITING...</span>
+            <div class="hud-border" data-tilt>
+                <div class="hud-corner-tr"></div>
+                <div class="hud-corner-bl"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(34, 211, 238, 0.2); margin-bottom: 1.5rem; padding-bottom: 0.5rem;">
+                    <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--color-cyan);">
+                        AI ENGINE PARAMETERS
+                    </span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span id="keyStatus" class="hud-badge" style="font-size: 0.65rem;">KEY: CHECKING...</span>
+                        <span id="aiStatus" class="hud-badge green" style="font-size: 0.65rem;">AI: WAITING...</span>
                     </div>
                 </div>
                 
                 <form id="settingsForm">
                     <div class="form-group">
-                        <label for="provider" class="form-label">AI Provider</label>
-                        <select id="provider" class="form-control">
-                            <option value="gemini">Google Gemini</option>
-                            <option value="openrouter">OpenRouter</option>
+                        <label for="provider">AI Neural Provider</label>
+                        <select id="provider" class="input-box">
+                            <option value="ollama">Local Ollama AI Engine (Brain32:latest)</option>
+                            <option value="gemini">Google Gemini AI</option>
+                            <option value="openrouter">OpenRouter Multi-LLM</option>
                         </select>
-                        <span class="helper-text">Select the backend engine for Zeon7.</span>
+                        <span class="helper-text">Select the backend engine for Zeon7 operations.</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="model" class="form-label">Model Name</label>
+                        <label for="model">Model Specification</label>
                         
+                        <!-- Ollama Dropdown -->
+                        <select id="ollamaModel" class="input-box" style="display: none;">
+                            <option value="Brain32:latest">Brain32:latest (Local Qwen3.5 9B)</option>
+                            <option value="tripolskypetr/qwen3.5-uncensored-aggressive:9b">qwen3.5-uncensored-aggressive:9b</option>
+                            <option value="Zeon7-Gemma:64k">Zeon7-Gemma:64k</option>
+                            <option value="fredrezones55/Gemma-4-Uncensored-HauhauCS-Aggressive:e2b-SCN">Gemma-4-Uncensored</option>
+                        </select>
+
                         <!-- Gemini Dropdown -->
-                        <select id="geminiModel" class="form-control" style="display: none;">
-                            <option value="gemini-pro-latest">Gemini Pro (Latest)</option>
-                            <option value="gemini-flash-latest">Gemini Flash (Latest)</option>
+                        <select id="geminiModel" class="input-box" style="display: none;">
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Reasoning)</option>
+                            <option value="gemini-flash-latest">Gemini Flash Latest</option>
                         </select>
 
-                        <!-- OpenRouter/Custom Input -->
-                        <input type="text" id="customModel" class="form-control" placeholder="e.g. openai/gpt-4" style="display: none;">
+                        <!-- OpenRouter Input -->
+                        <input type="text" id="customModel" class="input-box" placeholder="e.g. anthropic/claude-3.5-sonnet" style="display: none;">
                         
-                        <span class="helper-text" id="modelHelp">Select the AI model version.</span>
+                        <span class="helper-text" id="modelHelp">Select or specify the target LLM version.</span>
                     </div>
 
-                    <div class="form-group">
-                        <label for="apiKey" class="form-label">API Key</label>
+                    <!-- Ollama Think Toggle -->
+                    <div class="form-group" id="ollamaThinkGroup" style="display: none;">
+                        <label>Reasoning Scratchpad Protocol</label>
+                        <div class="hud-toggle-container">
+                            <input type="checkbox" id="ollamaThink" style="width: 20px; height: 20px; accent-color: var(--color-cyan); cursor: pointer;">
+                            <div>
+                                <span id="thinkStatusText" style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--color-cyan); display: block;">
+                                    THINK: FALSE (--think=false)
+                                </span>
+                                <span class="helper-text" style="margin-top: 0.15rem;">
+                                    When disabled (recommended), model outputs instant, direct responses without raw thought chains.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="apiKeyGroup">
+                        <label for="apiKey">API Access Key (Encrypted in MariaDB)</label>
                         <div style="position: relative;">
-                            <input type="password" id="apiKey" class="form-control" placeholder="••••••••••••••••" style="padding-right: 40px;">
+                            <input type="password" id="apiKey" class="input-box" placeholder="••••••••••••••••" style="padding-right: 40px;">
                             <button type="button" id="toggleKeyBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; z-index: 10;">
-                                <!-- Eye Icon -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                👁
                             </button>
                         </div>
-                        <span class="helper-text">Enter new key to update. Leave empty to keep current key.</span>
+                        <span class="helper-text" id="apiKeyHelp">Enter new key to update keyring. Empty keeps current key.</span>
                     </div>
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary" id="saveBtn">UPDATE PROTOCOLS</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+                        <button type="button" class="btn btn-secondary" id="testAiBtn">TEST CONNECTION</button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">UPDATE SYSTEM PROTOCOLS</button>
                     </div>
                 </form>
-
             </div>
 
-            <!-- Right Column: Terminal -->
+            <!-- Right Column: Live Terminal -->
             <?php include 'components/terminal-panel.php'; ?>
 
-            <!-- Danger Zone: System Initialization (Full Width) -->
-            <div class="settings-card" style="margin-top: 0; border-color: var(--accent-danger, #ff4444); grid-column: 1 / -1;">
-                <h3 class="section-title" style="color: var(--accent-danger, #ff4444); border-color: rgba(255,68,68,0.3);">System Initialization</h3>
+            <!-- Danger Zone: Factory Reset (Full Width) -->
+            <div class="hud-border" style="grid-column: 1 / -1; border-color: rgba(244, 63, 94, 0.4);" data-tilt>
+                <div class="hud-corner-tr" style="background: var(--color-coral); box-shadow: 0 0 8px var(--color-coral);"></div>
+                <div class="hud-corner-bl" style="background: var(--color-coral); box-shadow: 0 0 8px var(--color-coral);"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(244, 63, 94, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--color-coral);">
+                        ⚠️ EMERGENCY SYSTEM RE-INITIALISATION
+                    </span>
+                    <span class="hud-badge orange" style="font-size: 0.65rem;">DESTRUCTIVE</span>
+                </div>
                 
-                <p style="margin-bottom: 2rem; color: var(--text-secondary);">
-                    Factory Reset will <strong>WIPE ALL</strong> Lore, Knowledge, and Instructions from the database and reload them from the <code>restart/</code> directories.
-                    Chat history will also be cleared. This action is irreversible.
+                <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem;">
+                    Factory Reset will purge all Lore facts, Knowledge vectors, and System Instructions from the active MariaDB database and reload clean baseline configurations. This operation cannot be undone.
                 </p>
                 
-                <div class="form-actions" style="border-top-color: rgba(255,68,68,0.1);">
-                    <button type="button" class="btn-primary" id="resetSystemBtn" style="background: var(--accent-danger, #ff4444); color: white;">FACTORY RESET SYSTEM</button>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-danger" id="resetSystemBtn">EXECUTE FACTORY SYSTEM RESET</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="js/app.js"></script>
-    <script src="js/settings.js"></script>
-    <script>
-        // Ensure Auth logic runs
-        if(typeof App !== 'undefined') App.requireAuth();
-        document.addEventListener('DOMContentLoaded', () => {
-            Settings.init();
-        });
-    </script>
+<script src="js/app.js"></script>
+<script src="js/settings.js?v=15.0"></script>
+<script>
+    if (typeof App !== 'undefined') App.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Settings.init();
+    });
+</script>
 </body>
 </html>

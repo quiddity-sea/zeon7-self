@@ -15,7 +15,6 @@ class ConfigUpdateController extends BaseController {
         parent::__construct();
         $this->configService = new ConfigService();
         
-        // Protect with CSRF
         CsrfMiddleware::handle();
     }
     
@@ -37,6 +36,10 @@ class ConfigUpdateController extends BaseController {
             
             if (!empty($data['api_key'])) {
                 $this->configService->setApiKey($data['provider'] ?? 'gemini', $data['api_key']);
+            }
+            
+            if (isset($data['ollama_think'])) {
+                $this->configService->setOllamaThink(filter_var($data['ollama_think'], FILTER_VALIDATE_BOOLEAN));
             }
             
             $this->sendResponse([

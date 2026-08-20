@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../src/core/BaseController.php';
-require_once __DIR__ . '/../../src/Services/ConfigService.php';
-require_once __DIR__ . '/../../src/Services/AIServiceFactory.php';
+require_once __DIR__ . '/../../src/services/ConfigService.php';
+require_once __DIR__ . '/../../src/services/AIServiceFactory.php';
 
 class TestConnectionController extends BaseController {
     private ConfigService $configService;
@@ -14,35 +14,32 @@ class TestConnectionController extends BaseController {
     public function handleRequest() {
         $this->requireMethod('GET');
         
-        // Ensure user is authenticated (BaseController doesn't enforce this by default, 
-        // but the JS checks auth. For extra security we could check session here)
-        // For now, we assume the middleware/frontend auth check is sufficient for this internal tool.
-        
         try {
             $provider = $this->configService->getCurrentProvider();
-            $key = $this->configService->getApiKey($provider);
+            $key = $this->configService->getApiKey($provider) ?? '';
             $model = $this->configService->getModel($provider);
             
-            if (!$key) {
-                $this->jsonResponse(['success' => false, 'error' => 'No API key found']);
+            if ($provider !== 'ollama' && empty($key)) {
+                $this->jsonResponse(['success' => false, 'error' => "No API key found for $provider"]);
             }
             
             $aiService = AIServiceFactory::create($provider, $key, $model);
             
-            // Try a very simple, cheap prompt
-            $prompt = "Ping. Reply with 'Pong'.";
+            $prompt = "Ping. Reply in one short sentence starting with 'Pong'.";
             $response = $aiService->chat($prompt);
             
             if (!empty($response['reply'])) {
                 $this->jsonResponse([
                     'success' => true, 
                     'message' => 'Connection successful',
+                    'provider' => $provider,
+                    'model' => $model,
                     'prompt' => $prompt,
                     'reply' => $response['reply'],
-                    'usage' => $response['usage'] ?? null // Add usage metadata
+                    'usage' => $response['usage'] ?? null
                 ]);
             } else {
-                $this->jsonResponse(['success' => false, 'error' => 'Empty response from AI']);
+                $this->jsonResponse(['success' => false, 'error' => 'Empty response from AI engine']);
             }
             
         } catch (Exception $e) {

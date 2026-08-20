@@ -1,11 +1,12 @@
 <?php
 require_once __DIR__ . '/../../src/Services/ConfigService.php';
 
-// Instantiate service if not already available
 if (!isset($configService)) {
     $configService = new ConfigService();
 }
 
 $totalTokens = $configService->getTotalTokens();
 ?>
-<span id="tokenDisplay" class="header-badge-1" data-count="<?php echo $totalTokens; ?>">TOKENS USED: <?php echo $totalTokens; ?></span>
+<span id="tokenDisplay" class="hud-badge green" data-count="<?php echo (int)$totalTokens; ?>" title="Accumulated Token Count">
+    ?? TOKENS: <?php echo number_format((int)$totalTokens); ?>
+</span>

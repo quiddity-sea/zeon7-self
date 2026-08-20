@@ -146,7 +146,7 @@ const Instructions = {
     }
 };
 
-// Initialize when DOM is ready
+// Initialise when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     Instructions.init();
 });

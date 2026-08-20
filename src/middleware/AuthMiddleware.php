@@ -1,7 +1,7 @@
 <?php
 /**
  * AuthMiddleware
- * Protects routes requiring admin authentication.
+ * Protects routes and pages requiring admin authentication.
  */
 
 require_once __DIR__ . '/../services/AuthService.php';
@@ -9,8 +9,20 @@ require_once __DIR__ . '/../services/AuthService.php';
 class AuthMiddleware {
     
     /**
-     * Handle authentication check.
-     * If not authenticated, returns 401 Unauthorized (for API) or redirects (optional).
+     * Enforce authentication on HTML Admin Pages.
+     * Redirects to login.php if session is missing or expired.
+     */
+    public static function enforcePageAuth(): void {
+        $auth = new AuthService();
+        if (!$auth->isAuthenticated()) {
+            header('Location: login.php');
+            exit;
+        }
+    }
+
+    /**
+     * Handle authentication check for JSON API endpoints.
+     * Returns HTTP 401 Unauthorized if not logged in.
      */
     public static function handle(): void {
         $auth = new AuthService();

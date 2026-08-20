@@ -1,138 +1,120 @@
-/* --- SIDEBAR COMPONENT --- */
-/* Independent component styling - Overrides main theme defaults where necessary */
-
-.sidebar * {
-    box-sizing: border-box;
-}
-
-.sidebar a {
-    text-decoration: none;
-    border: none;
-    outline: none;
-}
-
-.sidebar ul,
-.sidebar li {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
+/* Standalone Sidebar Styling - synced with master zeon7-theme.css */
 .sidebar {
-    width: 3rem;
-    background: var(--bg-void);
-    border-right: var(--border-hairline);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.5rem 0;
-    z-index: 10;
-    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: hidden;
+    width: 220px !important;
+    background: #05080e !important;
+    border-right: 1px solid rgba(34, 211, 238, 0.15) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 1.5rem 0 !important;
+    z-index: 30 !important;
+    flex-shrink: 0 !important;
+    transition: background 0.3s, border-color 0.3s !important;
+    position: relative !important;
+    height: 100vh !important;
 }
 
-.sidebar:hover {
-    width: 16.25rem;
-    /* 260px */
+[data-theme="light"] .sidebar {
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03) !important;
 }
 
 .brand-container {
-    height: 3.125rem;
-    /* 50px */
-    margin-bottom: 3rem;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    justify-content: center;
-    width: 100%;
-}
-
-.sidebar:hover .brand-container {
-    justify-content: center;
+    padding: 0 1.5rem !important;
+    margin-bottom: 1.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
 }
 
 .brand-logo {
-    width: 2.5rem;
-    /* 40px */
-    height: 2.5rem;
-    /* 40px */
-    object-fit: fill;
-    transition: all 0.3s;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50% !important;
+    border: 1px solid var(--color-cyan, #22d3ee) !important;
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.3) !important;
+    object-fit: cover !important;
 }
 
-.sidebar:hover .brand-logo {
-    width: auto;
-    height: auto;
-    max-width: 9.375rem;
-    /* 150px */
-    max-height: 3.125rem;
-    /* 50px */
-    object-fit: contain;
-    margin-right: 0;
+.brand-title {
+    font-family: var(--font-head, sans-serif) !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.12em !important;
+    color: #ffffff !important;
 }
 
-.brand-text {
-    display: none;
+[data-theme="light"] .brand-title {
+    color: #0f172a !important;
 }
 
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-family: var(--font-ui);
-    font-size: 0.85rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 1.5rem;
-    white-space: nowrap;
-    opacity: 0.7;
-    transition: all 0.2s;
-    padding: 0.8rem 0.5rem;
-    border-left: 0.2rem solid transparent;
-    /* 3px approx */
-    width: 100%;
-    justify-content: center;
+.sidebar .nav-item {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.75rem 1.5rem !important;
+    color: #cbd5e1 !important;
+    text-decoration: none !important;
+    font-family: var(--font-mono, monospace) !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    border-left: 3px solid transparent !important;
+    margin-bottom: 0.2rem !important;
+    opacity: 1 !important;
 }
 
-.nav-text {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in;
+[data-theme="light"] .sidebar .nav-item {
+    color: #334155 !important;
+    font-weight: 600 !important;
 }
 
-.sidebar:hover .nav-text {
-    display: inline-block;
-    opacity: 1;
+.sidebar .nav-item i {
+    font-size: 1.15rem !important;
+    min-width: 24px !important;
+    text-align: center !important;
+    font-style: normal !important;
+    color: var(--color-cyan, #22d3ee) !important;
+    margin-right: 0.85rem !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
 }
 
-.sidebar:hover .nav-item {
-    justify-content: flex-start;
-    padding-left: 1.5rem;
-    /* 24px */
+[data-theme="light"] .sidebar .nav-item i {
+    color: #0284c7 !important;
 }
 
-.nav-item:hover,
-.nav-item.active {
-    color: var(--cyan);
-    opacity: 1;
-    background: linear-gradient(90deg, rgba(77, 238, 234, 0.05) 0%, transparent 100%);
-    text-shadow: 0 0 0.5rem var(--cyan-dim);
-    /* 8px */
+.sidebar .nav-text {
+    display: inline-block !important;
+    opacity: 1 !important;
+    transform: none !important;
+    color: inherit !important;
 }
 
-.nav-item.active {
-    border-left-color: var(--cyan);
+.sidebar .nav-item:hover {
+    color: #ffffff !important;
+    background: rgba(34, 211, 238, 0.08) !important;
+    border-left-color: rgba(34, 211, 238, 0.5) !important;
 }
 
-.nav-item i {
-    font-style: normal;
-    font-size: 1.2rem;
-    width: 1.5rem;
-    /* 24px */
-    text-align: center;
-    flex-shrink: 0;
-    /* Prevent icon from shrinking */
+[data-theme="light"] .sidebar .nav-item:hover {
+    color: #0f172a !important;
+    background: rgba(2, 132, 199, 0.06) !important;
+    border-left-color: #0284c7 !important;
+}
+
+.sidebar .nav-item.active {
+    color: var(--color-cyan, #22d3ee) !important;
+    background: rgba(34, 211, 238, 0.12) !important;
+    border-left-color: var(--color-cyan, #22d3ee) !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="light"] .sidebar .nav-item.active {
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.1) !important;
+    border-left-color: #0284c7 !important;
+    font-weight: 700 !important;
 }

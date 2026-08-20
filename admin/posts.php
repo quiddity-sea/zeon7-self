@@ -1,61 +1,70 @@
+<?php
+require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
+AuthMiddleware::enforcePageAuth();
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="hud-scanline">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Posts Manager - Zeon7 Admin</title>
-    <link rel="stylesheet" href="/css/zeon7-theme.css">
-    <link rel="stylesheet" href="/css/base.css">
-    <link rel="stylesheet" href="/css/components.css">
-    <link rel="stylesheet" href="css/style.css?v=3">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Posts Manager ? Zeon7 Admin</title>
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=14.0">
 </head>
 <body>
+<div class="app-wrapper">
     <?php include 'components/sidebar.php'; ?>
 
     <div class="main-stage">
-        <main class="main-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <div>
-                    <h1>Posts</h1>
-                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Manage your blog posts and generated content.</p>
-                </div>
-                <a href="post-editor.php" class="btn btn-primary">
-                    + New Post
-                </a>
-            </div>
+        <?php
+        $pageTitle = 'DISPATCH POSTS';
+        $pageSubtitle = 'NEWS & GENERATED ARTICLES';
+        include 'components/header.php';
+        ?>
 
-            <div class="card">
+        <div class="dashboard-container">
+            <div class="hud-border" data-tilt>
+                <div class="hud-corner-tr"></div>
+                <div class="hud-corner-bl"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div>
+                        <h2>DISPATCH ARCHIVE</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                            Review, edit, publish, or purge generated news items and editorial articles.
+                        </p>
+                    </div>
+                    <a href="post-editor.php" class="btn btn-green">+ CREATE NEW DISPATCH</a>
+                </div>
+
                 <div class="table-container">
-                    <table style="width: 100%; border-collapse: collapse;">
+                    <table class="hud-table">
                         <thead>
-                            <tr style="text-align: left; border-bottom: 1px solid var(--border);">
-                                <th style="padding: 1rem;">Title</th>
-                                <th style="padding: 1rem;">Status</th>
-                                <th style="padding: 1rem;">Created</th>
-                                <th style="padding: 1rem;">Updated</th>
-                                <th style="padding: 1rem; text-align: right;">Actions</th>
+                            <tr>
+                                <th>TITLE</th>
+                                <th>STATUS</th>
+                                <th>CREATED</th>
+                                <th>UPDATED</th>
+                                <th style="text-align: right;">ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody id="postsList">
                             <tr>
-                                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-secondary);">Loading...</td>
+                                <td colspan="5" style="padding: 2.5rem; text-align: center; color: var(--text-muted); font-family: var(--font-mono);">
+                                    QUERYING DISPATCH DATABASE...
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
+</div>
 
-    <script src="/js/theme-switcher.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/posts.js"></script>
-    <script>
-        App.requireAuth();
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof Posts !== 'undefined') Posts.initList();
-        });
-    </script>
+<script src="js/app.js"></script>
+<script src="js/posts.js"></script>
+<script>
+    App.requireAuth();
+</script>
 </body>
 </html>
