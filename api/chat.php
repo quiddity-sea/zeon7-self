@@ -101,68 +101,81 @@ class ChatController extends BaseController {
                         $knownName = $knownUser['first_name'] ?? $knownUser['username'];
                         $systemPrompt .= "\n\nCRITICAL CONTEXT: You are speaking to $knownName.";
                     }
-                } elseif (empty($history)) {
-                    // First turn of an unauthenticated session
-                    $hasPreviousIpRecord = ($this->userService->findByIp($ip) !== null);
-                    $_SESSION[$stateKey] = true;
-
-                    if ($hasPreviousIpRecord) {
-                        // Known IP connection, but could be any user on this network (shared IP privacy protection)
-                        $systemPrompt .= "\n\nCRITICAL PRIVACY DIRECTIVE: This network IP has interacted with you previously, but the user is NOT authenticated. NEVER disclose, assume, or leak any other person's name or identity. Acknowledge that you think you recognise this station/connection, and ask: \"I think I recognise you — if you've spoken with me before, what name did you use?\" (or ask how they would like to be addressed). Do NOT guess their name.";
-                    } else {
-                        // Completely brand new IP
-                        $systemPrompt .= "\n\nCRITICAL CONTEXT: This is a new, unrecognised user connection. Before answering their query, warmly introduce yourself and ask what their name is or how they would like to be addressed. Do NOT assume their name.";
-                    }
                 } else {
-                    // Subsequent turns
-                    if (!empty($_SESSION[$stateKey])) {
-                        // User was asked for their name. Extract from current response.
-                        $extractService = AIServiceFactory::create($provider, $apiKey ?? '', $model, false);
-                        $extractPrompt = "Extract the person's name or preferred handle from this text. Respond ONLY with the name itself. If no name or handle is provided, output exactly NONE. Text: " . $message;
-                        $extractResult = $extractService->chat($extractPrompt, []);
-                        $extractedName = trim(trim($extractResult['reply'], "\"'.,!?\n\r"));
-                        
-                        if (stripos($extractedName, 'none') === false && !empty($extractedName) && strlen($extractedName) < 50) {
-                            // Check if this name matches an existing operator in the system
-                            $matchedUser = $this->userService->findByName($extractedName);
+                    // Try to extract name/identity from the current message
+                    $extractedName = null;
+                    
+                    // Quick check if message likely contains a name/introduction
+                    if (preg_match('/(name is|i am|i\'m|call me|this is)\s+([a-zA-Z0-9_\-\s]{2,30})/i', $message, $matches)) {
+                        $candidate = trim($matches[2]);
+                        // Strip common trailing conversation words
+                        $candidate = preg_replace('/\s+(and|how|what|nice|good|hello|hi|hey|please|thanks|thank|you|is|it|to|see|meet).*$/i', '', $candidate);
+                        if (!empty($candidate) && strlen($candidate) >= 2 && strlen($candidate) <= 30) {
+                            $extractedName = ucfirst($candidate);
+                        }
+                    }
+                    
+                    // Fallback to LLM extraction if regex didn't extract or if session state was awaiting name
+                    if (!$extractedName && (!empty($_SESSION[$stateKey]) || preg_match('/(name|identity|who|call|introduce)/i', $message))) {
+                        try {
+                            $extractService = AIServiceFactory::create($provider, $apiKey ?? '', $model, false);
+                            $extractPrompt = "Does the following text contain a person stating their name or handle? If yes, respond ONLY with the extracted single first name or handle. If no, output exactly NONE. Text: " . $message;
+                            $extractResult = $extractService->chat($extractPrompt, []);
+                            $rawName = trim(trim($extractResult['reply'] ?? '', "\"'.,!?\n\r"));
+                            if (!empty($rawName) && stripos($rawName, 'none') === false && strlen($rawName) < 50) {
+                                $extractedName = ucfirst($rawName);
+                            }
+                        } catch (Throwable $e) {}
+                    }
 
-                            if ($matchedUser) {
-                                // Re-associated returning user
-                                $userId = (int) $matchedUser['id'];
-                                $this->userService->recordIp($userId, $ip);
-                                $actualName = $matchedUser['first_name'] ?? $matchedUser['username'];
-                                $systemPrompt .= "\n\nCRITICAL CONTEXT: The user confirmed their identity as $actualName (returning operator). Welcome them back warmly by their name.";
-                            } else {
-                                // New operator profile
-                                $usernameAttempt = $extractedName;
-                                $collisionCheck = $this->userService->findByUsername($usernameAttempt);
-                                if ($collisionCheck) {
-                                    $usernameAttempt .= '_' . bin2hex(random_bytes(2));
-                                }
-                                
-                                $newUserId = $this->userService->create(
-                                    username: $usernameAttempt,
-                                    password: bin2hex(random_bytes(10)),
-                                    email: null,
-                                    firstName: $extractedName,
-                                    lastName: null,
-                                    location: null,
-                                    isPrimeUser: false
-                                );
-                                $this->userService->recordIp($newUserId, $ip);
-                                $userId = $newUserId;
-                                $systemPrompt .= "\n\nCRITICAL CONTEXT: The user introduced themselves as $extractedName. Welcome them warmly by name.";
+                    if ($extractedName) {
+                        // Check if this name matches an existing operator in the system
+                        $matchedUser = $this->userService->findByName($extractedName);
+
+                        if ($matchedUser) {
+                            // Re-associated returning user
+                            $userId = (int) $matchedUser['id'];
+                            $this->userService->recordIp($userId, $ip);
+                            $actualName = $matchedUser['first_name'] ?? $matchedUser['username'];
+                            $systemPrompt .= "\n\nCRITICAL CONTEXT: The user confirmed their identity as $actualName. Welcome them back warmly by their name.";
+                        } else {
+                            // New operator profile
+                            $usernameAttempt = $extractedName;
+                            $collisionCheck = $this->userService->findByUsername($usernameAttempt);
+                            if ($collisionCheck) {
+                                $usernameAttempt .= '_' . bin2hex(random_bytes(2));
                             }
                             
-                            // Link existing session logs to this user ID
-                            $db = DatabaseService::getInstance();
-                            $stmt = $db->prepare('UPDATE chat_logs SET user_id = ? WHERE session_id = ?');
-                            $stmt->execute([$userId, $sessionId]);
-                            
-                            unset($_SESSION[$stateKey]);
+                            $newUserId = $this->userService->create(
+                                username: $usernameAttempt,
+                                password: bin2hex(random_bytes(10)),
+                                email: null,
+                                firstName: $extractedName,
+                                lastName: null,
+                                location: null,
+                                isPrimeUser: false
+                            );
+                            $this->userService->recordIp($newUserId, $ip);
+                            $userId = $newUserId;
+                            $systemPrompt .= "\n\nCRITICAL CONTEXT: The user introduced themselves as $extractedName. Welcome them warmly by name.";
+                        }
+                        
+                        // Link existing session logs to this user ID
+                        $db = DatabaseService::getInstance();
+                        $stmt = $db->prepare('UPDATE chat_logs SET user_id = ? WHERE session_id = ?');
+                        $stmt->execute([$userId, $sessionId]);
+                        unset($_SESSION[$stateKey]);
+                    } elseif (empty($history)) {
+                        // First turn and no name was provided in the message
+                        $hasPreviousIpRecord = ($this->userService->findByIp($ip) !== null);
+                        $_SESSION[$stateKey] = true;
+
+                        if ($hasPreviousIpRecord) {
+                            // Known IP connection, but could be any user on this network (shared IP privacy protection)
+                            $systemPrompt .= "\n\nCRITICAL PRIVACY DIRECTIVE: This network IP has interacted with you previously, but the user is NOT authenticated. NEVER disclose, assume, or leak any other person's name or identity. Acknowledge that you think you recognise this station/connection, and ask: \"I think I recognise you — if you've spoken with me before, what name did you use?\" (or ask how they would like to be addressed). Do NOT guess their name.";
                         } else {
-                            // User did not provide a name, unset to avoid asking repeatedly
-                            unset($_SESSION[$stateKey]);
+                            // Completely brand new IP
+                            $systemPrompt .= "\n\nCRITICAL CONTEXT: This is a new, unrecognised user connection. Before answering their query, warmly introduce yourself and ask what their name is or how they would like to be addressed. Do NOT assume their name.";
                         }
                     }
                 }
