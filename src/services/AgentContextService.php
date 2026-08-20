@@ -1,6 +1,6 @@
 <?php
 /**
- * AgentContextService — resolves the active agent identity for the current request.
+ * AgentContextService — resolves and manages the active agent identity for the current session.
  */
 class AgentContextService
 {
@@ -9,12 +9,33 @@ class AgentContextService
 
     public function __construct()
     {
-        $this->agentId = $_ENV['COUNCIL_AGENT_ID'] ?? 'zeon7';
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+
+        // Allow runtime query override (?agent=leon) which persists in session
+        if (!empty($_GET['agent'])) {
+            $candidate = strtolower(trim($_GET['agent']));
+            if (preg_match('/^[a-z0-9_\-]+$/', $candidate)) {
+                $_SESSION['active_agent'] = $candidate;
+            }
+        }
+
+        $this->agentId = $_SESSION['active_agent']
+            ?? $_ENV['COUNCIL_AGENT_ID']
+            ?? 'zeon7';
     }
 
     public function getAgentId(): string
     {
         return $this->agentId;
+    }
+
+    public function setAgentId(string $agentId): void
+    {
+        $this->agentId = strtolower(trim($agentId));
+        $_SESSION['active_agent'] = $this->agentId;
+        $this->manifest = null;
     }
 
     public function getDisplayName(): string
@@ -25,6 +46,11 @@ class AgentContextService
     public function getTagline(): string
     {
         return $this->getManifest()['tagline'] ?? '';
+    }
+
+    public function getRole(): string
+    {
+        return $this->getManifest()['role'] ?? '';
     }
 
     public function getPageTitle(): string
@@ -74,7 +100,7 @@ class AgentContextService
 
     public function getCapabilities(): array
     {
-        return $this->getManifest()['capabilities'] ?? ['chat'];
+        return $this->getManifest()['capabilities'] ?? ['chat', 'memory', 'knowledge'];
     }
 
     public function hasCapability(string $capability): bool
@@ -90,6 +116,57 @@ class AgentContextService
     public function getLayoutType(): string
     {
         return $this->getManifest()['layout']['type'] ?? 'cockpit';
+    }
+
+    /**
+     * List all available agents in the ForeverBox ecosystem.
+     */
+    public function listAvailableAgents(): array
+    {
+        $dataPath = $_ENV['FOREVERBOX_DATA_PATH'] ?? '/foreverbox_data';
+        $profilesDir = "{$dataPath}/profiles";
+        $agents = [];
+
+        $known = ['zeon7', 'leon', 'gemma', 'otec', 'wolf'];
+        
+        if (is_dir($profilesDir)) {
+            $dirs = scandir($profilesDir);
+            foreach ($dirs as $d) {
+                if ($d !== '.' && $d !== '..' && is_dir("{$profilesDir}/{$d}")) {
+                    if (!in_array($d, $known, true)) {
+                        $known[] = $d;
+                    }
+                }
+            }
+        }
+
+        foreach ($known as $slug) {
+            $manifestFile = "{$profilesDir}/{$slug}/ui-manifest.yaml";
+            $name = ucfirst($slug);
+            $tagline = '';
+            $role = '';
+            $accent = '#00ffff';
+
+            if (file_exists($manifestFile)) {
+                $content = file_get_contents($manifestFile);
+                $parsed = $this->parseSimpleYaml($content);
+                $name = $parsed['display_name'] ?? ucfirst($slug);
+                $tagline = $parsed['tagline'] ?? '';
+                $role = $parsed['role'] ?? '';
+                $accent = $parsed['theme']['accent'] ?? '#00ffff';
+            }
+
+            $agents[$slug] = [
+                'id'        => $slug,
+                'name'      => $name,
+                'tagline'   => $tagline,
+                'role'      => $role,
+                'accent'    => $accent,
+                'is_active' => ($slug === $this->agentId)
+            ];
+        }
+
+        return $agents;
     }
 
     private function getManifest(): array
@@ -116,14 +193,12 @@ class AgentContextService
 
     private function cleanValue(string $val): string
     {
-        // Strip trailing inline comments if not inside quotes
         if (preg_match('/^"([^"]*)"\s*(?:#.*)?$/', $val, $m)) {
             return trim($m[1]);
         }
         if (preg_match('/^\'([^\']*)\'\s*(?:#.*)?$/', $val, $m)) {
             return trim($m[1]);
         }
-        // Unquoted: take part before #
         $parts = explode('#', $val, 2);
         return trim(trim($parts[0]), "\"' ");
     }

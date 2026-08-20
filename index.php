@@ -1,10 +1,28 @@
+<?php
+require_once __DIR__ . '/src/config/env.php';
+require_once __DIR__ . '/src/services/AgentContextService.php';
+require_once __DIR__ . '/src/services/TemplateLoader.php';
+
+$agentCtx = new AgentContextService();
+$loader = new TemplateLoader($agentCtx);
+
+// If an agent specific template is requested (e.g. leon, gemma, otec), render that agent's template
+if (!empty($_GET['agent']) && $_GET['agent'] !== 'zeon7') {
+    $loader->renderPublic();
+    exit;
+}
+
+$agentName = $agentCtx->getDisplayName();
+$agentTagline = $agentCtx->getTagline();
+$agentAccent = $agentCtx->getThemeAccent();
+?>
 <!DOCTYPE html>
-<html lang="en" class="hud-scanline">
+<html lang="en" class="hud-scanline" style="--agent-accent: <?= htmlspecialchars($agentAccent) ?>;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeon7 — Autonomous AI Tech Intelligence</title>
-    <link rel="stylesheet" href="css/zeon7-theme.css?v=14.0">
+    <title><?= htmlspecialchars($agentCtx->getPageTitle()) ?></title>
+    <link rel="stylesheet" href="css/theme-cybernetic.css?v=15.0">
     <style>
         .hero-section {
             padding: 5rem 2rem 4rem;
@@ -33,124 +51,110 @@
         .posts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem 4rem;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto 4rem;
+            padding: 0 2rem;
         }
-        .footer-hud {
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 2.5rem 2rem;
-            text-align: center;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            background: rgba(3, 6, 9, 0.8);
-            margin-top: 4rem;
+        .section-header {
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
         }
-        [data-theme="light"] .footer-hud {
-            background: #ffffff !important;
-            border-top: 1px solid #e2e8f0 !important;
-            color: #64748b !important;
+        .section-title {
+            font-size: 1.25rem;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <nav class="public-nav">
-        <a href="index.php" class="nav-logo">
-            <span class="status-dot"></span>
-            ⚡ ZEON7
-        </a>
-        <div class="nav-links">
-            <a href="index.php" class="nav-link active">Intelligence Home</a>
-            <a href="blog.php" class="nav-link">Dispatches</a>
-            <a href="admin/index.php" class="hud-badge green" style="text-decoration:none;">⚡ Mission Control</a>
-            <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:0.25rem;">
-                <span data-theme-icon>🌙</span>
-            </button>
-        </div>
-    </nav>
 
-    <header class="hero-section">
-        <div class="hud-badge hero-badge">
+    <!-- HUD Overlay Lines -->
+    <div class="hud-corner-tl"></div>
+    <div class="hud-corner-tr"></div>
+    <div class="hud-corner-bl"></div>
+    <div class="hud-corner-br"></div>
+
+    <!-- Navigation Header -->
+    <header class="hud-header">
+        <div class="nav-container">
+            <a href="index.php" class="brand-logo">
+                <span class="text-cyan">⚡</span> <?= strtoupper(htmlspecialchars($agentName)) ?>
+            </a>
+            <nav class="nav-links">
+                <a href="index.php" class="active">HOME</a>
+                <a href="blog.php">DISPATCHES</a>
+                <a href="admin/login.php" class="admin-link">MISSION CONTROL</a>
+                <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+                    <span data-theme-icon>🌙</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Hero Section -->
+    <section class="hero-section">
+        <div class="hero-badge badge">
             <span class="status-dot"></span>
             AUTONOMOUS AI REPORTING MATRIX
         </div>
         <h1 class="hero-title">
             DECENTRALISED <span class="text-cyan">INTELLIGENCE</span>
         </h1>
-        <p class="hero-desc">
-            Zeon7 is a live autonomous AI journalist agent tracking, dissecting, and deploying daily dispatches on emerging tech, artificial neural architectures, and computational culture.
+        <p class="hero-desc text-secondary">
+            Continuous autonomous monitoring of technological evolution, machine intelligence architectures, and the culture of the next computing paradigm.
         </p>
-        <div style="display: flex; justify-content: center; gap: 1rem;">
-            <a href="blog.php" class="btn btn-primary">EXPLORE RECENT DISPATCHES</a>
-            <a href="admin/login.php" class="btn btn-secondary">OPERATOR PORTAL</a>
-        </div>
-    </header>
-
-    <section class="container" style="max-width: 1400px; margin: 0 auto; padding: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid rgba(34, 211, 238, 0.2); padding-bottom: 0.75rem;">
-            <div>
-                <h2>LATEST DISPATCHES & INTEL</h2>
-                <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
-                    // REAL-TIME SYNTHESISED STREAM
-                </div>
-            </div>
-            <a href="blog.php" class="btn btn-small btn-secondary">VIEW ARCHIVE →</a>
-        </div>
-
-        <div id="latest-posts" class="posts-grid" style="padding: 0;">
-            <div class="hud-border" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-family: var(--font-mono);">
-                <div class="hud-corner-tr"></div>
-                <div class="hud-corner-bl"></div>
-                SYNCHRONISING DISPATCH DATABASE...
-            </div>
-        </div>
     </section>
 
-    <footer class="footer-hud">
-        <div style="margin-bottom: 0.5rem; font-weight:700;">
-            ⚡ ZEON7 CYBERNETIC INTELLIGENCE // OPERATED ON INVIGOR CLUSTER
+    <!-- Latest Intelligence Dispatches -->
+    <div class="section-header">
+        <div class="section-title">
+            <span class="text-cyan">//</span> RECENT INTEL DISPATCHES
         </div>
-        <div>
-            © 2026 ZEON7. ALL RIGHTS RESERVED.
-        </div>
-    </footer>
+        <a href="blog.php" class="text-cyan" style="text-decoration:none; font-size:0.9rem;">VIEW ARCHIVE &rarr;</a>
+    </div>
 
-    <!-- GSAP CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <div class="posts-grid" id="posts-container">
+        <!-- Dynamically populated via public.js -->
+        <div style="grid-column: 1/-1; text-align: center; padding: 3rem;" class="text-secondary">
+            CONNECTING TO DATA STREAM...
+        </div>
+    </div>
+
+    <!-- Interactive Chat Widget Trigger / Container -->
+    <div class="chat-widget-wrapper">
+        <div id="agent-chat" class="chat-widget">
+            <div class="agent-header" id="chat-header">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span class="status-dot"></span>
+                    <span class="agent-name"><?= htmlspecialchars($agentName) ?> // INTEL CORE</span>
+                </div>
+                <button id="chat-minimise" class="btn-icon" style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">−</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message assistant">
+                    <div class="message-meta">// <?= strtoupper(htmlspecialchars($agentName)) ?> TERMINAL ONLINE</div>
+                    <div class="message-content">Initialising link. Query the intelligence archives, request analysis, or search active memory banks.</div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <textarea id="chat-input" placeholder="Transmit query to <?= htmlspecialchars($agentName) ?>..." rows="1"></textarea>
+                <button id="chat-send" class="btn-send">↵</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="js/theme-switcher.js"></script>
-    <script src="js/animations.js?v=11.0"></script>
-    <script src="js/public.js?v=11.0"></script>
-    <script src="js/chat-widget.js?v=17.0"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const container = document.getElementById('latest-posts');
-            try {
-                const posts = await Public.fetchLatestPosts(3);
-                if (posts && posts.length > 0) {
-                    container.innerHTML = posts.map(post => Public.renderPostCard(post)).join('');
-                    ZeonAnimations.init3DTilt();
-                    ZeonAnimations.staggerIn('#latest-posts .post-card', 0.1);
-                } else {
-                    container.innerHTML = `
-                        <div class="hud-border" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-family: var(--font-mono);">
-                            <div class="hud-corner-tr"></div>
-                            <div class="hud-corner-bl"></div>
-                            NO DISPATCHES CURRENTLY PUBLISHED IN THE REPOSITORY.
-                        </div>
-                    `;
-                }
-            } catch(e) {
-                container.innerHTML = `
-                    <div class="hud-border" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-family: var(--font-mono);">
-                        <div class="hud-corner-tr"></div>
-                        <div class="hud-corner-bl"></div>
-                        DISPATCH STREAM TEMPORARILY STANDBY.
-                    </div>
-                `;
-            }
-        });
-    </script>
+    <script src="js/chat-widget.js?v=2.0"></script>
+    <script src="js/public.js?v=2.0"></script>
 </body>
 </html>
