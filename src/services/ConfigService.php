@@ -17,10 +17,10 @@ class ConfigService extends BaseService {
     }
 
     private function loadConfig(): void {
-        $sql = "SELECT config_key, config_value FROM config";
+        $sql = "SELECT key_name, value FROM config";
         $rows = $this->fetchAll($sql);
         foreach ($rows as $row) {
-            $this->config[$row['config_key']] = $row['config_value'];
+            $this->config[$row['key_name']] = $row['value'];
         }
     }
 
@@ -134,9 +134,9 @@ class ConfigService extends BaseService {
     }
 
     private function saveConfigValue(string $key, string $value): void {
-        $sql = "INSERT INTO config (config_key, config_value) 
+        $sql = "INSERT INTO config (key_name, value) 
                 VALUES (?, ?) 
-                ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_at = CURRENT_TIMESTAMP";
+                ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = CURRENT_TIMESTAMP";
 
         $this->executeQuery($sql, [$key, $value]);
         $this->config[$key] = $value;

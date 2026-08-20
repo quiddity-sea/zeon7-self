@@ -14,43 +14,50 @@ class OllamaService extends BaseService {
     private string $host;
     private bool $think;
     
-    public function __construct(string $apiKey = '', string $model = 'Brain32:latest', string $host = '', ?bool $think = null) {
+    public function __construct(string $model = 'Brain32:latest', ?string $host = null, ?bool $think = null) {
         parent::__construct();
         $this->model = !empty($model) ? $model : 'Brain32:latest';
         
+        $config = new ConfigService();
+        $dbHost = $config->getOllamaHost();
         $envHost = $_ENV['OLLAMA_HOST'] ?? '';
-        $this->host = !empty($host) ? rtrim($host, '/') : (!empty($envHost) ? rtrim($envHost, '/') : 'http://127.0.0.1:11434');
+
+        if (!empty($host)) {
+            $this->host = rtrim($host, '/');
+        } elseif (!empty($dbHost)) {
+            $this->host = rtrim($dbHost, '/');
+        } elseif (!empty($envHost)) {
+            $this->host = rtrim($envHost, '/');
+        } else {
+            $this->host = 'http://127.0.0.1:11434';
+        }
         
         if ($think !== null) {
             $this->think = $think;
         } else {
-            $config = new ConfigService();
             $this->think = $config->getOllamaThink();
         }
     }
     
     /**
-     * Generate content from prompt
+     * Send chat request to Ollama
      */
-    public function generateContent(string $prompt, array $context = []): string {
-        if (!empty($context)) {
-            $contextText = $this->formatContext($context);
-            $prompt .= "\n" . $contextText;
-        }
-        
-        $res = $this->chat($prompt);
-        return $res['reply'] ?? '';
-    }
-    
-    /**
-     * Conversational chat with history
-     */
-    public function chat(string $message, array $history = []): array {
+    public function chat(string $message, array $history = [], array $context = []): array {
         $url = $this->host . '/api/chat';
         
         $messages = [];
+        
+        // Include context as system instructions if present
+        if (!empty($context)) {
+            $messages[] = [
+                'role' => 'system',
+                'content' => $this->formatContext($context)
+            ];
+        }
+        
+        // Append history
         foreach ($history as $turn) {
-            $role = (isset($turn['role']) && ($turn['role'] === 'assistant' || $turn['role'] === 'model')) ? 'assistant' : 'user';
+            $role = ($turn['role'] === 'user') ? 'user' : 'assistant';
             $messages[] = [
                 'role' => $role,
                 'content' => $turn['content'] ?? ''
