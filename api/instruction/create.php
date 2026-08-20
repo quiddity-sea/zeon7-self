@@ -1,48 +1,51 @@
 <?php
 /**
- * API: Create New Instruction Version
+ * API: Create New Instruction Version for Agent
  * Endpoint: POST /api/instruction/create.php
  */
 
 require_once __DIR__ . '/../../src/core/BaseController.php';
 require_once __DIR__ . '/../../src/services/InstructionService.php';
+require_once __DIR__ . '/../../src/services/AgentContextService.php';
+require_once __DIR__ . '/../../src/middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../src/middleware/CsrfMiddleware.php';
 
 class CreateInstructionController extends BaseController {
     private InstructionService $instructionService;
+    private AgentContextService $agentCtx;
     
     public function __construct() {
         parent::__construct();
-        $this->instructionService = new InstructionService();
-        
-        // Protect with CSRF
-        CsrfMiddleware::handle();
+        $this->agentCtx = new AgentContextService();
+        $this->instructionService = new InstructionService($this->agentCtx);
     }
     
     public function handleRequest(): void {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->sendError('Method not allowed', 405);
-        }
-        
-        $data = $this->getJsonBody();
-        
-        if (empty($data['content'])) {
-            $this->sendError('Content is required', 400);
-        }
-        
-        $content = $data['content'];
-        $createdBy = $data['created_by'] ?? 'admin';
+        $this->requireMethod('POST');
         
         try {
-            $version = $this->instructionService->createVersion($content, $createdBy);
+            $body = $this->getJsonBody();
+            $content = trim($body['content'] ?? '');
+            $agentId = $body['agent_id'] ?? $this->agentCtx->getAgentId();
+            $component = $body['component'] ?? 'custom';
+            $type = $body['type'] ?? 'core';
+            
+            if (empty($content)) {
+                $this->sendError('Instruction content is required', 400);
+                return;
+            }
+            
+            $versionId = $this->instructionService->createVersion($content, $agentId, $type, $component);
             
             $this->sendResponse([
-                'success' => true,
-                'version' => $version,
-                'message' => 'New instruction version created successfully'
+                'success'    => true,
+                'version_id' => $versionId,
+                'agent_id'   => $agentId,
+                'component'  => $component,
+                'message'    => 'Instruction version saved and activated'
             ]);
             
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->sendError($e->getMessage(), 500);
         }
     }

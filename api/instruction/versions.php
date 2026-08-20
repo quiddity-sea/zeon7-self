@@ -1,39 +1,44 @@
 <?php
 /**
- * API: List Instruction Versions
+ * API: Get Instruction Version History for Agent
  * Endpoint: GET /api/instruction/versions.php
  */
 
 require_once __DIR__ . '/../../src/core/BaseController.php';
 require_once __DIR__ . '/../../src/services/InstructionService.php';
+require_once __DIR__ . '/../../src/services/AgentContextService.php';
 
-class InstructionVersionsController extends BaseController {
+class VersionHistoryController extends BaseController {
     private InstructionService $instructionService;
+    private AgentContextService $agentCtx;
     
     public function __construct() {
         parent::__construct();
-        $this->instructionService = new InstructionService();
+        $this->agentCtx = new AgentContextService();
+        $this->instructionService = new InstructionService($this->agentCtx);
     }
     
     public function handleRequest(): void {
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             $this->sendError('Method not allowed', 405);
+            return;
         }
         
         try {
-            $versions = $this->instructionService->getAllVersions();
+            $agentId = $_GET['agent'] ?? $this->agentCtx->getAgentId();
+            $versions = $this->instructionService->getVersions($agentId);
             
             $this->sendResponse([
-                'success' => true,
-                'count' => count($versions),
+                'success'  => true,
+                'agent_id' => $agentId,
                 'versions' => $versions
             ]);
             
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->sendError($e->getMessage(), 500);
         }
     }
 }
 
-$controller = new InstructionVersionsController();
+$controller = new VersionHistoryController();
 $controller->handleRequest();

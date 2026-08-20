@@ -1,45 +1,47 @@
 <?php
 /**
- * API: Get Current Instruction Version
+ * API: Get Current Instruction Version and Agent Components
  * Endpoint: GET /api/instruction/current.php
  */
 
 require_once __DIR__ . '/../../src/core/BaseController.php';
 require_once __DIR__ . '/../../src/services/InstructionService.php';
+require_once __DIR__ . '/../../src/services/AgentContextService.php';
 
 class CurrentInstructionController extends BaseController {
     private InstructionService $instructionService;
+    private AgentContextService $agentCtx;
     
     public function __construct() {
         parent::__construct();
-        $this->instructionService = new InstructionService();
+        $this->agentCtx = new AgentContextService();
+        $this->instructionService = new InstructionService($this->agentCtx);
     }
     
     public function handleRequest(): void {
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             $this->sendError('Method not allowed', 405);
+            return;
         }
         
         try {
-            $current = $this->instructionService->getCurrentVersion();
+            $agentId = $_GET['agent'] ?? $this->agentCtx->getAgentId();
+            $current = $this->instructionService->getCurrentVersion($agentId);
+            $components = $this->instructionService->getAgentComponents($agentId);
             
-            if ($current) {
-                $this->sendResponse([
-                    'success' => true,
-                    'version' => (int)$current['version'],
-                    'content' => $current['content'],
-                    'created_at' => $current['created_at'],
-                    'created_by' => $current['created_by']
-                ]);
-            } else {
-                $this->sendResponse([
-                    'success' => false,
-                    'message' => 'No instructions found',
-                    'version' => 0
-                ]);
-            }
+            $this->sendResponse([
+                'success'      => true,
+                'agent_id'     => $agentId,
+                'agent_name'   => $this->agentCtx->getDisplayName(),
+                'version'      => $current['version'] ?? 0,
+                'component'    => $current['component'] ?? 'custom',
+                'content'      => $current['content'] ?? '',
+                'created_at'   => $current['created_at'] ?? null,
+                'created_by'   => $current['created_by'] ?? 'system',
+                'components'   => $components
+            ]);
             
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->sendError($e->getMessage(), 500);
         }
     }
