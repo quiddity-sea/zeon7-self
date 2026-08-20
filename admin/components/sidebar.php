@@ -16,7 +16,7 @@ $menu_items = [
 
 <nav class="sidebar">
     <div class="brand-container">
-        <a href="index.php" title="Zeon7 Mission Control" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
+        <a href="index.php" title="Mission Control" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
             <img src="../assets/images/logo_1759683970.png" class="brand-logo" alt="ZEON7" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=zeon7'">
             <span class="brand-title">ZEON7</span>
         </a>
