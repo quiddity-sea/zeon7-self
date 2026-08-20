@@ -1,10 +1,6 @@
 <?php
 /**
  * AgentContextService — resolves the active agent identity for the current request.
- *
- * Sources agent configuration from:
- * 1. The UI manifest YAML in foreverbox-data/profiles/{agent_id}/ui-manifest.yaml
- * 2. Hardcoded Zeon7 defaults as final fallback
  */
 class AgentContextService
 {
@@ -96,9 +92,6 @@ class AgentContextService
         return $this->getManifest()['layout']['type'] ?? 'cockpit';
     }
 
-    /**
-     * Load and cache the agent manifest.
-     */
     private function getManifest(): array
     {
         if ($this->manifest !== null) {
@@ -121,9 +114,20 @@ class AgentContextService
         return $this->manifest;
     }
 
-    /**
-     * Minimal YAML parser for flat and nested keys.
-     */
+    private function cleanValue(string $val): string
+    {
+        // Strip trailing inline comments if not inside quotes
+        if (preg_match('/^"([^"]*)"\s*(?:#.*)?$/', $val, $m)) {
+            return trim($m[1]);
+        }
+        if (preg_match('/^\'([^\']*)\'\s*(?:#.*)?$/', $val, $m)) {
+            return trim($m[1]);
+        }
+        // Unquoted: take part before #
+        $parts = explode('#', $val, 2);
+        return trim(trim($parts[0]), "\"' ");
+    }
+
     private function parseSimpleYaml(string $content): array
     {
         $result = [];
@@ -137,7 +141,7 @@ class AgentContextService
 
             if (preg_match('/^(\w[\w_]+):\s*(.+)$/', $line, $m)) {
                 $key = $m[1];
-                $val = trim($m[2], "\"' ");
+                $val = $this->cleanValue($m[2]);
                 $result[$key] = $val;
                 $currentSection = null;
                 $currentSubSection = null;
@@ -158,18 +162,18 @@ class AgentContextService
             }
 
             if ($currentSection && $currentSubSection && preg_match('/^    (\w[\w_]+):\s*(.+)$/', $line, $m)) {
-                $result[$currentSection][$currentSubSection][$m[1]] = trim($m[2], "\"' ");
+                $result[$currentSection][$currentSubSection][$m[1]] = $this->cleanValue($m[2]);
                 continue;
             }
 
             if ($currentSection && preg_match('/^  (\w[\w_]+):\s*(.+)$/', $line, $m)) {
-                $result[$currentSection][$m[1]] = trim($m[2], "\"' ");
+                $result[$currentSection][$m[1]] = $this->cleanValue($m[2]);
                 continue;
             }
 
             if ($currentSection && preg_match('/^  - (.+)$/', $line, $m)) {
                 if (!is_array($result[$currentSection])) $result[$currentSection] = [];
-                $result[$currentSection][] = trim($m[1], "\"' ");
+                $result[$currentSection][] = $this->cleanValue($m[1]);
                 continue;
             }
 
@@ -177,7 +181,7 @@ class AgentContextService
                 if (!is_array($result[$currentSection][$currentSubSection])) {
                     $result[$currentSection][$currentSubSection] = [];
                 }
-                $result[$currentSection][$currentSubSection][] = trim($m[1], "\"' ");
+                $result[$currentSection][$currentSubSection][] = $this->cleanValue($m[1]);
                 continue;
             }
         }
