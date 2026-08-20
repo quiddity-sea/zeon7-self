@@ -41,6 +41,10 @@ class ConfigUpdateController extends BaseController {
             if (isset($data['ollama_think'])) {
                 $this->configService->setOllamaThink(filter_var($data['ollama_think'], FILTER_VALIDATE_BOOLEAN));
             }
+
+            if (isset($data['ollama_host'])) {
+                $this->configService->setOllamaHost($data['ollama_host']);
+            }
             
             $this->sendResponse([
                 'success' => true,

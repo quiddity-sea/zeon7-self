@@ -1,47 +1,53 @@
+/**
+ * Zeon7 Mission Control — Settings Manager
+ * Dynamic AI Provider switcher & API Keyring manager
+ */
+
 const Settings = {
-    init() {
+    configData: null,
+    totalTokens: 0,
+
+    async init() {
         this.form = document.getElementById('settingsForm');
         this.providerSelect = document.getElementById('provider');
         this.geminiSelect = document.getElementById('geminiModel');
         this.ollamaSelect = document.getElementById('ollamaModel');
         this.customInput = document.getElementById('customModel');
-        this.apiKeyInput = document.getElementById('apiKey');
-        this.toggleKeyBtn = document.getElementById('toggleKeyBtn');
-        this.saveBtn = document.getElementById('saveBtn');
-        this.testAiBtn = document.getElementById('testAiBtn');
-        this.terminalOutput = document.getElementById('terminalOutput') || document.getElementById('terminal-output');
-        this.tokenDisplay = document.getElementById('tokenDisplay');
         this.modelHelp = document.getElementById('modelHelp');
-        this.apiKeyHelp = document.getElementById('apiKeyHelp');
+        
         this.apiKeyGroup = document.getElementById('apiKeyGroup');
+        this.apiKeyInput = document.getElementById('apiKey');
+        this.apiKeyHelp = document.getElementById('apiKeyHelp');
+        this.toggleKeyBtn = document.getElementById('toggleKeyBtn');
+
         this.ollamaThinkGroup = document.getElementById('ollamaThinkGroup');
         this.ollamaThinkCheckbox = document.getElementById('ollamaThink');
         this.thinkStatusText = document.getElementById('thinkStatusText');
 
-        this.totalTokens = 0;
-        this.configData = null;
-
-        this.bindEvents();
-        this.loadSettings();
-    },
-
-    bindEvents() {
-        this.providerSelect?.addEventListener('change', () => this.handleProviderChange());
-        this.form?.addEventListener('submit', (e) => this.save(e));
+        this.ollamaHostGroup = document.getElementById('ollamaHostGroup');
+        this.ollamaHostInput = document.getElementById('ollamaHost');
         
-        if (this.ollamaThinkCheckbox) {
-            this.ollamaThinkCheckbox.addEventListener('change', () => this.updateThinkLabel());
-        }
+        this.testBtn = document.getElementById('testAiBtn');
+        this.saveBtn = document.getElementById('saveBtn');
+        this.terminalOutput = document.getElementById('terminalOutput');
+        this.tokenDisplay = document.getElementById('tokenDisplay');
 
-        if (this.testAiBtn) {
-            this.testAiBtn.addEventListener('click', () => this.testConnection());
+        // Handlers
+        this.providerSelect.addEventListener('change', () => this.handleProviderChange());
+        this.form.addEventListener('submit', (e) => this.save(e));
+        this.testBtn.addEventListener('click', () => this.testConnection());
+
+        if (this.ollamaThinkCheckbox) {
+            this.ollamaThinkCheckbox.addEventListener('change', () => {
+                this.updateThinkStatusText(this.ollamaThinkCheckbox.checked);
+            });
         }
 
         if (this.toggleKeyBtn) {
             this.toggleKeyBtn.addEventListener('click', () => {
-                const isPassword = this.apiKeyInput.type === 'password';
-                this.apiKeyInput.type = isPassword ? 'text' : 'password';
-                this.toggleKeyBtn.textContent = isPassword ? '🔒' : '👁';
+                const type = this.apiKeyInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                this.apiKeyInput.setAttribute('type', type);
+                this.toggleKeyBtn.textContent = type === 'password' ? '👁' : '🔒';
             });
         }
 
@@ -49,80 +55,84 @@ const Settings = {
         if (resetBtn) {
             resetBtn.addEventListener('click', () => this.resetSystem());
         }
+
+        await this.loadSettings();
     },
 
-    updateThinkLabel() {
-        if (!this.ollamaThinkCheckbox || !this.thinkStatusText) return;
-        const isChecked = this.ollamaThinkCheckbox.checked;
-        if (isChecked) {
-            this.thinkStatusText.textContent = 'THINK: TRUE (Reasoning Scratchpad Enabled)';
-            this.thinkStatusText.style.color = '#facc15';
+    updateThinkStatusText(checked) {
+        if (!this.thinkStatusText) return;
+        if (checked) {
+            this.thinkStatusText.textContent = 'THINK: ENABLED (--think=true)';
+            this.thinkStatusText.style.color = 'var(--color-gold)';
         } else {
-            this.thinkStatusText.textContent = 'THINK: FALSE (--think=false Enforced)';
-            this.thinkStatusText.style.color = '#22d3ee';
+            this.thinkStatusText.textContent = 'THINK: DISABLED (--think=false)';
+            this.thinkStatusText.style.color = 'var(--color-cyan)';
         }
     },
 
     log(msg, type = 'info') {
-        const term = this.terminalOutput || document.getElementById('terminalOutput') || document.getElementById('terminal-output');
-        if (!term) return;
-
-        const line = document.createElement('div');
-        line.className = `log-line ${type}`;
-        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-
-        const cursor = term.querySelector('.cursor');
-        if (cursor) {
-            term.insertBefore(line, cursor);
-        } else {
-            term.appendChild(line);
-        }
-        term.scrollTop = term.scrollHeight;
+        if (!this.terminalOutput) return;
+        const div = document.createElement('div');
+        div.className = `terminal-line ${type}`;
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        div.innerHTML = `<span class="time">[${time}]</span> ${msg}`;
+        this.terminalOutput.appendChild(div);
+        this.terminalOutput.scrollTop = this.terminalOutput.scrollHeight;
     },
 
     async loadSettings() {
-        this.log('Querying active neural parameters...', 'system');
+        this.log('Querying System Configuration...', 'system');
         try {
             const res = await fetch('/api/config/get.php');
             const text = await res.text();
-            const data = JSON.parse(text.trim());
-
-            if (data.success) {
-                this.configData = data.config;
-                this.totalTokens = data.total_tokens || 0;
-                this.updateTokenDisplay();
-
-                this.providerSelect.value = this.configData.provider || 'ollama';
-                this.handleProviderChange();
-
-                if (this.configData.provider === 'gemini') {
-                    this.geminiSelect.value = this.configData.model || 'gemini-2.5-flash';
-                } else if (this.configData.provider === 'ollama') {
-                    this.ollamaSelect.value = this.configData.model || 'Brain32:latest';
-                } else {
-                    this.customInput.value = this.configData.model || 'openai/gpt-4';
-                }
-
-                if (this.ollamaThinkCheckbox) {
-                    this.ollamaThinkCheckbox.checked = Boolean(this.configData.ollama_think);
-                    this.updateThinkLabel();
-                }
-
-                const thinkState = this.configData.ollama_think ? 'THINK: TRUE' : 'THINK: FALSE';
-                this.log(`Active Engine: ${this.configData.provider.toUpperCase()} (${this.configData.model}) [${thinkState}]`, 'success');
-                this.updateStatus();
-            } else {
-                this.log('Configuration query failed: ' + data.error, 'error');
+            let data;
+            try {
+                data = JSON.parse(text.trim());
+            } catch(jsonErr) {
+                throw new Error('Invalid JSON from server: ' + text.substring(0, 50));
             }
+
+            if (!data.success) throw new Error(data.error || 'Server rejected query');
+
+            this.configData = data.config;
+            this.totalTokens = data.total_tokens || 0;
+            this.updateTokenDisplay();
+
+            // Populate form
+            this.providerSelect.value = data.config.provider || 'ollama';
+
+            if (data.config.provider === 'gemini') {
+                this.geminiSelect.value = data.config.model || 'gemini-2.5-flash';
+            } else if (data.config.provider === 'ollama') {
+                this.ollamaSelect.value = data.config.ollama_model || 'Brain32:latest';
+            } else {
+                this.customInput.value = data.config.model || '';
+            }
+
+            if (this.ollamaThinkCheckbox) {
+                const thinkVal = data.config.ollama_think === true || data.config.ollama_think === 'true';
+                this.ollamaThinkCheckbox.checked = thinkVal;
+                this.updateThinkStatusText(thinkVal);
+            }
+
+            if (this.ollamaHostInput) {
+                this.ollamaHostInput.value = data.config.ollama_host || 'http://127.0.0.1:11434';
+            }
+
+            this.handleProviderChange();
+            this.updateStatus();
+            this.log(`Active Provider: ${data.config.provider.toUpperCase()} (Model: ${data.config.model})`, 'success');
+
         } catch (e) {
             console.error('Failed to load settings', e);
-            this.log('Error querying configuration: ' + e.message, 'error');
+            this.log(`Initialization Error: ${e.message}`, 'error');
         }
     },
 
     handleProviderChange() {
         const provider = this.providerSelect.value;
-        
+
+        // Hide all model selects
         this.geminiSelect.style.display = 'none';
         this.ollamaSelect.style.display = 'none';
         this.customInput.style.display = 'none';
@@ -130,20 +140,26 @@ const Settings = {
         if (provider === 'gemini') {
             this.geminiSelect.style.display = 'block';
             this.ollamaThinkGroup.style.display = 'none';
-            this.modelHelp.textContent = 'Google Generative Language Model (Gemini 2.5 Flash recommended).';
+            this.ollamaHostGroup.style.display = 'none';
+            this.apiKeyGroup.style.display = 'block';
+            this.modelHelp.textContent = 'Google Gemini 2.5 models support web grounding and fast token streams.';
             this.apiKeyInput.disabled = false;
-            this.apiKeyInput.placeholder = '••••••••••••••••';
-            this.apiKeyHelp.textContent = 'Enter new Google Gemini API key to update keyring. Empty keeps current key.';
+            this.apiKeyInput.placeholder = 'AIzaSy•••••••••••••••••••••••••••••';
+            this.apiKeyHelp.textContent = 'Enter Google AI Studio API key. Empty keeps current key.';
         } else if (provider === 'ollama') {
             this.ollamaSelect.style.display = 'block';
             this.ollamaThinkGroup.style.display = 'block';
-            this.modelHelp.textContent = 'Local Ollama Engine running Brain32:latest.';
+            this.ollamaHostGroup.style.display = 'block';
+            this.apiKeyGroup.style.display = 'none';
+            this.modelHelp.textContent = 'Local Ollama runs on your hardware or via Tailscale Mesh VPN tunnel.';
             this.apiKeyInput.disabled = true;
-            this.apiKeyInput.placeholder = 'LOCAL OLLAMA: NO API KEY REQUIRED (http://127.0.0.1:11434)';
-            this.apiKeyHelp.textContent = 'Local Ollama connects directly to http://127.0.0.1:11434.';
+            this.apiKeyInput.placeholder = 'No API key required for Ollama';
+            this.apiKeyHelp.textContent = 'Ollama uses local network host endpoints.';
         } else {
             this.customInput.style.display = 'block';
             this.ollamaThinkGroup.style.display = 'none';
+            this.ollamaHostGroup.style.display = 'none';
+            this.apiKeyGroup.style.display = 'block';
             this.modelHelp.textContent = 'Specify OpenRouter model string (e.g. anthropic/claude-3.5-sonnet).';
             this.apiKeyInput.disabled = false;
             this.apiKeyInput.placeholder = 'sk-or-v1-••••••••';
@@ -157,7 +173,7 @@ const Settings = {
         const aiStatusEl = document.getElementById('aiStatus');
 
         if (provider === 'ollama') {
-            this.setStatus(keyStatusEl, 'LOCAL OLLAMA', 'success');
+            this.setStatus(keyStatusEl, 'LOCAL/TUNNEL', 'success');
             this.setStatus(aiStatusEl, 'AI: READY', 'success');
             return;
         }
@@ -185,8 +201,9 @@ const Settings = {
         else targetModel = this.customInput.value;
 
         const thinkFlag = (provider === 'ollama' && this.ollamaThinkCheckbox?.checked) ? 'THINK=TRUE' : 'THINK=FALSE';
+        const hostInfo = (provider === 'ollama' && this.ollamaHostInput) ? ` // Endpoint: ${this.ollamaHostInput.value}` : '';
         this.log(`--- INITIATING NEURAL CONNECTION TEST ---`, 'system');
-        this.log(`Target: ${provider.toUpperCase()} // Model: ${targetModel} // [${thinkFlag}]`, 'info');
+        this.log(`Target: ${provider.toUpperCase()} // Model: ${targetModel}${hostInfo} // [${thinkFlag}]`, 'info');
 
         try {
             const res = await fetch('/api/config/test_connection.php');
@@ -263,13 +280,14 @@ const Settings = {
             provider: provider,
             model: model,
             api_key: this.apiKeyInput.value,
-            ollama_think: this.ollamaThinkCheckbox ? this.ollamaThinkCheckbox.checked : false
+            ollama_think: this.ollamaThinkCheckbox ? this.ollamaThinkCheckbox.checked : false,
+            ollama_host: this.ollamaHostInput ? this.ollamaHostInput.value.trim() : 'http://127.0.0.1:11434'
         };
 
         this.saveBtn.disabled = true;
         this.saveBtn.textContent = 'SAVING PROTOCOLS...';
         const thinkStr = config.ollama_think ? 'think=true' : 'think=false';
-        this.log(`Transmitting updated parameters (${provider.toUpperCase()}: ${model} [${thinkStr}])...`, 'system');
+        this.log(`Transmitting updated parameters (${provider.toUpperCase()}: ${model} [${thinkStr}] Endpoint: ${config.ollama_host})...`, 'system');
 
         try {
             const res = await fetch('/api/config/update.php', {
@@ -281,7 +299,7 @@ const Settings = {
             const data = JSON.parse(text.trim());
 
             if (data.success) {
-                this.log(`Protocols saved: Active Provider set to ${provider.toUpperCase()} (${model}) [${thinkStr}]`, 'success');
+                this.log(`Protocols saved: Active Provider set to ${provider.toUpperCase()} (${model})`, 'success');
                 this.apiKeyInput.value = '';
                 await this.loadSettings();
                 await this.testConnection();

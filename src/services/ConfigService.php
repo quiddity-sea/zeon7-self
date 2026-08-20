@@ -1,55 +1,27 @@
 <?php
 /**
- * ConfigService - Application configuration and secrets management
+ * ConfigService - Application & AI Provider Configuration Manager
  */
 
 require_once __DIR__ . '/../core/BaseService.php';
 require_once __DIR__ . '/EncryptionService.php';
 
 class ConfigService extends BaseService {
-    
-    private array $config = [];
     private EncryptionService $encryption;
-    
+    private array $config = [];
+
     public function __construct() {
         parent::__construct();
         $this->encryption = new EncryptionService();
         $this->loadConfig();
     }
-    
-    /**
-     * Load all configuration from database
-     */
-    private function loadConfig(): void {
-        try {
-            $rows = $this->fetchAll("SELECT key_name, value FROM config");
-            foreach ($rows as $row) {
-                $this->config[$row['key_name']] = $row['value'];
-            }
-        } catch (Exception $e) {
-            error_log("Failed to load config from database: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Get configuration value
-     */
-    public function get(string $key, mixed $default = null): mixed {
-        if ($key === 'ai_provider') {
-            return $this->getCurrentProvider();
-        }
-        
-        if ($key === 'ai_api_key') {
-             $provider = $this->getCurrentProvider();
-             return $this->getApiKey($provider);
-        }
-        
-        if ($key === 'ai_model') {
-             $provider = $this->getCurrentProvider();
-             return $this->getModel($provider);
-        }
 
-        return $this->config[$key] ?? $default;
+    private function loadConfig(): void {
+        $sql = "SELECT config_key, config_value FROM config";
+        $rows = $this->fetchAll($sql);
+        foreach ($rows as $row) {
+            $this->config[$row['config_key']] = $row['config_value'];
+        }
     }
 
     public function getCurrentProvider(): string {
@@ -76,40 +48,36 @@ class ConfigService extends BaseService {
                 return $this->encryption->decrypt($row['encrypted_key'], $row['iv']);
             } catch (Exception $e) {
                 error_log("Failed to decrypt API key for $provider: " . $e->getMessage());
+                return null;
             }
         }
 
-        if (!empty($this->config[$provider . '_api_key'])) {
-            return $this->config[$provider . '_api_key'];
-        }
-        $key = strtoupper($provider) . '_API_KEY';
-        return $_ENV[$key] ?? null;
+        return null;
     }
 
-    public function setApiKey(string $provider, string $key): void {
-        try {
-            $encrypted = $this->encryption->encrypt($key);
-            $sql = "INSERT INTO api_keys (provider, encrypted_key, iv) VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE encrypted_key = ?, iv = ?";
-            
-            $this->executeQuery($sql, [
-                $provider, 
-                $encrypted['data'], 
-                $encrypted['iv'],
-                $encrypted['data'],
-                $encrypted['iv']
-            ]);
-        } catch (Exception $e) {
-            error_log("Failed to encrypt API key for $provider: " . $e->getMessage());
-            throw $e;
+    public function setApiKey(string $provider, string $apiKey): void {
+        if (empty($apiKey)) {
+            return;
         }
+
+        $encryptedData = $this->encryption->encrypt($apiKey);
+
+        $sql = "INSERT INTO api_keys (provider, encrypted_key, iv) 
+                VALUES (?, ?, ?) 
+                ON DUPLICATE KEY UPDATE encrypted_key = VALUES(encrypted_key), iv = VALUES(iv), updated_at = CURRENT_TIMESTAMP";
+
+        $this->executeQuery($sql, [
+            $provider,
+            $encryptedData['encrypted'],
+            $encryptedData['iv']
+        ]);
     }
 
     public function getModel(string $provider): string {
-        if (!empty($this->config[$provider . '_model'])) {
+        if (isset($this->config[$provider . '_model'])) {
             return $this->config[$provider . '_model'];
         }
-        
+
         $defaults = [
             'gemini' => $_ENV['GEMINI_MODEL'] ?? 'gemini-2.5-flash',
             'openrouter' => $_ENV['OPENROUTER_MODEL'] ?? 'openai/gpt-4',
@@ -133,6 +101,17 @@ class ConfigService extends BaseService {
         $this->saveConfigValue('ollama_think', $think ? 'true' : 'false');
     }
 
+    public function getOllamaHost(): string {
+        if (!empty($this->config['ollama_host'])) {
+            return $this->config['ollama_host'];
+        }
+        return $_ENV['OLLAMA_HOST'] ?? 'http://127.0.0.1:11434';
+    }
+
+    public function setOllamaHost(string $host): void {
+        $this->saveConfigValue('ollama_host', rtrim(trim($host), '/'));
+    }
+
     public function getAll(): array {
         return [
             'provider' => $this->getCurrentProvider(),
@@ -143,7 +122,8 @@ class ConfigService extends BaseService {
             'gemini_model' => $this->getModel('gemini'),
             'openrouter_model' => $this->getModel('openrouter'),
             'ollama_model' => $this->getModel('ollama'),
-            'ollama_think' => $this->getOllamaThink()
+            'ollama_think' => $this->getOllamaThink(),
+            'ollama_host' => $this->getOllamaHost()
         ];
     }
 
@@ -153,14 +133,12 @@ class ConfigService extends BaseService {
         return (int)($result['total'] ?? 0);
     }
 
-    /**
-     * Save a configuration value to database
-     */
     private function saveConfigValue(string $key, string $value): void {
-        $sql = "INSERT INTO config (key_name, value) VALUES (?, ?) 
-                ON DUPLICATE KEY UPDATE value = ?";
-        
-        $this->executeQuery($sql, [$key, $value, $value]);
+        $sql = "INSERT INTO config (config_key, config_value) 
+                VALUES (?, ?) 
+                ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_at = CURRENT_TIMESTAMP";
+
+        $this->executeQuery($sql, [$key, $value]);
         $this->config[$key] = $value;
     }
 }

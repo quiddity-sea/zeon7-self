@@ -6,6 +6,7 @@
 require_once __DIR__ . '/GeminiService.php';
 require_once __DIR__ . '/OpenRouterService.php';
 require_once __DIR__ . '/OllamaService.php';
+require_once __DIR__ . '/ConfigService.php';
 
 class AIServiceFactory {
     
@@ -23,8 +24,11 @@ class AIServiceFactory {
                 return new OpenRouterService($apiKey, $defaultModel);
                 
             case 'ollama':
-                $defaultModel = $model ?: 'Brain32:latest';
-                return new OllamaService($apiKey, $defaultModel, '', $think);
+                $configService = new ConfigService();
+                $defaultModel = $model ?: ($configService->getModel('ollama') ?? 'Brain32:latest');
+                $host = $configService->getOllamaHost();
+                $thinkMode = $think !== null ? $think : $configService->getOllamaThink();
+                return new OllamaService($defaultModel, $host, $thinkMode);
                 
             default:
                 throw new InvalidArgumentException("Unsupported AI provider: $provider. Use 'gemini', 'openrouter', or 'ollama'.");

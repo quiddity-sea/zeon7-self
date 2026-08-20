@@ -7,23 +7,32 @@ AuthMiddleware::enforcePageAuth();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings & Keyring — Zeon7 Admin</title>
-    <link rel="stylesheet" href="../css/zeon7-theme.css?v=15.0">
+    <title>Zeon7 Mission Control — System Settings</title>
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=14.0">
     <style>
-        .settings-container { 
-            padding: 1.5rem 2rem; 
-            max-width: 1600px;
+        .settings-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
         }
-        .form-group { margin-bottom: 1.5rem; }
-        .helper-text {
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
             display: block;
-            margin-top: 0.35rem;
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
             font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .helper-text {
+            font-size: 0.725rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+            display: block;
         }
         .hud-toggle-container {
             display: flex;
@@ -99,6 +108,13 @@ AuthMiddleware::enforcePageAuth();
                         <span class="helper-text" id="modelHelp">Select or specify the target LLM version.</span>
                     </div>
 
+                    <!-- Ollama Host / Tailscale Tunnel Endpoint -->
+                    <div class="form-group" id="ollamaHostGroup" style="display: none;">
+                        <label for="ollamaHost">Ollama Host / Tailscale Tunnel Endpoint</label>
+                        <input type="text" id="ollamaHost" class="input-box" placeholder="http://127.0.0.1:11434">
+                        <span class="helper-text">Use <code>http://127.0.0.1:11434</code> for local machine or <code>http://100.x.y.z:11434</code> for Tailscale VPN offloading.</span>
+                    </div>
+
                     <!-- Ollama Think Toggle -->
                     <div class="form-group" id="ollamaThinkGroup" style="display: none;">
                         <label>Reasoning Scratchpad Protocol</label>
@@ -161,7 +177,7 @@ AuthMiddleware::enforcePageAuth();
 </div>
 
 <script src="js/app.js"></script>
-<script src="js/settings.js?v=15.0"></script>
+<script src="js/settings.js?v=16.0"></script>
 <script>
     if (typeof App !== 'undefined') App.requireAuth();
     document.addEventListener('DOMContentLoaded', () => {
