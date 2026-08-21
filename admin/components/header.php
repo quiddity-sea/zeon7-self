@@ -26,10 +26,10 @@ $activeAgent = $availableAgents[$activeAgentId] ?? [
     </div>
     
     <div style="display: flex; gap: 1rem; align-items: center;">
-        <!-- Agent Switcher Dropdown -->
+        <!-- Agent Switcher Dropdown: Redirects directly to that agent's Mission Control index page -->
         <div class="agent-selector-container" style="position: relative;">
             <label for="adminAgentSelect" style="display:none;">Select Agent</label>
-            <select id="adminAgentSelect" onchange="window.location.search = '?agent=' + this.value;" 
+            <select id="adminAgentSelect" onchange="window.location.href = 'index.php?agent=' + encodeURIComponent(this.value);" 
                     style="background: rgba(18, 22, 28, 0.9); color: var(--text-primary, #fff); border: 1px solid <?= htmlspecialchars($activeAgent['accent']) ?>; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem; font-family: inherit; font-weight: 600; cursor: pointer; outline: none; box-shadow: 0 0 8px rgba(0,0,0,0.4);">
                 <?php foreach ($availableAgents as $slug => $info): ?>
                     <option value="<?= htmlspecialchars($slug) ?>" <?= $slug === $activeAgentId ? 'selected' : '' ?> style="background: #12161c; color: #fff;">
