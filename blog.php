@@ -70,22 +70,6 @@
             QUERYING INTEL ARCHIVE...
         </div>
     </div>
-
-    <!-- Chat Trigger Overlay -->
-    <div class="chat-widget-wrapper">
-        <div id="agent-chat" class="chat-widget">
-            <div class="agent-header" id="chat-header">
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <span class="status-dot"></span>
-                    <span class="agent-name">ZEON7 // DISPATCH CORE</span>
-                </div>
-                <button id="chat-minimise" class="btn-icon" style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">−</button>
-            </div>
-            <div class="chat-messages" id="chat-messages">
-                <div class="chat-message assistant">
-                    <div class="message-meta">// ZEON7 TERMINAL ONLINE</div>
-                    <div class="message-content">Initialising intelligence uplink. Request analysis on any published dispatch or search active memory banks.</div>
-                </div>
             </div>
             <div class="chat-input-area">
                 <textarea id="chat-input" placeholder="Transmit query to Zeon7..." rows="1"></textarea>

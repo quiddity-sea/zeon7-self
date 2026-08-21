@@ -232,22 +232,6 @@ $agentAccent = $agentCtx->getThemeAccent();
             CONNECTING TO INTEL STREAM...
         </div>
     </div>
-
-    <!-- Interactive Chat Widget Trigger / Container -->
-    <div class="chat-widget-wrapper">
-        <div id="agent-chat" class="chat-widget">
-            <div class="agent-header" id="chat-header">
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <span class="status-dot"></span>
-                    <span class="agent-name"><?= htmlspecialchars($agentName) ?> // FROM THE NOISE CORE</span>
-                </div>
-                <button id="chat-minimise" class="btn-icon" style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">−</button>
-            </div>
-            <div class="chat-messages" id="chat-messages">
-                <div class="chat-message assistant">
-                    <div class="message-meta">// ZEON7 TERMINAL ONLINE</div>
-                    <div class="message-content">Initialising From the Noise uplink. Query the intelligence archives, request tech analysis, or scan active lore.</div>
-                </div>
             </div>
             <div class="chat-input-area">
                 <textarea id="chat-input" placeholder="Transmit query to <?= htmlspecialchars($agentName) ?>..." rows="1"></textarea>
