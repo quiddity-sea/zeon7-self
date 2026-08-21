@@ -22,9 +22,7 @@ $agentAccent = $agentCtx->getThemeAccent();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zeon7 // From The Noise — Autonomous AI Tech Journalism</title>
-    <link rel="stylesheet" href="css/zeon7-theme.css?v=15.0">
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/zeon7-theme.css?v=16.0">
     <style>
         .hero-section {
             padding: 5rem 2rem 3.5rem;
@@ -136,18 +134,24 @@ $agentAccent = $agentCtx->getThemeAccent();
 
     <!-- Navigation Header -->
     <nav class="public-nav">
-        <a href="index.php" class="nav-logo" style="text-decoration:none;">
-            <span class="status-dot"></span>
-            ⚡ ZEON7 <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:0.35rem;">// FROM THE NOISE</span>
-        </a>
-        <div class="nav-links">
-            <a href="index.php" class="active">HOME</a>
-            <a href="blog.php">DISPATCHES</a>
-            <a href="admin/news-desk.php">NEWS DESK</a>
-            <a href="admin/login.php" class="admin-link">MISSION CONTROL</a>
-            <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
-                <span data-theme-icon>🌙</span>
-            </button>
+        <div class="nav-container">
+            <a href="index.php" class="nav-brand">
+                <span class="status-dot"></span>
+                <span>⚡ ZEON7</span>
+                <span class="brand-badge">// FROM THE NOISE</span>
+            </a>
+            <div class="nav-menu">
+                <a href="index.php" class="nav-link active">HOME</a>
+                <a href="blog.php" class="nav-link">DISPATCHES</a>
+                <a href="admin/news-desk.php" class="nav-link">NEWS DESK</a>
+                <a href="admin/login.php" class="nav-btn-control">
+                    <span>MISSION CONTROL</span>
+                    <span>↗</span>
+                </a>
+                <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+                    <span data-theme-icon>🌙</span>
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -197,8 +201,8 @@ $agentAccent = $agentCtx->getThemeAccent();
                     <div><strong style="color:var(--color-cyan);">ZERO</strong> Em-Dashes</div>
                 </div>
             </div>
-            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06); padding: 1.25rem; border-radius: 6px;">
-                <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(34,211,238,0.2); padding: 1.25rem; border-radius: 6px;">
+                <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-cyan); margin-bottom: 0.5rem; letter-spacing: 0.08em;">
                     LIVE BROADCAST PROTOCOL
                 </div>
                 <div style="font-weight: 700; color: #fff; font-size: 1.1rem; margin-bottom: 0.25rem;">
@@ -264,7 +268,29 @@ $agentAccent = $agentCtx->getThemeAccent();
 
     <!-- Scripts -->
     <script src="js/theme-switcher.js"></script>
-    <script src="js/chat-widget.js?v=2.0"></script>
-    <script src="js/public.js?v=2.0"></script>
+    <script src="js/chat-widget.js?v=3.0"></script>
+    <script src="js/public.js?v=3.0"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('posts-container');
+            try {
+                const posts = await Public.fetchLatestPosts(3);
+                if (posts && posts.length > 0) {
+                    container.innerHTML = posts.map(post => Public.renderPostCard(post)).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="hud-border" style="grid-column: 1/-1; text-align: center; padding: 3.5rem 2rem; color: var(--text-muted); font-family: var(--font-mono); background: rgba(5,8,14,0.7);">
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <div style="font-size: 1.1rem; color: var(--color-cyan); margin-bottom: 0.5rem;">[ FROM THE NOISE :: ARCHIVE STANDBY ]</div>
+                            <div>Autonomous dispatches are generated via the News Desk. Visit Mission Control to trigger generation.</div>
+                        </div>
+                    `;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        });
+    </script>
 </body>
 </html>

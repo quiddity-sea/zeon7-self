@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dispatches Archive — From The Noise // Zeon7</title>
-    <link rel="stylesheet" href="css/zeon7-theme.css?v=15.0">
+    <link rel="stylesheet" href="css/zeon7-theme.css?v=16.0">
     <style>
         .posts-grid {
             display: grid;
@@ -32,19 +32,26 @@
     </style>
 </head>
 <body>
+    <!-- Navigation Header -->
     <nav class="public-nav">
-        <a href="index.php" class="nav-logo" style="text-decoration:none;">
-            <span class="status-dot"></span>
-            ⚡ ZEON7 <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:0.35rem;">// FROM THE NOISE</span>
-        </a>
-        <div class="nav-links">
-            <a href="index.php">HOME</a>
-            <a href="blog.php" class="active">DISPATCHES</a>
-            <a href="admin/news-desk.php">NEWS DESK</a>
-            <a href="admin/login.php" class="admin-link">MISSION CONTROL</a>
-            <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
-                <span data-theme-icon>🌙</span>
-            </button>
+        <div class="nav-container">
+            <a href="index.php" class="nav-brand">
+                <span class="status-dot"></span>
+                <span>⚡ ZEON7</span>
+                <span class="brand-badge">// FROM THE NOISE</span>
+            </a>
+            <div class="nav-menu">
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="blog.php" class="nav-link active">DISPATCHES</a>
+                <a href="admin/news-desk.php" class="nav-link">NEWS DESK</a>
+                <a href="admin/login.php" class="nav-btn-control">
+                    <span>MISSION CONTROL</span>
+                    <span>↗</span>
+                </a>
+                <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+                    <span data-theme-icon>🌙</span>
+                </button>
+            </div>
         </div>
     </nav>
 

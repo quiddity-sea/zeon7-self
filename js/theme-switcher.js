@@ -1,7 +1,6 @@
 /**
  * Zeon7 Theme Switcher
- * 
- * Handles light/dark mode toggle with localStorage persistence
+ * Handles light/dark mode toggle with localStorage persistence. Defaults to dark (Cybernetic HUD).
  */
 
 (function () {
@@ -15,21 +14,14 @@
     };
 
     /**
-     * Get the current theme from localStorage or system preference
+     * Get current theme from localStorage (defaults to DARK)
      */
     function getInitialTheme() {
-        // Check localStorage first
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored && (stored === THEMES.LIGHT || stored === THEMES.DARK)) {
             return stored;
         }
-
-        // Fall back to system preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return THEMES.DARK;
-        }
-
-        return THEMES.LIGHT;
+        return THEMES.DARK;
     }
 
     /**
@@ -55,13 +47,12 @@
      */
     function toggleTheme() {
         const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
-        const newTheme = current === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK;
+        const newTheme = current === THEMES.LIGHT ? THEMES.DARK : THEMES.LIGHT;
 
         applyTheme(newTheme);
         saveTheme(newTheme);
         updateThemeToggles(newTheme);
 
-        // Dispatch custom event for theme change
         window.dispatchEvent(new CustomEvent('themechange', {
             detail: { theme: newTheme }
         }));
@@ -75,11 +66,9 @@
         toggles.forEach(toggle => {
             const icon = toggle.querySelector('[data-theme-icon]');
             if (icon) {
-                // Update icon (sun for light mode, moon for dark mode)
                 icon.textContent = theme === THEMES.DARK ? '☀️' : '🌙';
             }
 
-            // Update aria-label
             toggle.setAttribute('aria-label',
                 theme === THEMES.DARK ? 'Switch to light mode' : 'Switch to dark mode'
             );
@@ -94,36 +83,19 @@
         applyTheme(initialTheme);
         updateThemeToggles(initialTheme);
 
-        // Attach event listeners to all theme toggles
         const toggles = document.querySelectorAll('[data-theme-toggle]');
         toggles.forEach(toggle => {
             toggle.addEventListener('click', toggleTheme);
         });
-
-        // Listen for system theme changes
-        if (window.matchMedia) {
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                // Only apply if user hasn't set a preference
-                if (!localStorage.getItem(STORAGE_KEY)) {
-                    const theme = e.matches ? THEMES.DARK : THEMES.LIGHT;
-                    applyTheme(theme);
-                    updateThemeToggles(theme);
-                }
-            });
-        }
     }
 
-    // Initialise immediately to avoid flash of wrong theme
     if (document.readyState === 'loading') {
-        // Apply theme as early as possible
         applyTheme(getInitialTheme());
-        // Full initialization after DOM is ready
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Export functions for external use
     window.Zeon7Theme = {
         toggle: toggleTheme,
         set: function (theme) {
@@ -134,8 +106,7 @@
             }
         },
         get: function () {
-            return document.documentElement.getAttribute(THEME_ATTRIBUTE) || THEMES.LIGHT;
+            return document.documentElement.getAttribute(THEME_ATTRIBUTE) || THEMES.DARK;
         }
     };
-
 })();

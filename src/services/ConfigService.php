@@ -86,6 +86,11 @@ class ConfigService extends BaseService {
         return $defaults[$provider] ?? 'Brain32:latest';
     }
 
+    public function getCurrentModel(): string {
+        $provider = $this->getCurrentProvider();
+        return $this->getModel($provider);
+    }
+
     public function setModel(string $provider, string $model): void {
         $this->saveConfigValue($provider . '_model', $model);
     }
@@ -95,6 +100,10 @@ class ConfigService extends BaseService {
             return filter_var($this->config['ollama_think'], FILTER_VALIDATE_BOOLEAN);
         }
         return false; // Default is think=false
+    }
+
+    public function getThinkMode(): bool {
+        return $this->getOllamaThink();
     }
 
     public function setOllamaThink(bool $think): void {
@@ -115,7 +124,7 @@ class ConfigService extends BaseService {
     public function getAll(): array {
         return [
             'provider' => $this->getCurrentProvider(),
-            'model' => $this->getModel($this->getCurrentProvider()),
+            'model' => $this->getCurrentModel(),
             'gemini_key_set' => !empty($this->getApiKey('gemini')),
             'openrouter_key_set' => !empty($this->getApiKey('openrouter')),
             'ollama_key_set' => true,

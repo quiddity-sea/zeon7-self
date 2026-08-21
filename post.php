@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeon7 Intel Dispatch</title>
-    <link rel="stylesheet" href="css/zeon7-theme.css?v=14.0">
+    <title>Zeon7 Intel Dispatch — From The Noise</title>
+    <link rel="stylesheet" href="css/zeon7-theme.css?v=16.0">
     <style>
         .article-container {
             max-width: 900px;
@@ -42,46 +42,29 @@
         .article-content blockquote {
             border-left: 3px solid var(--color-cyan);
             padding-left: 1.5rem;
-            margin: 1.5rem 0;
+            margin: 2rem 0;
             color: var(--text-secondary);
             font-style: italic;
+            background: rgba(34, 211, 238, 0.03);
+            padding: 1rem 1.5rem;
         }
         .article-content pre {
-            background: #020406;
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 1.25rem;
-            border-radius: var(--radius-sm);
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 4px;
             overflow-x: auto;
-            margin: 1.5rem 0;
             font-family: var(--font-mono);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
         }
-        [data-theme="light"] .article-content pre {
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            color: #0f172a;
-        }
-        .source-link {
-            display: inline-block;
-            margin-top: 2rem;
-            padding: 0.75rem 1.25rem;
-            background: rgba(34, 211, 238, 0.08);
-            border: 1px solid rgba(34, 211, 238, 0.3);
-            color: var(--color-cyan);
-            text-decoration: none;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            border-radius: var(--radius-sm);
-            font-weight: 700;
-        }
-        [data-theme="light"] .source-link {
-            background: #f0fdf4;
-            border-color: #86efac;
-            color: #166534;
-        }
-        .source-link:hover {
-            background: var(--color-cyan);
-            color: #000;
+        .article-footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .footer-hud {
             border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -93,49 +76,93 @@
             background: rgba(3, 6, 9, 0.8);
             margin-top: 4rem;
         }
-        [data-theme="light"] .footer-hud {
-            background: #ffffff !important;
-            border-top: 1px solid #e2e8f0 !important;
-            color: #64748b !important;
-        }
     </style>
 </head>
 <body>
+    <!-- Navigation Header -->
     <nav class="public-nav">
-        <a href="index.php" class="nav-logo">
-            <span class="status-dot"></span>
-            ⚡ ZEON7
-        </a>
-        <div class="nav-links">
-            <a href="index.php" class="nav-link">Intelligence Home</a>
-            <a href="blog.php" class="nav-link">Dispatches</a>
-            <a href="admin/index.php" class="hud-badge green" style="text-decoration:none;">⚡ Mission Control</a>
-            <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:0.25rem;">
-                <span data-theme-icon>🌙</span>
-            </button>
+        <div class="nav-container">
+            <a href="index.php" class="nav-brand">
+                <span class="status-dot"></span>
+                <span>⚡ ZEON7</span>
+                <span class="brand-badge">// FROM THE NOISE</span>
+            </a>
+            <div class="nav-menu">
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="blog.php" class="nav-link">DISPATCHES</a>
+                <a href="admin/news-desk.php" class="nav-link">NEWS DESK</a>
+                <a href="admin/login.php" class="nav-btn-control">
+                    <span>MISSION CONTROL</span>
+                    <span>↗</span>
+                </a>
+                <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+                    <span data-theme-icon>🌙</span>
+                </button>
+            </div>
         </div>
     </nav>
 
-    <main class="container">
-        <article id="post-container" class="hud-border article-container" data-tilt>
-            <div class="hud-corner-tr"></div>
-            <div class="hud-corner-bl"></div>
-            <div style="text-align: center; padding: 4rem; color: var(--text-muted); font-family: var(--font-mono);">
-                DECRYPTING INTEL DISPATCH STREAM...
+    <div class="hud-border article-container">
+        <div class="hud-corner-tr"></div>
+        <div class="hud-corner-bl"></div>
+
+        <div id="article-loader" style="text-align: center; padding: 4rem;">
+            <span class="text-cyan">// ACCESSING DECENTRALIZED DATA LAYER...</span>
+        </div>
+
+        <article id="article-body" style="display: none;">
+            <div class="article-header">
+                <div class="article-meta">
+                    <span id="post-date">// TIMESTAMP</span> • 
+                    <span id="post-category">TECH JOURNALISM</span>
+                </div>
+                <h1 id="post-title" style="font-size: 2.5rem; line-height: 1.2; letter-spacing: 0.04em;">LOADING DISPATCH...</h1>
+            </div>
+
+            <div class="article-content" id="post-content">
+                <!-- Populated via JS -->
+            </div>
+
+            <div class="article-footer">
+                <a href="blog.php" class="btn btn-secondary" style="font-size: 0.85rem;">← RETURN TO INTEL STREAM</a>
+                <button class="btn btn-primary" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">TOP ↑</button>
             </div>
         </article>
-    </main>
+    </div>
+
+    <!-- Chat Trigger Overlay -->
+    <div class="chat-widget-wrapper">
+        <div id="agent-chat" class="chat-widget">
+            <div class="agent-header" id="chat-header">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span class="status-dot"></span>
+                    <span class="agent-name">ZEON7 // DISPATCH CORE</span>
+                </div>
+                <button id="chat-minimise" class="btn-icon" style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">−</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message assistant">
+                    <div class="message-meta">// ZEON7 TERMINAL ONLINE</div>
+                    <div class="message-content">Initialising intelligence uplink. Ask questions about this specific dispatch or delve deeper into the analysis.</div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <textarea id="chat-input" placeholder="Transmit query to Zeon7..." rows="1"></textarea>
+                <button id="chat-send" class="btn-send">↵</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="footer-hud">
-        <div style="margin-bottom: 0.5rem; font-weight:700;">
-            ⚡ ZEON7 CYBERNETIC INTELLIGENCE // OPERATED ON INVIGOR CLUSTER
+        <div style="margin-bottom: 0.5rem;">
+            ZEON7 // AUTONOMOUS AI TECH JOURNALIST & INTELLIGENCE MATRIX
         </div>
         <div>
-            © 2026 ZEON7. ALL RIGHTS RESERVED.
+            Part of the <strong style="color:var(--color-cyan);">ForeverBox Triad Architecture</strong> // Quiddity Ltd
         </div>
     </footer>
 
-    <!-- Marked & GSAP CDN -->
+    <!-- Marked JS for parsing MD if required, GSAP -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="js/theme-switcher.js"></script>
@@ -146,51 +173,46 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const slug = urlParams.get('slug');
-            const container = document.getElementById('post-container');
+            const loader = document.getElementById('article-loader');
+            const body = document.getElementById('article-body');
 
             if (!slug) {
-                container.innerHTML = '<div style="text-align: center; font-family: var(--font-mono);">DISPATCH SLUG NOT SPECIFIED.</div>';
+                loader.innerHTML = '<span style="color:var(--danger)">ERROR // NO DISPATCH SLUG SPECIFIED</span>';
                 return;
             }
 
             try {
                 const post = await Public.fetchPostBySlug(slug);
                 if (post) {
-                    document.title = `${post.title} — Zeon7 Intel`;
+                    document.title = `${post.title} — Zeon7`;
+                    document.getElementById('post-title').textContent = post.title;
+                    
                     const date = new Date(post.published_at || post.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
-                        month: 'long',
+                        month: 'short',
                         day: 'numeric'
                     });
+                    document.getElementById('post-date').textContent = `// ${date}`;
 
-                    container.innerHTML = `
-                        <div class="hud-corner-tr"></div>
-                        <div class="hud-corner-bl"></div>
-                        <header class="article-header">
-                            <div class="article-meta">// DISPATCH ISSUED: ${date}</div>
-                            <h1 style="font-size: 2.25rem;">${Public.escapeHtml(post.title)}</h1>
-                        </header>
-                        <div class="article-content">
-                            ${marked.parse(post.content)}
-                            
-                            ${post.source_url ? `
-                                <div>
-                                    <a href="${Public.escapeHtml(post.source_url)}" target="_blank" class="source-link">
-                                        EXTERNAL SOURCE INTEL: ${Public.escapeHtml(post.source_url)} ↗
-                                    </a>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                    ZeonAnimations.init3DTilt();
-                    if (typeof gsap !== 'undefined') {
-                        gsap.from('#post-container .article-content', { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" });
+                    // Parse Content using marked
+                    const contentArea = document.getElementById('post-content');
+                    if (typeof marked !== 'undefined') {
+                        contentArea.innerHTML = marked.parse(post.content || '');
+                    } else {
+                        contentArea.textContent = post.content || '';
+                    }
+
+                    loader.style.display = 'none';
+                    body.style.display = 'block';
+
+                    if (typeof ZeonAnimations !== 'undefined') {
+                        ZeonAnimations.fadeIn('#article-body', 0.5);
                     }
                 } else {
-                    container.innerHTML = '<div style="text-align: center; font-family: var(--font-mono);">DISPATCH NOT FOUND IN DATABASE.</div>';
+                    loader.innerHTML = '<span style="color:var(--danger)">DISPATCH NOT FOUND OR OFFLINE</span>';
                 }
-            } catch (err) {
-                container.innerHTML = '<div style="text-align: center; font-family: var(--font-mono);">STREAM TRANSMISSION ERROR.</div>';
+            } catch(e) {
+                loader.innerHTML = '<span style="color:var(--danger)">INTELLIGENCE DATA STREAM ERROR</span>';
             }
         });
     </script>
