@@ -129,12 +129,6 @@
             </div>
         </article>
     </div>
-            </div>
-            <div class="chat-input-area">
-                <textarea id="chat-input" placeholder="Transmit query to Zeon7..." rows="1"></textarea>
-                <button id="chat-send" class="btn-send">↵</button>
-            </div>
-        </div>
     </div>
 
     <footer class="footer-hud">

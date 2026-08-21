@@ -232,12 +232,6 @@ $agentAccent = $agentCtx->getThemeAccent();
             CONNECTING TO INTEL STREAM...
         </div>
     </div>
-            </div>
-            <div class="chat-input-area">
-                <textarea id="chat-input" placeholder="Transmit query to <?= htmlspecialchars($agentName) ?>..." rows="1"></textarea>
-                <button id="chat-send" class="btn-send">↵</button>
-            </div>
-        </div>
     </div>
 
     <!-- Footer -->
