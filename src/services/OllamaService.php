@@ -42,16 +42,17 @@ class OllamaService extends BaseService {
     /**
      * Send chat request to Ollama
      */
-    public function chat(string $message, array $history = [], array $context = []): array {
+    public function chat(string $message, array $history = [], string|array $context = ''): array {
         $url = $this->host . '/api/chat';
         
         $messages = [];
         
-        // Include context as system instructions if present
+        // Include system prompt as system role
         if (!empty($context)) {
+            $systemContent = is_array($context) ? $this->formatContext($context) : (string)$context;
             $messages[] = [
                 'role' => 'system',
-                'content' => $this->formatContext($context)
+                'content' => $systemContent
             ];
         }
         
@@ -112,45 +113,19 @@ class OllamaService extends BaseService {
             'usage' => $tokens
         ];
     }
-    
-    /**
-     * Get list of locally available models from Ollama
-     */
-    public function getInstalledModels(): array {
-        $url = $this->host . '/api/tags';
-        try {
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-            $resp = curl_exec($ch);
-            curl_close($ch);
-            
-            $data = json_decode($resp, true);
-            $models = [];
-            if (!empty($data['models'])) {
-                foreach ($data['models'] as $m) {
-                    if (!empty($m['name'])) {
-                        $models[] = $m['name'];
-                    }
-                }
-            }
-            return !empty($models) ? $models : ['Brain32:latest'];
-        } catch (Exception $e) {
-            return ['Brain32:latest'];
-        }
+
+    public function generateContent(string $prompt, array $context = []): string {
+        $res = $this->chat($prompt, [], $context);
+        return $res['reply'];
     }
     
-    /**
-     * Make HTTP request to Ollama API
-     */
     private function makeRequest(string $url, array $body): array {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json'
         ]);
@@ -161,63 +136,44 @@ class OllamaService extends BaseService {
         curl_close($ch);
         
         if (!empty($curlError)) {
-            throw new ApiException("Cannot connect to local Ollama server at {$this->host}: $curlError. Ensure 'ollama serve' is active.", 503);
+            throw new ApiException("Network error connecting to Ollama: $curlError", 500);
         }
         
         if ($httpCode !== 200) {
-            $error = json_decode($response, true);
-            $errorMsg = $error['error'] ?? "Ollama returned HTTP $httpCode";
-            try {
-                $this->logUsage(0, 0, 'error', $errorMsg);
-            } catch (Exception $e) {}
-            throw new ApiException("Local Ollama Error: $errorMsg", $httpCode);
+            throw new ApiException("Ollama API error (HTTP $httpCode): " . $response, $httpCode);
         }
         
-        return json_decode($response, true) ?? [];
+        $data = json_decode($response, true);
+        if (!$data) {
+            throw new ApiException("Invalid JSON response from Ollama", 500);
+        }
+        
+        return $data;
     }
     
-    /**
-     * Format context array into text
-     */
     private function formatContext(array $context): string {
-        $formatted = "\n\n--- Context ---\n";
+        $lines = [];
         foreach ($context as $key => $value) {
-            $formatted .= "$key: $value\n";
+            if (is_array($value)) {
+                $lines[] = strtoupper($key) . ": " . implode(", ", $value);
+            } else {
+                $lines[] = strtoupper($key) . ": $value";
+            }
         }
-        return $formatted;
+        return implode("\n", $lines);
     }
     
-    /**
-     * Log API usage to database
-     */
-    public function logUsage(int $promptTokens, int $responseTokens, string $status, ?string $error = null): void {
-        $sql = "INSERT INTO gemini_log (endpoint, prompt_tokens, response_tokens, total_tokens, model, status, error_message) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        $totalTokens = $promptTokens + $responseTokens;
+    private function logUsage(int $promptTokens, int $responseTokens, string $status): void {
+        $sql = "INSERT INTO token_usage (provider, model, prompt_tokens, completion_tokens, total_tokens, request_status) 
+                VALUES (?, ?, ?, ?, ?, ?)";
         
         $this->executeQuery($sql, [
-            'ollama/chat',
+            'ollama',
+            $this->model,
             $promptTokens,
             $responseTokens,
-            $totalTokens,
-            $this->model,
-            $status,
-            $error
+            $promptTokens + $responseTokens,
+            $status
         ]);
-
-        if ($totalTokens > 0) {
-            $sqlToken = "INSERT INTO token_usage (prompt_tokens, response_tokens, total_tokens) VALUES (?, ?, ?)";
-            $this->executeQuery($sqlToken, [$promptTokens, $responseTokens, $totalTokens]);
-        }
-    }
-    
-    /**
-     * Scan news using local Ollama model
-     */
-    public function scanNews(string $topic, string $angle): string {
-        $prompt = "Find 4-6 recent tech news angles about $topic focusing on $angle. Return a valid JSON array of objects with keys 'title', 'summary' (80-120 words), 'angles' (array of strings), 'sources' (array of strings). Return ONLY raw JSON.";
-        $res = $this->chat($prompt);
-        return $res['reply'] ?? '[]';
     }
 }

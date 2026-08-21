@@ -39,7 +39,9 @@ class GeminiService extends BaseService {
         
         if (!empty($context)) {
             $contextText = $this->formatContext($context);
-            $requestBody['contents'][0]['parts'][] = ['text' => $contextText];
+            $requestBody['systemInstruction'] = [
+                'parts' => [['text' => $contextText]]
+            ];
         }
         
         $response = $this->makeRequest($url, $requestBody);
@@ -47,9 +49,9 @@ class GeminiService extends BaseService {
     }
     
     /**
-     * Conversational chat with history
+     * Conversational chat with history and system instruction
      */
-    public function chat(string $message, array $history = []): array {
+    public function chat(string $message, array $history = [], string $systemPrompt = ''): array {
         $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
         
         $contents = [];
@@ -67,6 +69,12 @@ class GeminiService extends BaseService {
         ];
         
         $requestBody = ['contents' => $contents];
+
+        if (!empty($systemPrompt)) {
+            $requestBody['systemInstruction'] = [
+                'parts' => [['text' => $systemPrompt]]
+            ];
+        }
         
         $response = $this->makeRequest($url, $requestBody);
         $reply = $this->extractText($response);
@@ -108,120 +116,61 @@ class GeminiService extends BaseService {
         
         if ($httpCode !== 200) {
             $error = json_decode($response, true);
-            $errorMsg = $error['error']['message'] ?? 'Unknown error';
-            try {
-                $this->logUsage(0, 0, 'error', $errorMsg);
-            } catch (Exception $e) {}
+            $errorMsg = $error['error']['message'] ?? "HTTP $httpCode error";
             throw new ApiException("Gemini API error: $errorMsg", $httpCode);
         }
         
-        return json_decode($response, true) ?? [];
+        return json_decode($response, true);
     }
     
     /**
-     * Extract text from API response
+     * Extract text from Gemini response
      */
     private function extractText(array $response): string {
         return $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
     }
     
     /**
-     * Extract token usage from response
+     * Extract token usage from Gemini response
      */
     private function extractTokenUsage(array $response): array {
-        $usage = $response['usageMetadata'] ?? [];
-        
+        $meta = $response['usageMetadata'] ?? [];
         return [
-            'prompt' => $usage['promptTokenCount'] ?? 0,
-            'response' => $usage['candidatesTokenCount'] ?? 0,
-            'total' => $usage['totalTokenCount'] ?? 0
+            'prompt' => $meta['promptTokenCount'] ?? 0,
+            'response' => $meta['candidatesTokenCount'] ?? 0,
+            'total' => $meta['totalTokenCount'] ?? 0
         ];
     }
     
     /**
-     * Format context array into text
+     * Format context array into readable string
      */
     private function formatContext(array $context): string {
-        $formatted = "\n\n--- Context ---\n";
+        $lines = [];
         foreach ($context as $key => $value) {
-            $formatted .= "$key: $value\n";
+            if (is_array($value)) {
+                $lines[] = strtoupper($key) . ": " . implode(", ", $value);
+            } else {
+                $lines[] = strtoupper($key) . ": $value";
+            }
         }
-        return $formatted;
+        return implode("\n", $lines);
     }
     
     /**
-     * Log API usage to database
+     * Log token usage to database
      */
-    public function logUsage(int $promptTokens, int $responseTokens, string $status, ?string $error = null): void {
-        $sql = "INSERT INTO gemini_log (endpoint, prompt_tokens, response_tokens, total_tokens, model, status, error_message) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        $totalTokens = $promptTokens + $responseTokens;
+    private function logUsage(int $promptTokens, int $responseTokens, string $status): void {
+        $sql = "INSERT INTO token_usage (provider, model, prompt_tokens, completion_tokens, total_tokens, request_status) 
+                VALUES (?, ?, ?, ?, ?, ?)";
         
         $this->executeQuery($sql, [
-            'generateContent',
+            'gemini',
+            $this->model,
             $promptTokens,
             $responseTokens,
-            $totalTokens,
-            $this->model,
-            $status,
-            $error
+            $promptTokens + $responseTokens,
+            $status
         ]);
-
-        if ($totalTokens > 0) {
-            $sqlToken = "INSERT INTO token_usage (prompt_tokens, response_tokens, total_tokens) VALUES (?, ?, ?)";
-            $this->executeQuery($sqlToken, [$promptTokens, $responseTokens, $totalTokens]);
-        }
-    }
-
-    /**
-     * Scan news using Google Search Grounding
-     */
-    public function scanNews(string $topic, string $angle): string {
-        $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
-        
-        $prompt = "Find 4-6 recent news stories about $topic. Focus on $angle. Return a JSON array of objects. Each object must have: 'title' (string), 'summary' (80-120 words), 'angles' (array of 3-5 strings), 'sources' (array of strings). Do not use Markdown formatting, just raw JSON.";
-        
-        $requestBody = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt]
-                    ]
-                ]
-            ],
-            'tools' => [
-                ['google_search' => new stdClass()]
-            ]
-        ];
-        
-        $response = $this->makeRequest($url, $requestBody);
-        return $this->extractText($response);
-    }
-
-    /**
-     * Analyze image with Vision
-     */
-    public function scanVision(string $imageData, string $mimeType, string $prompt): string {
-        $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
-        
-        $requestBody = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt],
-                        [
-                            'inline_data' => [
-                                'mime_type' => $mimeType,
-                                'data' => base64_encode($imageData)
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ];
-        
-        $response = $this->makeRequest($url, $requestBody);
-        return $this->extractText($response);
     }
 }

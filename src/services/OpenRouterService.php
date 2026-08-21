@@ -6,7 +6,7 @@
 require_once __DIR__ . '/../core/BaseService.php';
 require_once __DIR__ . '/../core/Exceptions.php';
 
-class OpenRouterService {
+class OpenRouterService extends BaseService {
     
     private string $apiKey;
     private string $model;
@@ -16,6 +16,7 @@ class OpenRouterService {
      * Initialize with API key and model
      */
     public function __construct(string $apiKey, string $model = 'openai/gpt-4') {
+        parent::__construct();
         $this->apiKey = $apiKey;
         $this->model = $model;
     }
@@ -24,35 +25,30 @@ class OpenRouterService {
      * Generate content from prompt
      */
     public function generateContent(string $prompt, array $context = []): string {
-        // Format context if provided
-        $fullPrompt = empty($context) ? $prompt : $this->formatContext($context) . "\n\n" . $prompt;
-        
-        $requestBody = [
-            'model' => $this->model,
-            'messages' => [
-                ['role' => 'user', 'content' => $fullPrompt]
-            ]
-        ];
-        
-        $response = $this->makeRequest($requestBody);
-        return $response['choices'][0]['message']['content'] ?? '';
+        $res = $this->chat($prompt, [], !empty($context) ? $this->formatContext($context) : '');
+        return $res['reply'];
     }
     
     /**
-     * Conversational chat with history
+     * Conversational chat with history and system instruction
      */
-    public function chat(string $message, array $history = []): array {
-        // Build message array
+    public function chat(string $message, array $history = [], string $systemPrompt = ''): array {
         $messages = [];
+
+        if (!empty($systemPrompt)) {
+            $messages[] = [
+                'role' => 'system',
+                'content' => $systemPrompt
+            ];
+        }
         
         foreach ($history as $turn) {
             $messages[] = [
                 'role' => $turn['role'] ?? 'user',
-                'content' => $turn['content']
+                'content' => $turn['content'] ?? ''
             ];
         }
         
-        // Add current message
         $messages[] = [
             'role' => 'user',
             'content' => $message
@@ -75,9 +71,6 @@ class OpenRouterService {
         ];
     }
     
-    /**
-     * Make HTTP request to OpenRouter API
-     */
     private function makeRequest(array $body): array {
         $ch = curl_init($this->apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -103,16 +96,15 @@ class OpenRouterService {
         return json_decode($response, true);
     }
     
-    /**
-     * Format context array into text
-     */
     private function formatContext(array $context): string {
-        $formatted = "--- Context ---\n";
-        
+        $lines = [];
         foreach ($context as $key => $value) {
-            $formatted .= "$key: $value\n";
+            if (is_array($value)) {
+                $lines[] = strtoupper($key) . ": " . implode(", ", $value);
+            } else {
+                $lines[] = strtoupper($key) . ": $value";
+            }
         }
-        
-        return $formatted;
+        return implode("\n", $lines);
     }
 }

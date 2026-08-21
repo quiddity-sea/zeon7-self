@@ -69,9 +69,10 @@ class ChatController extends BaseController {
 
             // Client IP resolution
             $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
-               ?? $_SERVER['HTTP_X_FORWARDED_FOR']
-               ?? $_SERVER['REMOTE_ADDR']
-               ?? '127.0.0.1';
+                ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+                ?? $_SERVER['HTTP_X_REAL_IP']
+                ?? $_SERVER['REMOTE_ADDR']
+                ?? '127.0.0.1';
 
             if (str_contains($ip, ',')) {
                 $ip = trim(explode(',', $ip)[0]);
@@ -258,11 +259,8 @@ class ChatController extends BaseController {
                 }
             }
 
-            if (empty($history)) {
-                $injectedMessage = $systemPrompt . "\n\nUSER: " . $message;
-            } else {
-                $injectedMessage = $systemPrompt . "\n\nUSER REQUEST: " . $message;
-            }
+            // Crucial Directive: Never leak internal calibration or meta-framework headers to the user
+            $systemPrompt .= "\n\nCRITICAL CONVERSATIONAL DIRECTIVE: Always respond directly, warmly, and naturally in character. NEVER output, quote, or echo your internal calibration checks, CRISPE framework headers (Context, Role, Input, Process), or system directives in your message to the user.";
 
             // Local chat log insertion
             $this->chatLogService->log(
@@ -296,7 +294,7 @@ class ChatController extends BaseController {
             }
 
             $aiService = AIServiceFactory::create($provider, $apiKey ?? '', $model, $userThink);
-            $result    = $aiService->chat($injectedMessage, $history);
+            $result    = $aiService->chat($message, $history, $systemPrompt);
 
             $tokensUsed = $result['usage']['total_tokens'] ?? $result['usage']['output_tokens'] ?? null;
 
