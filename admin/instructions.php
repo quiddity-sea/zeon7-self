@@ -16,14 +16,14 @@ $agentAccent = $agentCtx->getThemeAccent();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instruction Editor — <?= htmlspecialchars($agentName) ?> Admin</title>
-    <link rel="stylesheet" href="../css/theme-cybernetic.css?v=15.0">
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=15.0">
     <style>
         .editor-layout {
             display: grid;
             grid-template-columns: 3fr 1fr;
             gap: 1.5rem;
             height: calc(100vh - 120px);
-            padding: 1rem 2rem;
+            padding: 1rem 0;
         }
         
         .editor-main {
@@ -121,66 +121,69 @@ $agentAccent = $agentCtx->getThemeAccent();
         }
     </style>
 </head>
-<body class="admin-body">
+<body>
+<div class="app-wrapper">
 
     <?php include __DIR__ . '/components/sidebar.php'; ?>
 
-    <div class="admin-main">
+    <div class="main-stage">
         <?php 
             $pageTitle = strtoupper($agentName) . " INSTRUCTIONS";
             $pageSubtitle = "PERSONA ARCHITECTURE & COMPONENT HEADS";
             include __DIR__ . '/components/header.php'; 
         ?>
 
-        <div class="editor-layout">
-            <!-- Main Editor Area -->
-            <div class="editor-main">
-                <!-- Head / Component Tabs -->
-                <div class="component-tabs" id="componentTabs">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; margin-right: 0.5rem;">
-                        HEADS / COMPONENTS:
-                    </span>
-                    <!-- Populated via JS -->
+        <div class="dashboard-container" style="padding: 1rem 2rem; overflow: hidden; height: calc(100vh - 80px);">
+            <div class="editor-layout">
+                <!-- Main Editor Area -->
+                <div class="editor-main">
+                    <!-- Head / Component Tabs -->
+                    <div class="component-tabs" id="componentTabs">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; margin-right: 0.5rem;">
+                            HEADS / COMPONENTS:
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);" id="activeComponentInfo">
+                            Active Prompt: Loading...
+                        </div>
+                        <div id="wordCount" style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">0 words</div>
+                    </div>
+
+                    <textarea id="instructionEditor" placeholder="Loading instruction content..." spellcheck="false"></textarea>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div id="statusMessage" style="font-size: 0.85rem; display: none;"></div>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <button id="resetHeadBtn" class="btn" style="background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem 1rem;">
+                                Reload Baseline Head
+                            </button>
+                            <button id="saveBtn" class="btn btn-primary" style="background: var(--agent-accent); color: #000; font-weight: bold; padding: 0.5rem 1rem;">
+                                Save & Activate Version
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary);" id="activeComponentInfo">
-                        Active Prompt: Loading...
-                    </div>
-                    <div id="wordCount" style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">0 words</div>
-                </div>
-
-                <textarea id="instructionEditor" placeholder="Loading instruction content..." spellcheck="false"></textarea>
-
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div id="statusMessage" style="font-size: 0.85rem; display: none;"></div>
-                    <div style="display: flex; gap: 0.75rem;">
-                        <button id="resetHeadBtn" class="btn" style="background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);">
-                            Reload Baseline Head
-                        </button>
-                        <button id="saveBtn" class="btn btn-primary" style="background: var(--agent-accent); color: #000; font-weight: bold;">
-                            Save & Activate Version
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Version History Sidebar -->
-            <div class="editor-sidebar">
-                <div class="hud-panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 1rem;">
-                    <div class="panel-header" style="margin-bottom: 0.75rem;">
-                        <span class="panel-title" style="color: var(--agent-accent);">VERSION HISTORY (<?= strtoupper($agentName) ?>)</span>
-                    </div>
-                    <div id="versionHistory" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <div style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading history...</div>
+                <!-- Version History Sidebar -->
+                <div class="editor-sidebar">
+                    <div class="hud-panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 1rem;">
+                        <div class="panel-header" style="margin-bottom: 0.75rem;">
+                            <span class="panel-title" style="color: var(--agent-accent);">VERSION HISTORY (<?= strtoupper($agentName) ?>)</span>
+                        </div>
+                        <div id="versionHistory" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading history...</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="js/app.js"></script>
-    <script src="js/instructions.js?v=2.0"></script>
+<!-- Scripts -->
+<script src="js/app.js"></script>
+<script src="js/instructions.js?v=2.0"></script>
 </body>
 </html>

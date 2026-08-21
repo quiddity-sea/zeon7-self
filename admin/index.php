@@ -34,7 +34,7 @@ $operatorName = $_SESSION['user_name'] ?? 'MERRILL LEO';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($agentName) ?> Mission Control — ForeverBox Triad</title>
-    <link rel="stylesheet" href="../css/theme-cybernetic.css?v=15.0">
+    <link rel="stylesheet" href="../css/zeon7-theme.css?v=15.0">
     <style>
         .dashboard-grid {
             display: grid;
@@ -69,18 +69,19 @@ $operatorName = $_SESSION['user_name'] ?? 'MERRILL LEO';
         }
     </style>
 </head>
-<body class="admin-body">
+<body>
+<div class="app-wrapper">
 
     <?php include __DIR__ . '/components/sidebar.php'; ?>
 
-    <div class="admin-main">
+    <div class="main-stage">
         <?php 
             $pageTitle = strtoupper($agentName) . " TELEMETRY";
             $pageSubtitle = "MISSION CONTROL // " . strtoupper($agentId);
             include __DIR__ . '/components/header.php'; 
         ?>
 
-        <div style="padding: 1.5rem 2rem;">
+        <div class="dashboard-container" style="padding: 1.5rem 2rem; overflow-y: auto;">
             
             <!-- Active Agent Identity Banner -->
             <div class="agent-hero-banner">
@@ -100,7 +101,7 @@ $operatorName = $_SESSION['user_name'] ?? 'MERRILL LEO';
                 </div>
                 <div>
                     <a href="../index.php?agent=<?= urlencode($agentId) ?>" target="_blank" class="btn" 
-                       style="background: rgba(255,255,255,0.05); border: 1px solid var(--agent-accent); color: var(--agent-accent); text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                       style="background: rgba(255,255,255,0.05); border: 1px solid var(--agent-accent); color: var(--agent-accent); text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 0.5rem 1rem;">
                         Open Public Interface ↗
                     </a>
                 </div>
@@ -239,8 +240,9 @@ $operatorName = $_SESSION['user_name'] ?? 'MERRILL LEO';
 
         </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="js/app.js"></script>
+<!-- Scripts -->
+<script src="js/app.js"></script>
 </body>
 </html>
