@@ -1,144 +1,57 @@
-# Hermes Agent Control from the Self Web Interface
+# Hermes Agent Control & Unified Architecture
 
 ## Problem Statement
 
-Your Hermes agents (Zeon7, Leon, Gemma, Otec, Wolf) each have their own full runtime configuration in `/foreverbox_data/profiles/{agent}/config.yaml`, including model assignments, providers, custom providers, hooks, and memory backends. However, the Self web interface (`i-am-self`) currently has **no bridge** to these Hermes configurations:
+The ForeverBox ecosystem features a dynamic SOUL assembly system and a rich CLI environment (Hermes) with its own memory states, databases, and file storage. 
 
-- The **admin settings page** manages a single global provider/model — it doesn't know about per-agent Hermes configs
-- When you **switch agents** in the admin dropdown, only the UI theme and system prompt change — the actual AI model powering the chat stays the same global one
-- There is **no way** to start, stop, monitor, or reconfigure a Hermes agent session from the web UI
-- The Hermes `config.yaml` files are completely independent of the web app's MariaDB `config` table
+Historically, the Self web interface (`i-am-self`) used its own isolated MariaDB database (`zeon7_self`) for chat logs, system instructions, and agent configurations. This created a split brain: if an agent learned something in the CLI, the web interface didn't know about it.
 
-## Current Architecture
+The new goal is absolute unification. The `zeon7_self` database will be stripped down to handle only web-specific concerns (UI layouts, web user accounts). Everything relating to the agents—personalities, memory, vector storage, and Quiddity Sea files—must point directly to the exact same backend data sources that the Hermes CLI uses.
 
-```mermaid
-graph TB
-    subgraph "Self Web App (i-am-self)"
-        UI["Admin UI / Public Chat"]
-        CS["ConfigService<br/>(global config table)"]
-        ACS["AgentContextService<br/>(ui-manifest.yaml only)"]
-        AI["AIServiceFactory<br/>(Ollama/Gemini/OpenRouter)"]
-        UI --> CS
-        UI --> ACS
-        CS --> AI
-    end
+## Proposed Architecture: The Unified Data Layer
 
-    subgraph "Hermes CLI (separate runtime)"
-        H1["hermes --profile zeon7<br/>Brain32:latest"]
-        H2["hermes --profile leon<br/>nemotron-ultra:free"]
-        H3["hermes --profile gemma<br/>Zeon7-Gemma:64k"]
-        H4["hermes --profile otec<br/>Zeon7-Gemma:64k"]
-    end
+We will implement this in four phases, starting with unifying the data layer.
 
-    subgraph "ForeverBox Data"
-        UM["ui-manifest.yaml<br/>(theme, layout, persona)"]
-        CY["config.yaml<br/>(model, provider, hooks)"]
-        SOUL["SOUL.md<br/>(persona identity)"]
-    end
+### Phase 0: Unified Data Layer (The Foundation)
+We will deprecate the isolated agent tables in `zeon7_self` and route the web application directly to the Hermes ecosystem backends:
 
-    ACS -->|reads| UM
-    H1 -->|reads| CY
-    H2 -->|reads| CY
-    H3 -->|reads| CY
-    H4 -->|reads| CY
+- **Identity & SOULs**: The web app will read/write directly to the `agent_registry` MariaDB database (specifically the `soul_components` table) for all persona generation.
+- **Memory & Vectors**: The web chat endpoints will connect directly to the agent's Hermes SQLite databases (e.g., `/foreverbox_data/profiles/zeon7/state.db`) or vector stores. If Zeon7 learns a fact in the CLI, the public web chat will instantly have access to that same memory.
+- **Shared Knowledge**: The web app will read directly from the Quiddity Sea (`/foreverbox_data/`) just as the CLI agents do.
+- **Web DB Scope**: The `zeon7_self` database will be reduced to handling web authentication, UI preferences, and web-specific layout configs.
 
-    style CS fill:#f43f5e22,stroke:#f43f5e
-    style AI fill:#f43f5e22,stroke:#f43f5e
-```
+### Phase 1: Public Agent Router & Model Assignment
+We need a dedicated admin page (`/admin/hermes-router.php`) to control who answers the public chat and how they operate, using the unified data layer.
 
-> [!IMPORTANT]
-> The red-highlighted boxes show the disconnect: `ConfigService` and `AIServiceFactory` use a single global config and have no awareness of per-agent Hermes configurations.
+- **Public Agent**: Dropdown (Zeon7, Leon, Gemma, Otec)
+- **Active Head**: Dropdown (e.g., `default`, `coder`, `fiction`) pulling from `agent_registry`.
+- **Active Model**: Dropdown mapping to local Ollama models or cloud providers.
 
-## Per-Agent Model Assignments (Current Hermes Configs)
+### Phase 2: Dynamic SOUL / Head Editor
+We will build a visual CRUD (Create, Read, Update, Delete) interface in the admin panel to manage the `agent_registry.soul_components` table directly.
 
-| Agent | Default Model | Provider | Custom Provider |
-|---|---|---|---|
-| **Zeon7** | `Brain32:latest` | `custom:g4` | `Zeon7-Gemma:64k` (Ollama) |
-| **Leon** | `nvidia/nemotron-3-ultra-550b-a55b:free` | `openrouter` | `fredrezones55/Gemma-4-Uncensored` (Ollama) |
-| **Gemma** | `Zeon7-Gemma:64k` | `ollama` | — |
-| **Otec** | `Zeon7-Gemma:64k` | `ollama` | — |
-| **Wolf** | `Zeon7-Gemma:64k` | `ollama` | — |
+- **View**: A dashboard showing all components grouped by Agent -> Head.
+- **Edit/Create**: A markdown editor to change or create new heads (e.g., adding a `designer` variant).
+- **API**: Secure endpoints (`api/soul/update.php`) to save changes straight to the `agent_registry` DB.
 
-## Proposed Changes
+### Phase 3: Web Chat Dynamic Assembly
+Currently, the web chat uses `InstructionService.php` to fetch static prompts. We will wire it up to the dynamic SOUL system.
 
-There are two levels of integration. I recommend **Level 1** as the immediate deliverable, with **Level 2** as a follow-up.
+- **Dynamic Assembly**: When a web chat request comes in, the PHP backend will execute `python3 /foreverbox_data/bin/assemble_soul.py {agent_slug} {head}` to generate the exact prompt for that specific head.
+- **Model Routing**: The chat will be routed to the specific model chosen in Phase 1.
+- **Context Injection**: The chat handler will pull relevant context from the agent's Hermes CLI memory states (implemented in Phase 0) before sending the prompt to the LLM.
 
 ---
 
-### Level 1: Per-Agent Model Routing in the Web Chat
+## Architecture Flow (After Implementation)
 
-Make the web app respect each agent's Hermes `config.yaml` when routing chat messages, so switching to Leon in the dropdown actually uses Leon's model/provider.
+1. You log into Self Admin.
+2. You go to **SOUL Editor**, create a new head for Gemma called `fiction_writer`, and write her directives. (Saves to `agent_registry`).
+3. You go to **Hermes Router**, set the Public Agent to `Gemma`, Head to `fiction_writer`, Model to `openrouter:anthropic/claude-3.5-sonnet`.
+4. A public user asks Gemma to write a story about a specific event she learned about yesterday in the CLI.
+5. `api/chat.php` dynamically runs `assemble_soul.py`, connects to Gemma's `/foreverbox_data/profiles/gemma/state.db` to pull the memory of that event, and sends the enriched prompt to OpenRouter.
 
-#### [MODIFY] [ConfigService.php](file:///var/www/self/src/services/ConfigService.php)
-
-Add methods to read and parse an agent's `config.yaml`:
-- `getAgentConfig(string $agentId): array` — parses `profiles/{agent}/config.yaml`
-- `getModelForAgent(string $agentId): string` — returns `model.default`
-- `getProviderForAgent(string $agentId): string` — returns `model.provider`, mapping `custom:*` and `openrouter` to the correct Self provider type
-- `getOllamaModelForAgent(string $agentId): string` — resolves custom provider model names
-- Fallback: if no `config.yaml` exists, use the global `config` table values
-
-#### [MODIFY] [AIServiceFactory.php](file:///var/www/self/src/services/AIServiceFactory.php)
-
-No structural changes needed — it already accepts provider/model/apiKey as parameters. The change is in who calls it.
-
-#### [MODIFY] [chat.php](file:///var/www/self/api/chat.php)
-
-Instead of:
-```php
-$provider = $this->configService->getCurrentProvider();
-$model    = $this->configService->getCurrentModel();
-```
-
-Change to:
-```php
-$agentId  = $this->agentContext->getAgentId();
-$provider = $this->configService->getProviderForAgent($agentId);
-$model    = $this->configService->getModelForAgent($agentId);
-```
-
-This means when you switch to Leon in the admin dropdown and chat, the conversation goes through OpenRouter to `nemotron-ultra`, not through your local Ollama.
-
-#### [MODIFY] [settings.php](file:///var/www/self/admin/settings.php) & [settings.js](file:///var/www/self/admin/js/settings.js)
-
-Add a read-only "Agent Model Summary" panel showing each agent's current model assignment (read from their `config.yaml`), with the global settings serving as fallback defaults.
-
----
-
-### Level 2: Full Hermes Session Management (Future)
-
-This would allow starting/stopping/monitoring Hermes CLI sessions directly from the web UI:
-
-- **Agent Dashboard Panel**: Show running Hermes processes, GPU status, active sessions
-- **Launch/Stop Controls**: Trigger `fbox-launch {agent}` from the admin UI via a secure API endpoint
-- **Config Editor**: Edit `config.yaml` model/provider settings from the admin UI and write them back to disk
-- **Session Viewer**: Tail Hermes conversation logs in real-time from the admin interface
-
-> [!WARNING]
-> Level 2 requires careful security consideration (shell execution from web UI) and is a significantly larger scope. I recommend delivering Level 1 first.
-
----
-
-## Open Questions
+## Next Steps
 
 > [!IMPORTANT]
-> **1. OpenRouter API Key for Leon**: Leon's Hermes config uses OpenRouter (`nvidia/nemotron-3-ultra-550b-a55b:free`). The Self web app already has an OpenRouter service — do you have an OpenRouter API key stored in the web app's `api_keys` table, or do we need to set one up?
-
-> [!IMPORTANT]
-> **2. Agent Chat Isolation**: When you switch to Leon and chat, should the chat use Leon's `SOUL.md` as the system prompt (instead of the `system_instructions` table), or should the current `InstructionService` per-agent component system take priority?
-
-> [!IMPORTANT]
-> **3. Scope Confirmation**: Should I proceed with **Level 1 only** (per-agent model routing in web chat + settings summary panel), or do you also want elements of Level 2 now?
-
-## Verification Plan
-
-### Automated Tests
-- PHP syntax check on all modified files
-- `curl` test to `/api/chat.php` with `?agent=leon` to verify it routes to OpenRouter
-- `curl` test to `/api/chat.php` with `?agent=zeon7` to verify it routes to local Ollama
-- Playwright browser test: switch agents in admin dropdown, send chat message, verify different model in response metadata
-
-### Manual Verification
-- Switch between agents in the admin UI and verify chat responses come from the correct model
-- Check the settings page shows accurate per-agent model summary
-- Deploy to VPS and verify live
+> **Database Permissions**: We need to ensure the PHP PDO connection (likely `Database.php`) has credentials or permissions to read/write to `agent_registry` and access the SQLite files in `/foreverbox_data/profiles/`.
