@@ -1,57 +1,100 @@
-# Hermes Agent Control & Unified Architecture
+# Hermes Agent Control & Unified Architecture: Detailed Implementation Guide
 
-## Problem Statement
+## 1. Executive Summary & Problem Statement
 
-The ForeverBox ecosystem features a dynamic SOUL assembly system and a rich CLI environment (Hermes) with its own long-term memory, databases, and file storage. 
+The ForeverBox ecosystem currently operates with a "split brain" architecture:
+1. **The Hermes CLI Environment**: Uses the `agent_registry` MariaDB database to dynamically assemble personas ("SOULs") and "heads" (variants like `coder` or `fiction`). It stores long-term memory, vectors, and lore in agent-specific MariaDB databases (e.g., `agent_curator`, `agent_producer`) via the Council Library REST API.
+2. **The Self Web Interface (`i-am-self`)**: Currently relies on a separate, isolated MariaDB database (`zeon7_self`) for its system instructions and chat logs. It has no awareness of dynamic heads, cannot route to specific models per agent, and cannot access the memories formed by agents in the CLI.
 
-Historically, the Self web interface (`i-am-self`) used its own isolated MariaDB database (`zeon7_self`) for chat logs, system instructions, and agent configurations. This created a split brain: if an agent learned something in the CLI and saved it to their core memory, the web interface didn't know about it.
+**The Goal:** To achieve absolute architectural unification. The web interface must become the central "Control Center" for the Hermes ecosystem. The `zeon7_self` database will be restricted to web-only concerns (UI layouts, user accounts). All agent data (memory, knowledge, personality) in the web app must read from and write to the exact same MariaDB databases used by the Hermes CLI. 
 
-The new goal is absolute unification. The `zeon7_self` database will be stripped down to handle only web-specific concerns (UI layouts, web user accounts). Everything relating to the agents—personalities, long-term memory, and Quiddity Sea files—must point directly to the exact same MariaDB databases (`agent_curator`, `agent_producer`, etc.) and data sources that the Hermes CLI uses via the Council Library API.
-
-## Proposed Architecture: The Unified Data Layer
-
-We will implement this in four phases, starting with unifying the data layer.
-
-### Phase 0: Unified Data Layer (The Foundation)
-We will deprecate the isolated agent tables in `zeon7_self` and route the web application directly to the Hermes ecosystem backends:
-
-- **Identity & SOULs**: The web app will read/write directly to the `agent_registry` MariaDB database (specifically the `soul_components` table) for all persona generation.
-- **Memory & Context**: The web chat endpoints will connect directly to the agent's core MariaDB databases (e.g., `agent_curator` for Zeon7, `agent_producer` for Leon) either directly or via the Council Library REST API. If Zeon7 learns a fact in the CLI and saves it to `agent_curator.memory_lore`, the public web chat will instantly have access to that same memory.
-- **Shared Knowledge**: The web app will read directly from the Quiddity Sea (`/foreverbox_data/`) just as the CLI agents do.
-- **Web DB Scope**: The `zeon7_self` database will be reduced to handling web authentication, UI preferences, and web-specific layout configs.
-
-### Phase 1: Public Agent Router & Model Assignment
-We need a dedicated admin page (`/admin/hermes-router.php`) to control who answers the public chat and how they operate, using the unified data layer.
-
-- **Public Agent**: Dropdown (Zeon7, Leon, Gemma, Otec)
-- **Active Head**: Dropdown (e.g., `default`, `coder`, `fiction`) pulling from `agent_registry`.
-- **Active Model**: Dropdown mapping to local Ollama models or cloud providers.
-
-### Phase 2: Dynamic SOUL / Head Editor
-We will build a visual CRUD (Create, Read, Update, Delete) interface in the admin panel to manage the `agent_registry.soul_components` table directly.
-
-- **View**: A dashboard showing all components grouped by Agent -> Head.
-- **Edit/Create**: A markdown editor to change or create new heads (e.g., adding a `designer` variant).
-- **API**: Secure endpoints (`api/soul/update.php`) to save changes straight to the `agent_registry` DB.
-
-### Phase 3: Web Chat Dynamic Assembly
-Currently, the web chat uses `InstructionService.php` to fetch static prompts. We will wire it up to the dynamic SOUL system.
-
-- **Dynamic Assembly**: When a web chat request comes in, the PHP backend will execute `python3 /foreverbox_data/bin/assemble_soul.py {agent_slug} {head}` to generate the exact prompt for that specific head.
-- **Model Routing**: The chat will be routed to the specific model chosen in Phase 1.
-- **Context Injection**: The chat handler will pull relevant context from the agent's core MariaDB memory tables (implemented in Phase 0) before sending the prompt to the LLM.
+This will allow an administrator to define a public-facing agent, attach a specific "head", route it to a specific LLM model, and have that web agent instantly share the memory and knowledge of its CLI counterpart.
 
 ---
 
-## Architecture Flow (After Implementation)
+## 2. Phase 0: The Unified Data Layer (Eradicating the Split Brain)
 
-1. You log into Self Admin.
-2. You go to **SOUL Editor**, create a new head for Gemma called `fiction_writer`, and write her directives. (Saves to `agent_registry`).
-3. You go to **Hermes Router**, set the Public Agent to `Gemma`, Head to `fiction_writer`, Model to `openrouter:anthropic/claude-3.5-sonnet`.
-4. A public user asks Gemma to write a story about a specific event she learned about yesterday in the CLI.
-5. `api/chat.php` dynamically runs `assemble_soul.py`, queries `agent_coach.memory_lore` to pull the memory of that event, and sends the enriched prompt to OpenRouter.
+Before building new UI, the web application's backend must be rewired to point to the correct data sources.
 
-## Next Steps
+### 2.1 Database Unification
+- **`zeon7_self`**: Will continue to store `users`, UI `config`, and web-specific preferences. The isolated `system_instructions` and isolated `chat_logs` tables will be deprecated for agent use.
+- **`agent_registry` (MariaDB)**: The web app will connect here to manage the `soul_components` table (which defines the base personalities and "heads").
+- **`agent_curator`, `agent_producer`, etc. (MariaDB)**: The web app will connect to these (either directly via PDO or via the `localhost:8080/v1` Council Library REST API) to read and write memories, lore, and context.
 
-> [!IMPORTANT]
-> **Database Permissions**: We need to ensure the PHP PDO connection (likely `Database.php`) has credentials or permissions to read/write to `agent_registry` and the specific agent databases (`agent_curator`, `agent_producer`, etc.).
+### 2.2 Shared File Storage (Quiddity Sea)
+- The web app will read directly from the `/foreverbox_data/` directory for lore files and system states, exactly as the CLI agents do.
+
+---
+
+## 3. Phase 1: The Hermes Public Router
+
+The admin dashboard needs a control panel to dictate exactly *who* the public interacts with and *how* that agent operates.
+
+### 3.1 Admin Interface (`/admin/hermes-router.php`)
+A new settings page that allows the admin to define the **Active Public Profile**:
+1. **Target Agent**: Dropdown selecting the core agent (e.g., Zeon7, Leon, Gemma, Otec).
+2. **Target Head**: Dropdown selecting the active variant/head (e.g., `default`, `coder`, `fiction_writer`). This populates dynamically by scanning `provider_filter` values in the `agent_registry.soul_components` table.
+3. **Target Model / Provider**: Dropdown to select the exact LLM driving this instance (e.g., `Ollama: Zeon7-Gemma:64k` or `OpenRouter: anthropic/claude-3.5-sonnet`).
+
+### 3.2 Configuration Storage
+These selections will be saved in the `zeon7_self.config` table under specific keys:
+- `public_agent_id`
+- `public_agent_head`
+- `public_agent_model`
+- `public_agent_provider`
+
+---
+
+## 4. Phase 2: Dynamic SOUL & Head Editor (Persona Management)
+
+Currently, altering an agent's base personality or creating a new head requires writing manual SQL queries against the `agent_registry` database. We will build a visual editor in the Self web admin.
+
+### 4.1 Admin Interface (`/admin/soul-editor.php`)
+A full CRUD (Create, Read, Update, Delete) dashboard connected directly to `agent_registry.soul_components`.
+
+- **Matrix View**: A grid showing all agents and their available components, filtered by "Head" (the `provider_filter` column).
+- **Edit Base Personality**: Edit rows where `provider_filter` is `NULL`. This changes the core identity of the agent (e.g., Zeon7's "First Truth").
+- **Edit / Create Heads**: Edit rows where `provider_filter` equals a head name (e.g., `coder`). The admin can create a new head (e.g., `designer`) by adding a new row with `provider_filter = 'designer'` for a specific `component_key`.
+
+### 4.2 Backend API (`/api/soul/`)
+Secure PHP endpoints that execute the `INSERT`/`UPDATE` queries against the `agent_registry` MariaDB database.
+
+---
+
+## 5. Phase 3: Web Chat Dynamic Assembly & Routing
+
+The public chat endpoint (`api/chat.php`) currently uses static instructions. It must be upgraded to dynamically assemble the prompt and route the request based on the router settings and unified memory.
+
+### 5.1 Dynamic Prompt Assembly
+When a public user sends a message:
+1. `chat.php` reads the active public agent and head from the Config service.
+2. It executes the dynamic assembly logic (either by calling `python3 /foreverbox_data/bin/assemble_soul.py {agent} {head}` or by re-implementing that exact SQL `COALESCE`/override logic natively in PHP).
+3. The resulting assembled Markdown is used as the System Prompt.
+
+### 5.2 Context & Memory Injection
+Before sending the prompt to the LLM:
+1. The backend connects to the agent's specific memory database (e.g., `agent_coach` for Gemma) or calls the Council Library API (`/v1/sanctum/memory/search`).
+2. It retrieves vector-matched memories, lore, and past conversation history relevant to the user's message.
+3. This context is injected into the prompt, ensuring the web agent "remembers" things it learned in the CLI.
+
+### 5.3 Model Routing
+The `AIServiceFactory` will route the API request to the specific provider and model defined in the Hermes Router (e.g., bypassing a global Ollama setting to use OpenRouter specifically for this chat session).
+
+---
+
+## 6. Implementation Checklist & Prerequisites
+
+### Prerequisites
+- [ ] **Database Credentials**: The PHP application (`src/Database.php`) must be granted privileges to read/write to `agent_registry` and the various `agent_*` databases.
+- [ ] **API Access**: If accessing memory via the Council Library REST API instead of direct DB queries, the PHP app must have the correct `Authorization: Bearer` token configured in its `.env`.
+
+### Step-by-Step Execution Plan
+1. **Verify DB Connections**: Write a test script in PHP to ensure `i-am-self` can successfully query `agent_registry.soul_components`.
+2. **Build Phase 1 (Router)**: Create `hermes-router.php`, update `ConfigService.php` to save/load public routing keys.
+3. **Build Phase 2 (SOUL Editor)**: Create the UI and API endpoints to manage `soul_components`.
+4. **Refactor Phase 3 (Chat Pipeline)**: Modify `api/chat.php` and `InstructionService.php` to dynamically assemble the prompt and fetch memory context before routing to the LLM.
+5. **Testing**:
+    - Edit a head in the Self UI.
+    - Verify the CLI `fbox-launch` reflects the change.
+    - Set the web public router to use that head.
+    - Verify web chat uses the new personality and can access a memory created via the CLI.
