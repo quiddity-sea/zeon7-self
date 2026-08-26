@@ -10,38 +10,42 @@
 
 ---
 
-## 0. Builder Instructions
+# 0. Builder Instructions
 
 This document is an execution plan, not a suggestion list. Follow it in order.
 
-The objective is to implement the architecture described by `hermes-integrate-v2.md` without turning `zeon7-self` into a second Council implementation.
+The objective is to implement the architecture described by `hermes-integrate-v2.md` while progressively removing Self's duplicate agent state and making the VPS-hosted Council/Hermes environment the operational centre of ForeverBox.
 
 ### Non-negotiable rules
 
 1. **Do not modify or delete `docs/hermes-integrate-v1.md`.** It is the historical architecture record.
-2. **Do not replace `docs/hermes-integrate-v2.md`.** This implementation plan implements it.
+2. **Do not replace `docs/hermes-integrate-v2.md`.** It is the architectural baseline.
 3. **Do not introduce LoRA, user-specific fine-tuning, cognitive profiling, adaptive training or Master's research features.** Those are future work.
-4. **Do not rewrite the existing Self UI from scratch.** Preserve the current component, template, design, admin and public systems and rewire their backend dependencies.
+4. **Do not rewrite the existing Self UI from scratch.** The existing component, template, design, admin and public systems are the foundation for everything that follows.
 5. **Do not create a second agent database in Self.** Self's database is for web/UI/site state only.
-6. **Do not make Self directly depend on Council's internal database schema as the final architecture.** Use Council API contracts. Temporary direct DB access is allowed only as a migration bridge when a required API does not yet exist.
-7. **Do not invent a second model registry, head registry, agent registry, memory store or conversation store.** Extend the existing Council facilities.
-8. **Do not assume an API exists just because V2 names a conceptual endpoint.** Inspect the current Council controllers/routes first and extend them using existing conventions.
-9. **Do not remove existing functionality simply because it is being migrated.** First redirect it to the canonical backend, verify it, then remove the duplicate.
-10. **Every migration stage must finish with a cross-interface acceptance test.**
+6. **Do not make Self depend on Council's internal database schema as the final architecture.** Use Council API contracts.
+7. **Do not invent a second model registry, head registry, agent registry, memory store, conversation store or vector store.** Extend and consume the existing Council facilities.
+8. **Do not assume an API exists because V2 names it conceptually.** Inspect current Council routes/controllers and extend them using existing conventions.
+9. **Do not remove existing functionality simply because it is being migrated.** Redirect, verify, then remove the duplicate.
+10. **Every migration phase must end with an acceptance test across at least two interfaces.**
+11. **Do not introduce Cloudflare or any alternative tunnel/proxy architecture.** The deployment topology is Tailscale-based unless the user explicitly changes it later.
+12. **Do not treat the local PC as the primary server.** The VPS is the primary Council + Hermes runtime and primary canonical database host.
+13. **Do not make local and VPS MariaDB co-equal writable databases.** The intended model is VPS primary, with any local database being development/replica only.
+14. **Do not require the local PC to be online for the canonical agent system to exist.** Local models are compute resources, not the location of agent identity/state.
 
 The final system must satisfy this invariant:
 
-> One canonical agent state, many interfaces.
+> **One canonical agent state, many interfaces, one primary Council/Hermes environment.**
 
-Self Public, Self Admin, From the Noise and Hermes must all use the same canonical agent identity, heads, models, routing, knowledge, memory and conversations for the same authorised agent.
+Self Public, Self Admin, From the Noise and Hermes must all resolve the same authorised agent state through Council.
 
 ---
 
-# 1. Current System You Are Starting With
+# 1. Current System and Deployment Direction
 
 ## 1.1 Self
 
-The current Self repository is a PHP/MariaDB web application with:
+`zeon7-self` is a PHP/MariaDB web application containing:
 
 - public interface
 - admin cockpit
@@ -55,1408 +59,1490 @@ The current Self repository is a PHP/MariaDB web application with:
 - settings
 - multimodal vision interface
 - AI provider abstraction
-- existing reusable UI components and design system
-- authentication and CSRF/rate limiting
+- reusable UI components and templates
+- authentication, CSRF and rate limiting
 
-The repository currently contains service, middleware and UI layers that assume Self owns some agent state. The migration must progressively remove that assumption.
-
-The existing README confirms that the current application has its own `AIServiceFactory`, RAG/knowledge, lore, instruction manager, chat, admin and public systems. Preserve these interfaces while replacing their agent backend dependencies. fileciteturn49file0L2-L2
+The repository still contains local agent-related state and AI provider logic that must be progressively replaced by Council-backed operations. fileciteturn49file0L2-L2
 
 ## 1.2 Council
 
-Council already provides most of the backend capabilities required by V2:
+Council is the canonical cognitive/agent-state service.
 
-- Commons shared knowledge
-- Sanctum memory
-- Registry/control plane
-- vector search
+Existing capabilities include:
+
+- Commons
+- Sanctums
+- Registry
+- vector/search services
 - ingestion
-- conversation controller
-- Soul controller
-- Assignment controller
+- conversation management
+- Soul handling
+- assignments
 - Cognitive Router
-- AgentContext middleware
-- authentication middleware
-- privileged-action gate
-- Wolf infrastructure
+- AgentContext
+- authentication/authorization middleware
+- privileged actions
+- Wolves
 
-The repository describes this as a sovereign memory architecture with MariaDB vector/FULLTEXT storage, REST APIs and three-tier cognitive routing. fileciteturn13file0L2-L2
-
-The current controller layer includes `AssignmentController`, `ConversationController`, `MemoryController`, `SoulController`, `QuiddityController` and others. fileciteturn24file0L2-L2
+The current Council middleware includes `AgentContext`, `Auth` and `PrivilegedActionGate`. fileciteturn41file0L2-L10
 
 ## 1.3 ForeverBox Data
 
-`foreverbox-data` provides:
+`foreverbox-data` contains the persistent file-based ecosystem resources including agent profiles, Soul/configuration, Shared Skills, Quiddity Lore Sea, wrappers and integration resources.
 
-- agent profiles
-- `SOUL.md`
-- `config.yaml`
-- skills
-- Shared_Skills
-- Quiddity Lore Sea
-- shell wrappers
-- sync resources
-- Council integration
+## 1.4 New primary deployment topology
 
-This remains the persistent ecosystem/data layer. fileciteturn14file0L2-L2
-
----
-
-# 2. Target Architecture
+The operational architecture is now VPS-first:
 
 ```text
-                         FOREVERBOX
-                             |
-          +------------------+------------------+
-          |                  |                  |
-          v                  v                  v
-     DATA LAYER         COUNCIL LAYER       SELF LAYER
-          |                  |                  |
-          |                  |             users/auth
-          |                  |             UI/templates
-          |                  |             public/admin
-          |                  |             site structure
-          |                  |                  |
-          |            canonical agent state    |
-          |            memory / vectors         |
-          |            heads / models           |
-          |            routing / context        |
-          |                  |                  |
-          +------------------+------------------+
-                             |
-                 +-----------+-----------+
-                 |           |           |
-                 v           v           v
-              Self       From Noise    Hermes
-              Public        Prod         CLI
+                        TAILSCALE NETWORK
+                               |
+             +-----------------+-----------------
+             |                                   |
+             v                                   v
+           VPS                               MAIN PC
+   +-------------------+             +----------------------+
+   | Council           |             | Local models        |
+   | Hermes PRIMARY    |             | GPU / RTX compute   |
+   | MariaDB PRIMARY   |             | Local dev tooling   |
+   | ForeverBox Data   |             | Optional local DB  |
+   | Quiddity Lore Sea |             | Optional CLI       |
+   +---------+---------+             +----------+-----------+
+             |                                  |
+             +----------------------------------+
+
+      Self / remote clients reach Council over Tailscale
 ```
 
-The architecture is intentionally asymmetric:
+The VPS is the primary operational location for:
 
-- **Self owns presentation and web-specific state.**
-- **Council owns canonical agent cognition/state.**
-- **ForeverBox Data owns persistent ecosystem files/resources and agent definitions.**
-- **Hermes executes agents and consumes the same canonical system.**
+- Council
+- primary Hermes instance
+- primary MariaDB
+- operational `foreverbox-data`
+- operational Quiddity Lore Sea
+
+The main PC is primarily:
+
+- local model compute
+- development workstation
+- optional secondary/local Hermes access
+- optional local database replica/development database
+
+### Network rule
+
+Tailscale is the private connectivity layer between these services where remote access is required.
+
+Do not introduce Cloudflare Tunnel, Cloudflare Access, or another public reverse-proxy dependency as part of this migration.
 
 ---
 
-# 3. Phase 0 — Freeze the Existing System and Build an Inventory
+# 2. Canonical Data and Runtime Architecture
+
+```text
+                         GITHUB
+                 source-controlled code
+             and controlled data definitions
+                           |
+                    deployment/update
+                           |
+                           v
+                         VPS
+        +------------------------------------------+
+        |                                          |
+        | foreverbox-data                           |
+        | Quiddity Lore Sea                        |
+        | Council                                  |
+        | Hermes PRIMARY                            |
+        | MariaDB PRIMARY                           |
+        |                                          |
+        +------------------+-----------------------+
+                           |
+                        Tailscale
+                           |
+              +------------+-------------+
+              |                          |
+              v                          v
+         Main PC                     Self server
+       Local models                 Public/Admin UI
+       GPU compute                       |
+              |                          |
+              +------- Tailscale --------+
+                           |
+                         Council
+```
+
+There is an important distinction between **source control** and **runtime authority**:
+
+- GitHub is the source-controlled repository for code and controlled file definitions.
+- VPS is the primary runtime copy.
+- Council/MariaDB on the VPS is the canonical operational state for agent cognition and state.
+- Runtime-derived indexes, vectors and conversation state belong to the Council environment.
+- The local PC must not become a second competing source of truth.
+
+---
+
+# 3. Primary Database Decision
+
+## 3.1 VPS MariaDB is PRIMARY
+
+The Council VPS MariaDB becomes the authoritative database for the production agent system.
+
+It should hold the canonical state for:
+
+- agent registry data
+- heads/Soul components where applicable
+- agent assignments
+- memory
+- conversations
+- vector/reference metadata
+- model/routing configuration
+- other Council-owned agent state
+
+## 3.2 Local MariaDB is not co-equal
+
+Do not implement bidirectional active-active replication.
+
+Avoid:
+
+```text
+Local MariaDB <----> VPS MariaDB
+ both accepting writes
+```
+
+Target:
+
+```text
+              VPS MariaDB
+                PRIMARY
+                   |
+             one-way replica
+                   |
+                   v
+              Local MariaDB
+          optional/development
+```
+
+The local database can be retained as:
+
+- development DB
+- read replica
+- migration/testing target
+- emergency local copy
+
+but its role must be explicit.
+
+## 3.3 Backups are separate
+
+A local replica is not a backup.
+
+The implementation plan must preserve/introduce:
+
+- VPS database backup
+- point-in-time recovery where practical
+- separate/off-VPS backup
+- restoration testing
+
+Do not treat Tailscale replication as disaster recovery.
+
+---
+
+# 4. ForeverBox Data and Quiddity Lore Sea Placement
+
+## 4.1 Operational copy moves to VPS
+
+The VPS primary runtime must have access to the operational copy of:
+
+```text
+/foreverbox_data/
+/foreverbox_data/Quiddity_Lore_Sea/
+```
+
+and the relevant agent resources/configuration from `foreverbox-data`.
+
+Primary Hermes must not depend on the main PC filesystem for fundamental agent operation.
+
+## 4.2 GitHub remains source-controlled
+
+The repositories remain the source-controlled development records.
+
+Preferred direction:
+
+```text
+GitHub
+   |
+   v
+VPS deployment
+   |
+   v
+optional local development copy
+```
+
+Do not make ad-hoc edits on the VPS the normal source-control workflow.
+
+## 4.3 Quiddity Lore Sea remains file-backed
+
+Do not automatically move Lore Sea documents into MariaDB merely because the runtime moved to the VPS.
+
+Preferred model:
+
+```text
+VPS Quiddity Lore Sea files
+          |
+          v
+Council ingestion/indexing
+          |
+          v
+Commons metadata/chunks/vectors
+```
+
+The file corpus remains recoverable and can be re-indexed if required.
+
+## 4.4 Local copy
+
+Retain a local development copy where useful, but do not treat changes on the local copy as automatically authoritative.
+
+The V2 migration is not a bidirectional filesystem synchronisation project.
+
+---
+
+# 5. Tailscale Network and Service Boundary
 
 ## Objective
 
-Understand exactly what Self currently stores and calls before changing it.
+Make the actual private network topology explicit so implementation does not accidentally expose Council publicly.
 
-Do not begin by deleting tables or replacing `api/chat.php`.
+### Required service relationships
 
-## Tasks
+```text
+Self server
+    |
+    | Tailscale/private route
+    v
+Council API on VPS
+    |
+    +--> VPS MariaDB
+    +--> VPS ForeverBox Data
+    +--> VPS Quiddity Lore Sea
+    +--> VPS Hermes
+```
 
-### 3.1 Create a migration inventory
+And:
 
-Add a temporary engineering document, for example:
+```text
+Local model service on Main PC
+    |
+    | Tailscale/private route
+    v
+VPS Council / Hermes
+```
+
+### Rules
+
+- Prefer Tailscale DNS/name resolution where already available.
+- Prefer private Tailscale addresses over public database/service ports.
+- Do not expose MariaDB directly to the public internet.
+- Do not expose internal Council services merely to allow browser JavaScript access.
+- Browser requests should go to Self; Self's server-side PHP should call Council.
+- Keep Council authentication independent of browser cookies where appropriate.
+- Use TLS as appropriate to the actual Tailscale/Council deployment, without inventing a new proxy layer.
+- Do not hard-code Tailscale IPs in application code. Use deployment configuration/environment settings.
+
+### First implementation task
+
+Before coding the client, inspect the actual VPS/Tailscale topology and record:
+
+```text
+SELF_BASE_URL
+COUNCIL_BASE_URL
+COUNCIL_PRIVATE_HOST
+COUNCIL_PORT
+HERMES_ENDPOINT if separately addressable
+LOCAL_MODEL_ENDPOINT(s)
+```
+
+Use the real environment values found in the existing deployment rather than inventing them.
+
+---
+
+# 6. Phase 0 — Repository and Database Inventory
+
+## Objective
+
+Establish an exact map of the current state before migrating anything.
+
+Create:
 
 `docs/hermes-v2-self-data-inventory.md`
 
-Record every Self database table and classify it:
+Classify every Self table and major data structure:
 
-| Classification | Meaning |
-|---|---|
-| KEEP | Genuine Self/UI/site state |
-| MOVE | Canonical agent state belongs in Council/ForeverBox |
-| REPLACE | Existing local implementation must become a Council API call |
-| DELETE | Obsolete duplicate after migration |
-| ARCHIVE | Historical data retained for migration/reference |
+```text
+KEEP
+MOVE
+REPLACE
+DELETE
+ARCHIVE
+```
 
-Inspect at minimum:
+At minimum inspect:
 
 - `system_instructions`
 - `chat_logs`
 - `lore`
 - `knowledge_doc`
 - `knowledge_chunk`
-- model/provider configuration
-- agent/persona configuration
-- routing configuration
+- provider/model tables
+- agent/persona tables
+- routing tables
 - user/assignment tables
-- site/content tables
-- posts/content tables
+- site configuration
+- posts/content
+- UI/template configuration
 
-### 3.2 Trace code dependencies
+Trace all application dependencies using repository-wide search.
 
-Search the entire Self repository for:
+Also inspect Council:
 
-```text
-system_instructions
-chat_logs
-lore
-knowledge_doc
-knowledge_chunk
-AIServiceFactory
-InstructionService
-LoreService
-KnowledgeService
-ConfigService
-chat.php
-news-desk.php
-posts.php
-agent
-head
-model
-provider
-```
-
-Do not rely only on filenames. Trace actual call paths.
-
-For each result record:
-
-```text
-file
-function/class
-reads/writes
-purpose
-current source
-future source
-```
-
-### 3.3 Inventory Council before adding endpoints
-
-Inspect current Council:
-
-- controller classes
 - routes
+- controllers
 - middleware
-- database switching behaviour
-- current API authentication
-- existing AgentContext handling
-- SoulController
-- AssignmentController
-- ConversationController
-- MemoryController
-- QuiddityController
-- Router configuration
+- Registry
+- Soul
+- Assignment
+- Memory
+- Conversation
+- Commons
+- VectorSearch
+- Cognitive Router
+- database switching
+- ingestion workers
 
-Do not invent an endpoint that duplicates an existing Council operation.
+Do not create an endpoint merely because V2 mentions the concept.
 
-For example, Council already has an Assignment controller for user -> agent assignments, with `agent_id`, `template_id`, `permissions`, `memory_scope` and `status`. fileciteturn27file0L2-L10
+## Additional inventory: deployment
 
-Likewise, SoulController already provides Soul and user-context operations. fileciteturn26file0L2-L2
+Record:
 
-## Exit condition
-
-An inventory exists and every major Self agent-related table/function has an identified future owner.
-
-**Do not proceed until ownership is unambiguous.**
-
----
-
-# 4. Phase 1 — Establish the Council API Boundary
-
-## Objective
-
-Give Self a stable backend contract for canonical agent management.
-
-The Council API should encapsulate the database layout so Self does not have to know whether a particular value lives in `agent_registry`, an agent Sanctum or a file.
-
-## 4.1 Agent catalogue
-
-Provide or reuse a Council API that can return:
-
-- agent ID/slug
-- display name
-- enabled status
-- available heads
-- available model/routing configuration
-- supported capabilities
-- relevant permissions metadata
-
-Use existing Council naming and route conventions.
-
-Do not create a second agent table in Self.
-
-## 4.2 Head management
-
-Provide Council operations for:
-
-- list heads for agent
-- get head
-- create head
-- update head
-- delete/archive head
-- list head components
-- edit component
-
-The current Council Soul controller already works on the Sanctum `soul` data structure. fileciteturn26file0L2-L2
-
-Before adding a separate head table, inspect the current `soul_components` / head representation used by the existing Hermes assembly system and preserve it.
-
-### Required test
-
-Creating:
-
-```text
-zeon7 / designer
-```
-
-through Self must result in the same head being visible to Hermes without an additional synchronisation operation.
-
-## 4.3 Model and routing management
-
-Council is authoritative for models and routing.
-
-The existing Cognitive Router already defines model profiles and per-agent overrides. fileciteturn18file0L2-L2
-
-Expose enough of that configuration for Self Admin to:
-
-- display model choices
-- display provider
-- display layer assignment
-- display agent-specific overrides
-- change supported assignments
-
-Do not make Self maintain `public_agent_model` as the authoritative model registry.
-
-A Self-side preference may identify which agent a page/interface wants to use, but it must resolve the actual model configuration through Council.
-
-## 4.4 User-to-agent assignment
-
-Council already has `AssignmentController` and a registry table for `user_agent_assignments`. fileciteturn27file0L2-L10
-
-Reuse this instead of inventing another agent assignment table in Self.
-
-Self may retain the UI/template assignment information if the architecture decides that presentation choice is genuinely Self-owned, but the canonical agent permissions and memory scope remain Council-authoritative.
+- where Council currently runs
+- where Hermes currently runs
+- where MariaDB runs
+- where `foreverbox-data` runs
+- where Quiddity Lore Sea runs
+- how Tailscale connects the nodes
+- how Self reaches its backend today
+- where the local models are exposed
 
 ## Exit condition
 
-A minimal authenticated API contract exists for:
-
-```text
-agents
-heads
-head components
-models/routing
-user-agent assignments
-agent context
-```
-
-and Self can consume it without querying Council tables directly.
+A migration matrix exists for both application data and deployment topology.
 
 ---
 
-# 5. Phase 2 — Build the Self Council Client Layer
+# 7. Phase 1 — Establish Canonical Council APIs
 
 ## Objective
 
-Create one reusable client/service layer inside Self so individual PHP pages do not each invent their own Council HTTP calls.
+Create the stable API contract Self will consume.
 
-## Recommended structure
+### Required API capability groups
 
-Use the current Self service architecture and add a dedicated Council client, for example:
+```text
+Agent catalogue
+Agent detail
+Head catalogue
+Head detail
+Head create/update/delete
+SOUL/identity management as supported
+Model catalogue
+Routing configuration
+Agent-specific model override
+Agent context
+Assignments
+Memory/search
+Knowledge/Commons search
+Conversation read/write
+```
+
+### Important
+
+Reuse existing Council APIs where possible.
+
+The current Council architecture already exposes assignment, Soul, conversation and Commons functionality. Extend existing controllers before creating parallel controllers.
+
+### Agent management API
+
+Self Admin must eventually be able to:
+
+- create an agent if Council supports agent creation
+- edit agent metadata
+- create/edit/delete heads
+- edit supported Soul components
+- inspect model choices
+- change supported model assignments
+- inspect capabilities
+- inspect routing
+
+### Model API
+
+The model API should expose **available configuration**, not leak provider secrets.
+
+The response may contain:
+
+```text
+provider
+model identifier
+tier/layer
+local/cloud
+enabled
+capabilities
+availability/health
+```
+
+but never raw API credentials.
+
+### Exit condition
+
+The canonical operations required by Self exist in Council or have a documented implementation gap assigned to Council.
+
+---
+
+# 8. Phase 2 — Build Self's Council Client
+
+Create a single reusable integration layer in Self.
+
+Suggested shape:
 
 ```text
 src/services/
     CouncilApiClient.php
     CouncilAgentService.php
-    CouncilMemoryService.php
-    CouncilConversationService.php
-    CouncilKnowledgeService.php
     CouncilAssignmentService.php
+    CouncilConversationService.php
+    CouncilMemoryService.php
+    CouncilKnowledgeService.php
+    CouncilModelService.php
 ```
 
-Exact names may follow the repository's existing conventions.
+Follow current project naming conventions.
 
-## CouncilApiClient responsibilities
+The low-level client handles:
 
-- base URL configuration
-- authentication token
-- GET/POST/PUT/DELETE
-- JSON encoding/decoding
-- timeout handling
-- error translation
-- structured logging
-- correlation/request ID
-- no business logic
+- base URL
+- Tailscale/private hostname from configuration
+- service authentication
+- HTTP methods
+- JSON
+- timeouts
+- retries only where safe
+- status/error handling
+- request IDs
+- logging
 
-## Higher-level services
+Higher-level services translate Council API responses into Self application concepts.
 
-The higher-level service classes should expose application concepts, for example:
+### Important network behaviour
 
-```php
-getAgents()
-getAgent($slug)
-getHeads($agent)
-getHead($agent, $head)
-createHead(...)
-updateHead(...)
-getModelCatalogue(...)
-getAssignments($userId)
-searchMemory(...)
-getConversation(...)
-appendConversation(...)
-searchCommons(...)
+Self should make Council calls **server-side**.
+
+Do not make browser JavaScript responsible for reaching the private Council API.
+
+```text
+Browser
+   ↓
+Self PHP
+   ↓ Tailscale
+Council
 ```
 
-## Important rule
+### Failure behaviour
 
-No page such as `admin/soul-editor.php` or `api/chat.php` should contain direct SQL against Council databases once the migration is complete.
+When Council is unavailable:
 
-## Failure handling
-
-If Council is unavailable:
-
-- do not silently fall back to stale agent state
-- return a clear service-unavailable response
-- log the failure
-- preserve the user's existing conversation/UI state where practical
-
-The system should fail closed on canonical agent state rather than accidentally using obsolete local state.
+- fail clearly
+- do not use stale local agent state
+- do not silently fall back to Self's old model/memory implementation
+- preserve non-agent UI where possible
+- log the failure without logging secrets
 
 ---
 
-# 6. Phase 3 — Rebuild the Self Admin Agent Control Surface
+# 9. Phase 3 — Self Admin Becomes the Council Management Front End
 
-## Objective
+The current Self Admin remains the UI foundation.
 
-Turn the existing Self Admin into the front end for managing the canonical agent system.
+Build management screens using the existing component/template architecture.
 
-This phase is where the planned functionality in V1 becomes real, but through Council rather than local duplication.
+## Required management areas
 
-## 6.1 Agent selector
+### Agents
 
-Create an agent management view using the existing Self component system.
-
-Display:
-
-- agent name
+- list agents
+- search/filter
+- view agent
 - status
 - available heads
-- current active/default configuration
-- available models/routing
-- capabilities
+- model/routing summary
 
-Do not hard-code `Zeon7`, `Leon`, `Gemma`, `Otec` in the UI.
+### Heads
 
-The UI should be capable of rendering future agents returned by Council.
-
-## 6.2 Head editor
-
-Create a visual head editor.
-
-Required actions:
-
-- select agent
 - list heads
-- select head
-- inspect component matrix
-- create new head
-- edit head component
-- save changes
-- version/updated metadata if Council provides it
-- delete/archive head where permitted
+- inspect head
+- create head
+- edit head
+- clone head where appropriate
+- archive/delete where Council permits
 
-The editor must use shared Self components.
+A newly created head is canonical immediately.
 
-### Example flow
+### Model management
 
-```text
-Admin
- -> Agent: Zeon7
- -> New Head
- -> Name: designer
- -> Edit components
- -> Save
- -> Council API
- -> canonical agent state updated
- -> Hermes sees designer
-```
+- list available models
+- view provider/model
+- view layer/tier
+- view local/cloud status
+- configure supported assignments
+- view agent overrides
 
-## 6.3 Base personality editor
+### Agent preview
 
-Expose base identity/SOUL editing only where Council's current data model permits it.
-
-Do not create a second `system_instructions` replacement in Self.
-
-Where the existing Self instruction editor currently edits agent instructions, redirect the operation to the canonical Council/SOUL source after verifying exactly which parts map to:
-
-- SOUL
-- head
-- protocol
-- runtime instruction
-- site-only content
-
-Do not blindly move all old instruction records into one field.
-
-## 6.4 Model control UI
-
-Build the UI to display and change canonical model/routing assignments.
-
-The view should distinguish:
+Show at minimum:
 
 ```text
-Provider
-Model
-Routing layer
-Agent override
-Default/fallback
-Local/cloud
+Agent
+Head
+Resolved model
+Resolved routing layer
+Memory sources
+Knowledge sources
+Response
 ```
 
-The UI should not duplicate the Router's decision logic. Council decides what model is ultimately used.
-
-## 6.5 Agent preview/test panel
-
-Add an admin test interaction surface that explicitly displays:
-
-- agent
-- selected head
-- model selected/resolved by Council
-- retrieved memory count
-- knowledge sources used
-- final routing layer
-- response
-
-This becomes extremely useful during migration and later debugging.
+This is a diagnostic interface as well as a useful admin feature.
 
 ## Exit condition
 
-An administrator can create a head in Self and use the preview interface to test it through the canonical Council/Hermes path.
+An authorised administrator can change canonical agent configuration from Self and the change is immediately visible through Council/Hermes.
 
 ---
 
-# 7. Phase 4 — Replace Self's Independent Agent Instruction Path
+# 10. Phase 4 — Replace Self's Agent Instruction Authority
+
+Trace `InstructionService`, `instructions.php`, and associated APIs.
+
+Classify each instruction source:
+
+```text
+canonical agent identity
+canonical head
+runtime protocol
+workflow-specific instruction
+site/UI instruction
+```
+
+Only the first three should be considered for Council/Hermes authority.
+
+From the Noise may retain workflow-specific production instructions if they belong to the workflow rather than the agent identity.
+
+Do not simply move every `system_instructions` row into a Council field.
+
+### Exit condition
+
+Changing a canonical head/Soul in Council changes effective agent behaviour consistently across Self and Hermes without Self maintaining a competing instruction copy.
+
+---
+
+# 11. Phase 5 — Replace Self's Agent Memory and Knowledge Authority
+
+Audit:
+
+- `LoreService`
+- `KnowledgeService`
+- `admin/lore.php`
+- `admin/knowledge.php`
+- `/api/lore/*`
+- `/api/knowledge/*`
+- local search/chunk code
+
+### Lore
+
+Classify each record as:
+
+```text
+agent memory -> Council
+shared knowledge -> Council Commons / ForeverBox Data
+site editorial content -> Self
+```
+
+### Knowledge
+
+Where the material is already part of Quiddity Lore Sea/Commons, use the Council pipeline.
+
+Council's current `QuiddityController` exposes Commons file listing, sync and search and delegates semantic search to `VectorSearch`. fileciteturn42file0L2-L2
+
+### Important technical distinction
+
+Council currently contains both memory searching and Commons vector searching. Do not treat them as identical without verification.
+
+The existing `MemoryController::search()` and Commons `VectorSearch` paths should be tested separately before Self's old search implementation is retired.
+
+### Exit condition
+
+Self knowledge/memory screens operate as UI over canonical Council facilities.
+
+---
+
+# 12. Phase 6 — Move Primary Runtime to VPS Hermes
 
 ## Objective
 
-Remove `InstructionService` as an independent authority for agent identity/instructions.
+Install/configure Hermes on the VPS as the primary Hermes instance before finalising Self runtime integration.
 
-The current repository has `src/services/InstructionService.php` and a local instructions management system. The old integration plan explicitly identifies this as a component that must be replaced by dynamic SOUL/Head assembly. fileciteturn10file0L2-L2
+### VPS Hermes requirements
 
-## Tasks
+The primary Hermes instance must be able to reach:
 
-1. Trace every call to `InstructionService`.
-2. Classify each use as:
-   - agent identity
-   - head/personality
-   - prompt/runtime instruction
-   - content-generation instruction
-   - site/UI instruction
-3. Move agent-function responsibilities to Council.
-4. Keep genuinely site/workflow-specific instruction only where it is not part of agent identity.
-5. Replace Self reads with Council service calls.
-6. Add integration tests.
+- Council
+- VPS MariaDB where required through Council
+- VPS ForeverBox Data
+- Quiddity Lore Sea
+- relevant skills/tools
+- configured model endpoints
 
-## Important distinction
+### Main PC Hermes
 
-From the Noise may have workflow-specific production instructions. Those are not necessarily the same thing as the agent's canonical Soul/head.
+The local Hermes installation becomes a remote/secondary instance.
 
-The correct architecture is:
+Where its purpose is simply to interact with the canonical system, it should resolve agent state through the VPS Council/Hermes architecture rather than creating another sovereign copy.
+
+### Local models
+
+Expose local inference to the VPS over Tailscale using the actual model-serving mechanism already used in the environment.
+
+Conceptually:
 
 ```text
-Canonical Agent Identity
-        +
-Canonical Head
-        +
-Workflow-specific production context
+VPS Council/Hermes
+       |
+       | Tailscale
+       v
+Main PC model server
+       |
+       v
+RTX GPU
+```
+
+If the local model endpoint is unavailable, Council's existing model routing/fallback logic may select an alternative configured model.
+
+This is **model availability**, not agent-state availability. The agent remains in Council.
+
+## Exit condition
+
+VPS Hermes can execute a canonical agent without requiring the local PC.
+
+A local model can be used when available without becoming the source of agent identity or state.
+
+---
+
+# 13. Phase 7 — Rebuild Self Public Chat Around Council/Hermes
+
+The current `/api/chat.php` must become an adapter to the canonical runtime.
+
+Target flow:
+
+```text
+Browser
+   |
+   v
+Self Public Chat
+   |
+   | authenticate/identify user
+   v
+Council API over Tailscale
+   |
+   +--> assigned agent
+   +--> allowed head
+   +--> canonical context
+   +--> memory
+   +--> knowledge
+   +--> model/routing
+   |
+   v
+Primary VPS Hermes
+   |
+   v
+resolved model endpoint
+   |
+   v
+response
+   |
+   +--> canonical conversation
+   +--> durable memory where appropriate
+```
+
+## Preserve Self-specific security
+
+Keep:
+
+- authentication/session logic
+- CSRF as appropriate
+- rate limiting
+- privacy recognition flow
+- public web handling
+
+But do not let Self security tables become the source of agent cognitive state.
+
+## Provider migration
+
+`AIServiceFactory` may remain during a transitional stage.
+
+Sequence:
+
+```text
+old Self provider path
+        |
+        v
+Council resolution in parallel
+        |
+        v
+compare/verify
         |
         v
 Council/Hermes execution
+        |
+        v
+remove obsolete direct-provider authority
 ```
 
-Do not flatten the entire From the Noise workflow into the SOUL.
-
-## Exit condition
-
-Changing a head in Council changes the agent consistently across Self and Hermes, without Self having a competing prompt definition.
+Do not delete old providers until the new path has passed acceptance tests.
 
 ---
 
-# 8. Phase 5 — Replace Self's Local Memory/Lore/RAG Authority
+# 14. Phase 8 — Canonical Conversation and Semantic Reference System
 
 ## Objective
 
-Move agent memory and agent knowledge operations onto Council.
+All interfaces must write/read the same canonical conversation system.
 
-Council already has memory and Commons search infrastructure. Its `MemoryController` manages Sanctum memory, while `QuiddityController` exposes shared Commons file/search operations. fileciteturn30file0L2-L2 fileciteturn42file0L2-L2
+Current Council contains `ConversationController` and `conversation_history`. fileciteturn29file0L2-L10
 
-## 8.1 Lore
+### Required metadata
 
-Audit `admin/lore.php`, `/api/lore/*` and `LoreService`.
-
-Split current lore into:
-
-- canonical agent memory -> Council
-- shared knowledge -> Council Commons / ForeverBox Data
-- site editorial content -> Self
-
-The existing Self lore screen should remain as a UI, but its agent-memory operations should call Council.
-
-## 8.2 Knowledge
-
-Audit `admin/knowledge.php`, `/api/knowledge/*`, `KnowledgeService`, chunking and any local search SQL.
-
-Replace local agent knowledge search with Council Commons search where appropriate.
-
-Council already exposes a shared Commons search endpoint through `QuiddityController`, which delegates to `VectorSearch`. fileciteturn42file0L2-L2
-
-## 8.3 Important current-state warning
-
-The current Council `MemoryController::search()` shown in the repository is a FULLTEXT memory search implementation. It is not the same thing as the Commons vector search service. Do not claim a Council endpoint is semantic/vector retrieval until the actual endpoint is verified.
-
-Where a required semantic memory endpoint is absent, add it to Council rather than recreating semantic search inside Self.
-
-## Exit condition
-
-The Self knowledge and memory UI can search and manipulate canonical Council data and does not require the old Self RAG tables to answer agent questions.
-
----
-
-# 9. Phase 6 — Rebuild Self Public Chat Around the Canonical Runtime
-
-## Objective
-
-Turn `api/chat.php` into an adapter into Council/Hermes rather than a separate LLM application.
-
-## Required request pipeline
+Where not already present, preserve:
 
 ```text
-HTTP request
-   |
-   v
-Self authentication / public identity
-   |
-   v
-Resolve authorised agent
-   |
-   v
-Resolve template/UI assignment
-   |
-   v
-Council Agent Context
-   |
-   +-- agent identity
-   +-- head
-   +-- permissions
-   +-- memory scope
-   +-- model/routing
-   +-- available capabilities
-   |
-   v
-Council memory / knowledge retrieval
-   |
-   v
-Canonical Hermes/agent execution
-   |
-   v
-Response
-   |
-   +-- canonical conversation append
-   +-- optional durable memory operation
+conversation/session ID
+agent ID
+user/operator ID
+source interface
+timestamp
+role
+model used
+head used
+request/correlation ID where practical
+tool/action metadata where appropriate
 ```
 
-## 9.1 Do not duplicate routing
-
-The old Self `AIServiceFactory` can remain initially as a compatibility layer, but it must no longer decide independently whether the agent uses Gemini, Ollama or OpenRouter if Council already owns that decision.
-
-The migration sequence should be:
-
-1. keep old provider code available
-2. add Council resolution
-3. compare resolved model/provider with old path
-4. switch execution to Council/Hermes
-5. verify
-6. remove obsolete direct-provider routing only when no longer used
-
-## 9.2 Preserve public privacy behaviour
-
-The current Self chat has privacy/user-recognition protections. Preserve the web-facing security flow, but separate:
-
-```text
-Who is the visitor?
-```
-
-from:
-
-```text
-What is the agent's canonical state?
-```
-
-Self identifies/authenticates the user. Council decides what agent data the user may access.
-
-## Exit condition
-
-A conversation made through public Self is genuinely the same conversation/agent context that Hermes can retrieve through Council.
-
----
-
-# 10. Phase 7 — Canonical Conversation Storage and Vector References
-
-## Objective
-
-Remove Self's independent chat log as an agent-memory authority while preserving historical data and web audit requirements.
-
-Council already has `ConversationController` and `conversation_history`. fileciteturn29file0L2-L10
-
-## 10.1 Canonical log fields
-
-Ensure canonical conversation records retain enough information to distinguish:
-
-- agent
-- user/operator
-- session
-- interface/source
-- timestamp
-- role
-- model used
-- relevant tool/action metadata
-
-Do not discard useful audit metadata from Self merely because the canonical log moves to Council.
-
-## 10.2 Source interface
-
-Where Council's conversation schema does not yet include an interface/source field, add one or an equivalent metadata field so a record can indicate:
+Source interface values should distinguish:
 
 ```text
 self_public
 self_admin
 from_the_noise
 hermes_cli
-other_future_interface
+other
 ```
 
-This is diagnostic metadata, not a second conversation namespace.
+This is metadata, not separate storage silos.
 
-## 10.3 Vector reference model
-
-Vectors should be generated from canonical conversation logs.
-
-Vector records should reference:
+### Vector principle
 
 ```text
-conversation/session ID
-message ID or message range
+Canonical chat log
+      |
+      v
+embedding/index
+      |
+      v
+vector reference -> original log/message
+```
+
+The vector must not become the authoritative transcript.
+
+### Sequence safety
+
+The current conversation append implementation uses `MAX(message_seq) + 1`. Harden this for concurrent writes before declaring the shared runtime complete.
+
+Possible approaches:
+
+- transaction with row locking
+- safe sequence table
+- database-generated sequence strategy
+
+Use the least invasive pattern consistent with existing Council design.
+
+### Exit condition
+
+A message written by Self is retrievable by Hermes and vice versa, with no duplicate conversation authority.
+
+---
+
+# 15. Phase 9 — From the Noise Reconciliation
+
+From the Noise already lives in Self and should remain a Self workflow/presentation concern.
+
+Audit every AI operation in its production pipeline.
+
+For each operation record:
+
+```text
 agent
-operator/user
-embedding
-created_at
+head
+model
+routing
+knowledge
+memory
+conversation/context
 ```
 
-The vector is an index, not the authoritative transcript.
+All agent-function values must resolve from Council.
 
-## 10.4 Concurrency
+Keep in Self only:
 
-Audit `ConversationController::append()` carefully. The current implementation calculates the next sequence as `MAX(message_seq) + 1`. This may be vulnerable under concurrent writers.
+- post records
+- publication state
+- slugs
+- web presentation
+- editorial workflow state
+- content-production UI state
 
-Because Self and Hermes will eventually write to the same canonical conversation store, make message sequencing safe before declaring multi-interface conversation storage complete.
+unless an item is demonstrably canonical agent state.
 
-Use an existing safe pattern if the Council codebase already has one. Do not invent unnecessary distributed locking.
+### Required test
 
-## Exit condition
-
-Self, From the Noise and Hermes can append/read the same canonical conversation without sequence collisions, and vector references resolve to the original records.
+Generate a controlled test item from From the Noise, then verify its agent/head/model/context against Self Admin and Hermes.
 
 ---
 
-# 11. Phase 8 — Reconcile From the Noise
+# 16. Phase 10 — Self Database Reduction
 
-## Objective
-
-Verify that From the Noise is a workflow client rather than a separate agent backend.
-
-The Self repository already contains From the Noise content and public/post interfaces. fileciteturn20file0L1-L5 fileciteturn20file2L12-L15
-
-## Tasks
-
-Trace the full production flow:
-
-```text
-News Desk
- -> scan
- -> leads
- -> research/context
- -> agent generation
- -> content suite
- -> image prompts
- -> post storage
- -> publication
-```
-
-For each AI call identify:
-
-- agent
-- head
-- model
-- knowledge source
-- memory source
-- conversation state
-- provider selection
-
-Replace any local agent state access with Council calls.
-
-## Do not move editorial website content unnecessarily
-
-Posts, publication state, slugs, site display data and presentation metadata can remain in Self if they are website/content concerns rather than agent cognition.
-
-The distinction is:
-
-```text
-The article exists on the website -> Self
-
-What Zeon7 knows about the subject -> Council/ForeverBox
-
-How Zeon7 behaves while generating it -> Council/Hermes
-```
-
-## Exit condition
-
-From the Noise is demonstrably using the same canonical agent/head/model/memory system as chat and Hermes.
-
----
-
-# 12. Phase 9 — Reduce the Self Database
-
-## Objective
-
-After successful migration, remove the duplicate agent-function state from `zeon7_self`.
-
-Do not drop anything until migration and acceptance tests have passed.
-
-## Suggested treatment
+After all migration tests pass, shrink Self to web/application concerns.
 
 ### KEEP
 
-- users
-- sessions
-- authentication
-- UI configuration
-- page/site configuration
-- template configuration
-- theme configuration
-- navigation
-- publication/content state
-- web-only telemetry if it is genuinely web-specific
+```text
+users
+sessions
+authentication
+UI preferences
+themes
+components
+templates
+layouts
+routes/navigation
+site structure
+web workflow state
+publication/content state
+web-only audit/telemetry
+```
 
-### MOVE
+### MOVE / REPLACE
 
-- agent persona records
-- agent heads
-- agent instructions
-- agent lore/memory
-- agent knowledge
-- vector memory
-- canonical conversation history
-- canonical model/routing state
-
-### REPLACE
-
-- local AI provider selection
-- local agent search
-- local memory search
-- local agent context construction
+```text
+agent identity
+heads
+agent Soul state
+agent memory
+agent knowledge
+agent vectors
+agent conversations
+agent model registry
+agent routing authority
+agent capability state
+```
 
 ### ARCHIVE
 
-Historical chat and data that cannot or should not be merged directly should be exported into an archival format before old tables are removed.
+Historical Self chat/memory/content that cannot safely be merged should be exported before removal.
 
-### DELETE
+### Destructive migration rule
 
-Only after:
-
-- migration snapshot exists
-- data reconciliation complete
-- cross-interface tests pass
-- a rollback point exists
-
-## Exit condition
-
-If `zeon7_self` is queried for canonical agent memory, agent personality, agent head, model routing or agent conversation state, the answer should be that the information lives in Council/ForeverBox and is accessed through the Council client.
-
----
-
-# 13. Phase 10 — Preserve and Generalise the Self Component System
-
-## Objective
-
-Make the current Self UI the foundation of `i-am-self`.
-
-Do this only after the backend boundary is stable enough that UI work is not constantly coupled to changing database structures.
-
-## Requirements
-
-Create/maintain a common component layer for:
-
-- header
-- sidebar
-- navigation
-- panels/cards
-- chat
-- message rendering
-- memory views
-- conversation history
-- search
-- agent status
-- model/head status
-- activity
-- tasks
-- tools
-- notifications
-- forms
-- modals
-- telemetry
-
-## Agent templates
-
-Agent-specific layouts should be compositions of the same components.
-
-For example:
+Never combine:
 
 ```text
-shared/components
-       |
-       +---- Zeon7 cockpit
-       +---- Leon workspace
-       +---- Gemma coach
-       +---- Otec director
-       +---- Wolf worker
+new canonical path
++
+DROP old tables
 ```
 
-The template must not own agent logic. It receives resolved agent capability/context from Council.
+in one unverified deployment.
 
-## User assignments
-
-Council already has `user_agent_assignments` with `template_id`, permissions and memory scope. fileciteturn27file0L2-L10
-
-Use this as the canonical assignment mechanism where appropriate, while keeping purely visual presentation configuration in Self.
-
-## Exit condition
-
-A second agent can be introduced with a new UI composition without copying the application or introducing another backend.
-
----
-
-# 14. Phase 11 — Security and Trust Boundary
-
-## Objective
-
-Make the architecture safe when Self becomes an agent-control surface.
-
-There are two separate trust layers:
-
-### Self
-
-Answers:
-
-> Who is this web user?
-
-Handles:
-
-- login
-- session
-- CSRF
-- rate limiting
-- UI access
-
-### Council
-
-Answers:
-
-> What is this user allowed to do to canonical agent state?
-
-Handles:
-
-- agent context
-- permissions
-- memory scope
-- privileged operations
-- agent-level authorization
-
-Council already has `Auth`, `AgentContext` and `PrivilegedActionGate` middleware. fileciteturn41file0L2-L10
-
-## Mandatory rule
-
-Never rely on Self's hidden UI elements as authorization.
-
-The Council API must reject an unauthorized:
-
-- head creation
-- head modification
-- model/routing modification
-- memory access
-- conversation retrieval
-- privileged action
-
-## Audit trail
-
-All administrative canonical-state mutations should have sufficient logging to answer:
-
-```text
-who
-changed what
-when
-through which interface
-from which previous state
-```
-
----
-
-# 15. Phase 12 — Migration Tooling and Rollback
-
-## Objective
-
-Make database migration reversible.
-
-Create migration scripts for Self that can:
-
-- snapshot tables
-- export rows
-- mark migration status
-- verify record counts
-- verify hashes where practical
-- archive old tables
-- restore archived data
-
-Do not perform destructive `DROP TABLE` operations in the same deployment that introduces the new Council path.
-
-Use a sequence:
+Use:
 
 ```text
 snapshot
  -> migrate
- -> dual-read verification if needed
- -> switch authority
  -> verify
+ -> switch authority
+ -> verify cross-interface
  -> archive
- -> later delete
+ -> later remove
 ```
 
-Where possible, introduce feature flags/configuration to allow temporary rollback from Council-backed path to the old Self path during migration testing. Once the canonical path is proven, remove the fallback rather than leaving two active authorities.
+---
+
+# 17. Phase 11 — Self Component and Template System as the Permanent UI Foundation
+
+The existing component/template system must remain the foundation.
+
+Do not build separate applications such as:
+
+```text
+Zeon7 UI
+Leon UI
+Gemma UI
+Otec UI
+Wolf UI
+```
+
+Build:
+
+```text
+I-Am-Self
+  |
+  +-- shared components
+  +-- shared design system
+  +-- public
+  +-- admin
+  +-- site structure
+  +-- agent templates
+        +-- zeon7
+        +-- leon
+        +-- gemma
+        +-- otec
+        +-- wolf
+        +-- future agents
+```
+
+A template controls presentation/composition.
+
+It does not own the agent's identity, memory, model, head or knowledge.
+
+### Example
+
+```text
+Council resolves:
+  agent = zeon7
+  head = writer
+  model = X
+  capabilities = [...]
+
+Self resolves:
+  template = zeon7-cockpit
+
+Template renders the canonical agent.
+```
+
+Changing templates must not change the underlying agent state.
 
 ---
 
-# 16. Phase 13 — Automated Verification
+# 18. Phase 12 — User / Agent / Template Assignment
 
-Create an integration test suite focused on architectural invariants.
+The user access relationship is:
 
-## Test group A — Agent catalogue
+```text
+User
+  |
+  +--> authorised agent
+         |
+         +--> permissions
+         +--> memory scope
+         +--> allowed capabilities
+         +--> Self presentation template
+```
 
-- Self can list agents through Council.
-- No Self-local agent catalogue is required.
+Council enforces actual authority.
 
-## Test group B — Head creation
+Self chooses/render the presentation.
 
-1. Create `designer` for Zeon7 in Self Admin.
-2. Read it through Council.
-3. Read it through Hermes tooling.
-4. Use it in Self preview.
-5. Verify all three return the same definition.
+A hidden UI element is never a security boundary.
 
-## Test group C — Head update
-
-1. Change one component in Self.
-2. Verify canonical version changes.
-3. Verify Hermes resolves new value.
-4. Verify old value is not still authoritative anywhere.
-
-## Test group D — Model routing
-
-1. Change agent routing assignment in Self.
-2. Resolve the agent through Council.
-3. Verify the expected model/provider/layer.
-4. Verify Hermes uses the same resolution.
-
-## Test group E — Memory
-
-1. Write a durable memory through Hermes.
-2. Search it through Council.
-3. Search it through Self.
-4. Read original record.
-
-Repeat in the opposite direction.
-
-## Test group F — Conversation
-
-1. Start a Self conversation.
-2. Append user/assistant messages.
-3. Retrieve through Council.
-4. Retrieve through Hermes.
-5. Verify same session/agent/history.
-
-## Test group G — From the Noise
-
-1. Generate a test production workflow item.
-2. Verify correct agent/head/model.
-3. Verify canonical context is used.
-4. Verify durable learning is stored in canonical memory when applicable.
-
-## Test group H — Authorization
-
-- authorized user can use assigned agent
-- unauthorized user receives denial
-- UI hiding alone does not grant security
-- privileged operations still require Council gate
+The current Council AssignmentController already provides the basis for this relationship. fileciteturn27file0L2-L10
 
 ---
 
-# 17. Phase 14 — Manual End-to-End Verification
+# 19. Phase 13 — Security Hardening for the Distributed Runtime
 
-Before calling the integration complete, run the system manually in this order.
+Verify:
 
-### Scenario 1 — Self Admin creates a head
+- Self -> Council authentication
+- Council -> internal services
+- Tailscale-only private services where intended
+- no public MariaDB exposure
+- no Council secrets in browser JavaScript
+- no secrets in logs
+- CSRF on Self state-changing requests
+- Council authorization on canonical agent mutations
+- privileged operations through Council's gate
+
+Council already has `Auth`, `AgentContext` and `PrivilegedActionGate` middleware. fileciteturn41file0L2-L10
+
+Test unauthorized access both from Self and direct API requests.
+
+---
+
+# 20. Phase 14 — VPS Data Deployment and Synchronisation Rules
+
+## Goal
+
+Make the VPS self-sufficient as the primary ForeverBox runtime.
+
+### Controlled data flow
+
+```text
+GitHub controlled files
+        |
+        v
+VPS deployment
+        |
+        +--> foreverbox-data
+        +--> Quiddity Lore Sea
+        +--> Council configuration
+```
+
+Runtime memory/conversation flow:
+
+```text
+Self / From Noise / Hermes
+            |
+            v
+         Council
+            |
+            v
+       VPS MariaDB
+```
+
+Local model flow:
+
+```text
+Council/Hermes VPS
+        |
+     Tailscale
+        |
+        v
+Main PC local model
+```
+
+### Do not implement
+
+```text
+local filesystem <-> VPS filesystem
+bidirectional uncontrolled edits
+```
+
+for this phase.
+
+---
+
+# 21. Phase 15 — Migration Tooling and Rollback
+
+Create/revise scripts for:
+
+- Self data export
+- Council migration checks
+- record counts
+- hashes where practical
+- archive creation
+- table rename/archive
+- restore
+
+For data copied from Self into Council, record:
+
+```text
+source table
+source row ID
+canonical destination
+migration timestamp
+migration status
+```
+
+This makes failed or partial migrations diagnosable.
+
+Maintain a rollback checkpoint before each destructive step.
+
+---
+
+# 22. Phase 16 — Automated Cross-Interface Test Suite
+
+The most important tests are architectural, not just page-level.
+
+## Agent/head
+
+1. Create head in Self.
+2. Read through Council.
+3. Read through Hermes.
+4. Verify exact canonical definition.
+
+## Model
+
+1. Change supported model assignment in Self.
+2. Resolve through Council.
+3. Confirm Hermes sees same assignment.
+
+## Memory
+
+1. Write test memory through Hermes.
+2. Retrieve via Council.
+3. Retrieve via Self.
+
+Then reverse direction.
+
+## Conversation
+
+1. Start conversation in Self.
+2. Continue/retrieve in Hermes.
+3. Verify same conversation identity.
+
+## From the Noise
+
+1. Trigger controlled generation.
+2. Verify canonical agent/head/model.
+3. Verify intended memory/conversation writes.
+
+## Local model
+
+1. Configure local model endpoint on main PC.
+2. Verify Council/Hermes can use it over Tailscale.
+3. Remove/unavailable the endpoint temporarily.
+4. Verify configured fallback routing selects another model.
+5. Confirm canonical agent state remains unchanged.
+
+## VPS independence
+
+1. Shut down or disconnect main-PC model service.
+2. Run a cloud/VPS-backed agent interaction through primary Hermes.
+3. Verify agent identity/memory remain available.
+
+This explicitly tests the distinction between **compute availability** and **agent-state availability**.
+
+## Authorization
+
+- unauthorized user cannot access agent
+- unauthorized user cannot mutate head/model
+- direct API calls are denied even if UI hides controls
+
+---
+
+# 23. Phase 17 — Manual End-to-End Acceptance Scenarios
+
+### Scenario A — Build a new head from Self
 
 ```text
 Self Admin
  -> Zeon7
- -> New head: designer
+ -> New Head
+ -> designer
+ -> edit
  -> save
 ```
 
-Then:
+Immediately test:
 
 ```text
 Hermes CLI
  -> Zeon7
  -> designer
- -> inspect effective identity
 ```
 
-The result must match.
+The same definition must be used.
 
-### Scenario 2 — Hermes changes canonical agent state
+### Scenario B — Change model from Self
 
-Make a permitted Council/Hermes-side change.
+Modify an allowed agent model configuration.
 
-Then open Self Admin and verify that the change is visible immediately.
+Then inspect Hermes resolution.
 
-### Scenario 3 — Memory continuity
+No synchronization step should be necessary.
 
-Teach Zeon7 a non-sensitive test fact through Hermes.
+### Scenario C — Learn through Hermes
 
-Open Self chat and ask a semantically equivalent question.
+Write a controlled test fact.
 
-The answer should be derived from the same Council memory.
+Retrieve it in Self through semantic/contextual search.
 
-### Scenario 4 — Self learning continuity
+### Scenario D — Learn through Self
 
-Create a durable test memory through Self.
+Write a controlled memory.
 
-Query it through Hermes.
+Retrieve it through Hermes.
 
-### Scenario 5 — From the Noise continuity
+### Scenario E — From the Noise
 
-Use a test From the Noise generation with an explicit test fact/context.
+Run a controlled generation.
 
-Verify that any intended durable agent knowledge enters canonical storage and is retrievable through authorised interfaces.
+Verify the canonical state used to generate it.
 
-### Scenario 6 — UI continuity
+### Scenario F — Local model
 
-Use the agent-template system to present the same canonical agent in two different templates.
+Use the main-PC local model from the VPS runtime through Tailscale.
 
-Verify that visual differences do not change underlying agent state.
+Then disable the local endpoint and verify cloud fallback.
+
+### Scenario G — VPS primary
+
+Run Hermes and Council entirely on VPS without the PC's local model service.
+
+The canonical agent must continue to operate.
+
+### Scenario H — UI template separation
+
+Render the same agent through two different Self templates.
+
+Verify the underlying agent state is identical.
 
 ---
 
-# 18. Phase 15 — Documentation Update
+# 24. Phase 18 — Documentation and Status Tracking
 
-Once implementation is proven, update documentation in all three repositories as appropriate.
+Update documentation only after verified implementation.
 
 ## Self
 
-Update:
-
 - README
-- API/client documentation
-- deployment docs
-- Self database documentation
-- architecture docs
+- deployment documentation
+- Council integration documentation
+- Self DB ownership documentation
+- component/template documentation
 - migration status
 
 ## Council
 
-Update:
-
 - API documentation
-- agent management documentation
-- integration documentation
-- route/controller documentation
-- conversation/vector documentation
+- agent management API
+- conversation/vector API
+- deployment/runtime notes
+- Tailscale service notes
 
 ## ForeverBox Data
 
-Update:
+- VPS deployment notes
+- source-controlled versus runtime data
+- Lore Sea deployment/indexing
 
-- agent profile documentation
-- data ownership notes
-- sync documentation
-- interface integration notes
+## Architecture trail
 
-Do not rewrite historical V1 documents. Add V2/V3 documents as the architecture evolves.
-
----
-
-# 19. Recommended Commit Strategy
-
-The coding model should not create one enormous commit.
-
-Use small, reversible commits aligned to architectural phases.
-
-Suggested sequence:
+Preserve:
 
 ```text
-1. docs: add V2 implementation inventory
-2. council: expose/extend agent catalogue API
-3. council: add/extend head management API
-4. council: expose model/routing management
-5. self: add Council API client layer
-6. self: migrate agent admin reads to Council
-7. self: migrate head editing to Council
-8. self: migrate model management to Council
-9. self: migrate instruction authority to Council
-10. self: migrate lore/memory operations
-11. self: migrate knowledge search
-12. self: migrate public chat runtime
-13. council: unify conversation interface metadata
-14. self: migrate chat history writes
-15. self: reconcile From the Noise runtime
-16. self: archive/remove duplicate agent tables
-17. self: generalise component/template system
-18. tests: add cross-interface acceptance suite
-19. docs: mark V2 complete and record deviations
+hermes-integrate-v1.md
+       ↓
+hermes-integrate-v2.md
+       ↓
+hermes-integrate-v2-implementation-plan.md
+       ↓
+future V3 documents if architecture changes
 ```
 
-Each commit should leave the application runnable whenever practical.
+Do not rewrite historical reasoning out of the repository.
 
 ---
 
-# 20. Code-Quality Requirements for the Builder
+# 25. Recommended Commit Sequence
 
-Use the existing project's conventions unless a change is necessary to achieve the V2 boundary.
+Keep commits small and phase-aligned.
 
-### PHP
+```text
+1. docs: inventory Self/Council data ownership
+2. docs: record VPS/Tailscale topology
+3. council: expose agent catalogue
+4. council: expose/extend head management
+5. council: expose model/routing management
+6. self: add Council API client
+7. self: migrate admin agent reads
+8. self: migrate head management
+9. self: migrate model management
+10. self: migrate instruction authority
+11. self: migrate lore/memory
+12. self: migrate knowledge/search
+13. hermes: configure VPS primary runtime
+14. self: migrate public chat execution
+15. council: harden canonical conversation sequencing
+16. self: migrate conversation writes
+17. self: reconcile From the Noise
+18. self: archive/remove duplicate agent tables
+19. self: generalise component/template integration
+20. tests: add cross-interface suite
+21. docs: record final architecture and deviations
+```
 
-- strict types where the existing repository uses them
-- PDO prepared statements
-- explicit error handling
-- no silent fallback to obsolete agent state
-- no raw duplicated database logic in controllers when a service layer exists
-- validate all external input
-- preserve CSRF for Self mutations
-
-### API
-
-- stable JSON response shape
-- clear HTTP status codes
-- meaningful error messages
-- auth and authorization checks
-- request correlation IDs where feasible
-- no secrets in logs
-
-### JavaScript
-
-- use existing component patterns
-- no inline duplication of API contracts
-- centralized Council client calls
-- graceful loading/error states
-
-### Database
-
-- do not drop tables before migration verification
-- preserve backups
-- use explicit migration scripts
-- document ownership changes
+Do not create one enormous "V2 complete" commit.
 
 ---
 
-# 21. Known Current-System Integration Risks
+# 26. Known Risks to Verify During Implementation
 
-The builder should explicitly inspect these before assuming V2 is already implemented underneath.
+## Risk 1 — File versus DB authority
 
-## Risk A — Council controller ownership versus file authority
+Some agent identity/Soul information may currently exist in both files and database representations. Determine the actual runtime authority before moving anything.
 
-The Council blueprint states that some database structures mirror `SOUL.md` rather than replacing it, while Hermes still treats `SOUL.md` as canonical in places. fileciteturn16file0L2-L2
+## Risk 2 — Memory versus Commons vector search
 
-Do not silently choose a new authority. Determine the real current runtime authority for each Soul/head field and preserve it deliberately.
+Do not assume Council's memory FULLTEXT search and Commons semantic/vector search provide identical semantics. Test both.
 
-## Risk B — Memory search versus vector search
+## Risk 3 — Conversation concurrency
 
-Council has both memory storage and Commons vector search, but these are not automatically the same thing. The current `MemoryController::search()` is FULLTEXT-based, while `QuiddityController` delegates shared Commons semantic search to `VectorSearch`. fileciteturn30file0L2-L2 fileciteturn42file0L2-L2
+`MAX(message_seq)+1` must not remain an unsafe concurrent writer pattern if Self and Hermes can write the same session.
 
-Use the correct subsystem for each requirement.
+## Risk 4 — Local model routing
 
-## Risk C — Conversation sequence concurrency
+The local model is a provider/compute endpoint. It must not become the owner of agent identity or memory.
 
-The current ConversationController calculates the next sequence with `MAX(message_seq)+1`. fileciteturn29file0L2-L10
+## Risk 5 — VPS filesystem
 
-This should be hardened before Self and Hermes become concurrent writers.
+The VPS must contain the operational `foreverbox-data` and Quiddity Lore Sea needed by primary Hermes. Do not leave primary runtime dependent upon a Windows/WSL path on the main PC.
 
-## Risk D — Ingestion controller maturity
+## Risk 6 — Configuration drift
 
-The current IngestionController exposes an accepted/queued interface but contains a placeholder note that the worker performs the full ingestion. fileciteturn32file0L2-L2
+Avoid hard-coded local/VPS/Tailscale addresses. Use deployment configuration.
 
-Do not reimplement ingestion inside Self. Use the existing worker pipeline or extend Council's ingestion pipeline.
+## Risk 7 — Active-active databases
 
-## Risk E — Direct filesystem access
+Do not introduce bidirectional MariaDB writes unless the architecture is explicitly redesigned later. This V2 plan assumes a single primary.
 
-The current QuiddityController works with `/foreverbox_data/Quiddity_Lore_Sea`. fileciteturn42file0L2-L2
+## Risk 8 — Hidden old fallback
 
-Self should consume this through Council instead of assuming that production web hosting can directly see the same filesystem forever.
+After switching to Council, search for dormant paths that still read old Self agent tables. A fallback that nobody remembers is still a second source of truth.
 
 ---
 
-# 22. What Must Not Be Changed in This Project
+# 27. Explicitly Out of Scope
 
 This implementation does **not** include:
 
 - LoRA
-- personalised fine-tuning
+- personal fine-tuning
 - adaptive model training
-- cognitive profiling
-- neurodivergence-specific experimentation
+- user cognitive profiling
+- neurodivergence experiments
 - autonomous self-training
-- consciousness features
+- consciousness research
 - photonic architecture
-- new AI research features
+- new research features unrelated to the unification
 
-Those are future work.
+Those may come later.
 
-The current job is foundational:
-
-> **Unify the existing systems so every interface operates on one canonical agent reality.**
+This build creates the clean technical foundation on which those future systems can be researched.
 
 ---
 
-# 23. Final Definition of Done
+# 28. Final Definition of Done
 
-The V2 rebuild is complete only when all of the following are true.
+The migration is complete only when:
 
-### Canonical state
+## Canonical state
 
-- [ ] Council/ForeverBox is the authority for agent function.
-- [ ] Self has no competing agent state database.
+- [ ] Council + ForeverBox Data are authoritative for agent function/state.
+- [ ] VPS MariaDB is the canonical production database.
+- [ ] Self contains no competing agent database.
 - [ ] Heads are canonical and editable through Self.
-- [ ] Model choices/routing are canonical and editable through Self.
+- [ ] Models/routing are canonical and editable through Self.
 - [ ] Agent identity is canonical.
-- [ ] Agent memory is canonical.
+- [ ] Memory is canonical.
 - [ ] Knowledge is canonical.
-- [ ] Conversations are canonical.
+- [ ] Conversation logs are canonical.
 
-### Interfaces
+## Runtime
+
+- [ ] VPS Hermes is the primary Hermes runtime.
+- [ ] Main-PC Hermes is secondary/remote where used.
+- [ ] Local models are compute endpoints reachable over Tailscale.
+- [ ] Cloud fallback works when a local model endpoint is unavailable.
+- [ ] The local PC is not required for canonical agent identity/state.
+
+## Networking
+
+- [ ] Self -> Council uses the intended Tailscale/private path.
+- [ ] Council/internal database services are not publicly exposed unnecessarily.
+- [ ] No Cloudflare tunnel/proxy dependency has been introduced.
+- [ ] Endpoint configuration is deployment-controlled.
+
+## Data
+
+- [ ] Operational `foreverbox-data` is available on VPS.
+- [ ] Operational Quiddity Lore Sea is available on VPS.
+- [ ] GitHub remains source-controlled.
+- [ ] Backup/recovery is separate from replication.
+- [ ] Local data copies are not competing authorities.
+
+## Interfaces
 
 - [ ] Self Public uses canonical Council/Hermes execution.
-- [ ] Self Admin is a management front end for Council.
+- [ ] Self Admin manages canonical agents.
 - [ ] From the Noise uses canonical agent state.
-- [ ] Hermes sees Self Admin changes without synchronization.
-- [ ] Self sees Hermes/Council changes immediately.
+- [ ] Hermes CLI uses the same canonical state.
 
-### Memory
+## UI
 
-- [ ] Canonical logs remain authoritative.
-- [ ] vectors reference logs rather than replacing them.
-- [ ] cross-interface conversation retrieval works.
-- [ ] permissions are enforced before memory is returned.
+- [ ] Existing component system remains intact.
+- [ ] Existing template architecture remains foundational.
+- [ ] Different agents can use different UI compositions.
+- [ ] A new agent does not require cloning the application.
 
-### UI
+## Verification
 
-- [ ] existing Self component system is preserved
-- [ ] existing template system remains the basis
-- [ ] agents can have distinct UI compositions
-- [ ] no separate application is required for a new agent template
-
-### Security
-
-- [ ] Self authentication remains intact
-- [ ] Council authorization is enforced
-- [ ] privileged actions remain gated
-- [ ] CSRF/rate limiting remains intact
-- [ ] no secrets are leaked into logs or client responses
-
-### Data migration
-
-- [ ] Self database inventory is documented
-- [ ] historical data has been migrated or archived
-- [ ] obsolete agent tables are removed only after verification
-- [ ] rollback procedure has been tested
+- [ ] Cross-interface tests pass.
+- [ ] Memory continuity passes.
+- [ ] Conversation continuity passes.
+- [ ] Model/head continuity passes.
+- [ ] From the Noise continuity passes.
+- [ ] VPS-primary independence test passes.
+- [ ] Local-model/fallback test passes.
+- [ ] Security tests pass.
 
 ---
 
-# 24. Builder Workflow Summary
+# 29. Builder's Final Instruction
 
-The builder should follow this loop throughout the project:
-
-```text
-READ CURRENT CODE
-      |
-      v
-IDENTIFY EXISTING CAPABILITY
-      |
-      v
-REUSE / EXTEND COUNCIL
-      |
-      v
-ADD SELF CLIENT / UI
-      |
-      v
-RUN TARGETED TEST
-      |
-      v
-RUN CROSS-INTERFACE TEST
-      |
-      v
-COMMIT
-      |
-      v
-DOCUMENT DEVIATION IF ANY
-```
-
-Do not skip directly from architecture to large rewrites.
-
-Whenever an existing Council capability already satisfies a requirement, integrate with it.
-
-Whenever Council is missing a capability, add it to Council rather than adding a duplicate capability to Self.
-
-Whenever Self already has a working UI component, reuse it rather than replacing it with a new one.
-
----
-
-# 25. Final Builder Instruction
-
-Do not interpret this plan as permission to redesign the architecture while implementing it.
+Do not reinterpret the architecture while implementing it.
 
 The architecture has already been decided.
 
-The job is to make the current repositories conform to it while preserving working functionality.
-
-The desired final state is:
+The implementation goal is to turn the existing three repositories into one coherent operational ForeverBox system:
 
 ```text
-                         ONE FOREVERBOX SYSTEM
-                                  |
-            +---------------------+---------------------+
-            |                     |                     |
-            v                     v                     v
-      foreverbox-data        council-library        i-am-self
-       persistent data       cognition/state       human interface
-            |                     |                     |
-            |              canonical agent state       |
-            |              memory / vectors            |
-            |              heads / models              |
-            |              routing / context           |
-            |                     |                     |
-            +---------------------+---------------------+
-                                  |
-                     +------------+------------+
-                     |            |            |
-                     v            v            v
-                  Self        From Noise    Hermes CLI
-                  Public         Prod           CLI
-                     |            |            |
-                     +------------+------------+
-                                  |
-                       SAME CANONICAL AGENTS
-                                  |
-                         SAME HEADS / MODELS
-                                  |
-                          SAME MEMORY / DATA
-                                  |
-                         SAME CONVERSATION LOGS
+                           FOREVERBOX
+                               |
+             +-----------------+------------------+
+             |                 |                  |
+             v                 v                  v
+          DATA              COUNCIL             SELF
+             |                 |                  |
+       persistent files   canonical agent     UI/auth/site
+       and resources       state/runtime      templates
+             |                 |                  |
+             +-----------------+------------------+
+                               |
+                      VPS PRIMARY CORE
+                               |
+                  +------------+------------+
+                  |            |            |
+                  v            v            v
+               Self       From Noise     Hermes
+               Public         Prod          CLI
+                  \             |             /
+                   +------------+------------+
+                               |
+                        SAME AGENT STATE
+                               |
+                   +-----------+-----------+
+                   |                       |
+               VPS models             Local models
+                                        via Tailscale
 ```
 
-The implementation is successful when the system no longer behaves like three applications connected together.
+The final test is simple:
 
-It should behave like **one agent ecosystem with multiple interfaces**.
+> **If an authorised change to an agent is made through Self, Hermes must immediately see the same agent. If the agent learns something through Hermes, Self must be able to retrieve it. If From the Noise uses the agent, it must use the same canonical state. No synchronisation job should be required to make the three interfaces agree.**
+
+Build that first. Everything more ambitious comes later.
