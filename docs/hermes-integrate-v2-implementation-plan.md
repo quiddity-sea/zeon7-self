@@ -366,7 +366,200 @@ Use the real environment values found in the existing deployment rather than inv
 
 ---
 
-# 6. Phase 0 — Initial Local-to-VPS Migration
+# 6. Phase -1 — Critical Preconditions
+
+## Objective
+
+Make the Council/ForeverBox core **internally coherent, secure, and reproducibly deployable** before any remote exposure, VPS migration, or Self integration work begins.
+
+These six blockers were identified by a cross-repository code audit. Each must be resolved and verified before Phase 0.
+
+> **Hard gate: Do not proceed to VPS production migration or expose Council remotely until all six preconditions are resolved and verified.**
+
+---
+
+## 6.1 Precondition A — Real Council Authentication
+
+**Problem:** `Auth.php` accepts any non-empty Bearer token. The database lookup against `agent_registry.api_keys` is commented out.
+
+**Required resolution:**
+
+1. Implement real token validation in `Auth.php` — SHA-256 hash lookup against `agent_registry.api_keys`.
+2. Fix the undefined `$pdo` variable in `AgentContext.php` line 36.
+3. Verify that `PrivilegedActionGate` still works correctly after auth changes.
+4. Add route-level tests confirming that unauthenticated requests are rejected.
+
+**Verification:** An HTTP request with an invalid or missing Bearer token must receive `401 Unauthorized` on every protected route.
+
+---
+
+## 6.2 Precondition B — Single Canonical SOUL Authority
+
+**Problem:** There are two competing SOUL systems:
+
+| System | Location | Mechanism |
+|---|---|---|
+| `assemble_soul.py` | `/foreverbox_data/bin/` | Queries `agent_registry.soul_components`, writes `SOUL.md` to disk |
+| `SoulController.php` | Council REST API | Reads/writes `soul` table (YAML blobs) in Sanctum DB |
+
+These two systems do not share data. A head created via `soul_components` is invisible to `SoulController`, and vice versa.
+
+**Required architecture:**
+
+```text
+                 CANONICAL SOUL / HEAD STATE
+                           │
+                  ┌────────┴────────┐
+                  │                 │
+                  ▼                 ▼
+            Hermes runtime      Council API
+                  │                 │
+                  └────────┬────────┘
+                           ▼
+                      Self Admin
+```
+
+**Required resolution:**
+
+1. Determine the canonical data model. The intended architecture is that **Council owns the canonical representation**.
+2. Establish a single assembler/resolver that produces effective agent context from that canonical representation.
+3. Make Hermes consume that resolver.
+4. Make the REST API expose the same state.
+5. Make Self edit the same state through the REST/API boundary.
+
+Whether the assembler implementation ultimately lives in Python, PHP, or a shared service is secondary. **The representation and resolution semantics must be singular.**
+
+Do not choose between the two systems based on which is easier to keep. Choose based on which correctly implements the canonical architecture.
+
+**Verification:** A head created through any interface must be immediately visible and usable through every other interface without a synchronisation step.
+
+---
+
+## 6.3 Precondition C — Canonical Schema in Council's Deployment Path
+
+**Problem:** The `soul_components` table definition exists only in:
+
+```
+profiles/zeon7/skills/software-development/dynamic-config-assembly/references/soul-components-schema.sql
+```
+
+It is not in `council-library/schema/`. A fresh Council deployment from the schema directory will not create this table.
+
+**Required resolution:**
+
+1. Move or duplicate the `soul_components` schema into `council-library/schema/` (e.g., `07_soul_components.sql`).
+2. Include seed data if required for a minimal working deployment.
+3. The skill reference directory may continue to reference the schema, but it must not be the only place it exists.
+
+**Required architectural rule:**
+
+> **Every Council-owned database structure must have a canonical migration/schema definition in Council's deployment system.**
+
+**Verification:** A fresh deployment must be capable of cloning, running migrations, and resolving an agent without hidden schemas.
+
+---
+
+## 6.4 Precondition D — Secrets Remediation
+
+**Problem:** Multiple `.env` files, config files, and scripts contain inline credentials committed to Git. The committed history must be treated as potentially compromised.
+
+**Required resolution:**
+
+```text
+identify committed secrets
+        ↓
+inventory where each secret is used
+        ↓
+rotate/revoke each live credential
+        ↓
+remove secrets from active tracked files
+        ↓
+introduce runtime secret configuration (env vars, secret store)
+        ↓
+verify no active credential remains exposed in tracked files
+```
+
+Because credentials have been committed to Git history, merely deleting the current files is insufficient. The relevant history should be treated as compromised and live credentials must be rotated.
+
+**Important:** Do not put literal credentials into architecture or implementation documents. The coding model needs instructions for secret handling, not the secrets themselves.
+
+**Verification:** No live credential is present in any tracked file. All production secrets are supplied at runtime via environment configuration.
+
+---
+
+## 6.5 Precondition E — Embedding Contract and Vector Dimension Alignment
+
+**Problem:** Council's SQL schemas define `VECTOR(1024)` columns, but the actual embedding service (`embedding_service.py`) uses `all-MiniLM-L6-v2` which produces 384-dimensional vectors. Additionally, `conversation_embedder.py` targets columns that do not match the actual table schema.
+
+This is not merely "change 1024 to 384." It is a data migration.
+
+**Required resolution:**
+
+Establish and document the embedding contract:
+
+```text
+embedding model identifier
+        ↓
+actual vector dimension
+        ↓
+normalisation method
+        ↓
+distance/similarity method
+        ↓
+Council schema alignment
+        ↓
+existing stored vectors: compatible or require reindex?
+        ↓
+migration/reindex procedure if required
+```
+
+Then align all `VECTOR()` column definitions, fix `conversation_embedder.py` column references, and reindex if necessary.
+
+**Verification:** Vector search returns correct similarity results. No dimension mismatch errors occur.
+
+---
+
+## 6.6 Precondition F — API Route Contract Repair and Testing
+
+**Problem:** Five Council API routes silently fail due to mismatched parameter names between `public/index.php` route declarations and controller `$args` lookups.
+
+**Required resolution:**
+
+1. Reconcile every router parameter name with its corresponding controller method signature.
+2. Audit **all** routes for the same class of mismatch.
+3. Add a contract test for every Council route that Self will consume:
+
+```text
+route
+  ↓
+router parameter names
+  ↓
+controller method signature
+  ↓
+service call
+  ↓
+response schema
+```
+
+**Verification:** Every Council route returns the expected response shape with correct data. No undefined-index PHP errors occur.
+
+---
+
+## 6.7 Phase -1 Exit Condition
+
+> **Do not proceed to Phase 0 until all of the following are true:**
+
+- [ ] Council authentication rejects invalid tokens on all protected routes
+- [ ] A single canonical SOUL/head representation exists and is consumed by both Hermes and the REST API
+- [ ] All Council-owned schemas exist in Council's deployment/schema directory
+- [ ] All live credentials have been rotated and removed from tracked files
+- [ ] Runtime secret configuration is in place
+- [ ] The embedding contract is documented and schema dimensions are aligned
+- [ ] All Council API routes pass contract tests with correct parameter handling
+
+---
+
+# 7. Phase 0 — Initial Local-to-VPS Migration
 
 ## Objective
 
@@ -1619,33 +1812,39 @@ Do not rewrite historical reasoning out of the repository.
 Keep commits small and phase-aligned.
 
 ```text
-1. docs: inventory current local deployment
-2. docs: record VPS/Tailscale topology
-3. infra: prepare VPS runtime
-4. infra: migrate/verify Council MariaDB to VPS
-5. infra: deploy foreverbox-data and Lore Sea to VPS
-6. infra: install/configure primary VPS Hermes
-7. infra: connect local model endpoint over Tailscale
-8. infra: make VPS primary / local Hermes secondary
-9. docs: record migration acceptance
-10. council: expose agent catalogue
-11. council: expose/extend head management
-12. council: expose model/routing management
-13. self: add Council API client
-14. self: migrate admin agent reads
-15. self: migrate head management
-16. self: migrate model management
-17. self: migrate instruction authority
-18. self: migrate lore/memory
-19. self: migrate knowledge/search
-20. self: migrate public chat execution
-21. council: harden canonical conversation sequencing
-22. self: migrate conversation writes
-23. self: reconcile From the Noise
-24. self: archive/remove duplicate agent tables
-25. self: generalise component/template integration
-26. tests: add cross-interface suite
-27. docs: record final architecture and deviations
+1. docs: inventory current local deployment and identify secrets
+2. security: rotate live credentials and remove secrets from git
+3. council: implement active API token authentication
+4. council: repair routing parameter mismatches and add tests
+5. council: establish canonical SOUL/head resolution path
+6. council: consolidate all schemas into deployment path
+7. council: align vector dimensions to embedding contract
+8. docs: record VPS/Tailscale topology
+9. infra: prepare VPS runtime
+10. infra: migrate/verify Council MariaDB to VPS
+11. infra: deploy foreverbox-data and Lore Sea to VPS
+12. infra: install/configure primary VPS Hermes
+13. infra: connect local model endpoint over Tailscale
+14. infra: make VPS primary / local Hermes secondary
+15. docs: record migration acceptance
+16. council: expose agent catalogue
+17. council: expose/extend head management
+18. council: expose model/routing management
+19. self: add Council API client
+20. self: migrate admin agent reads
+21. self: migrate head management
+22. self: migrate model management
+23. self: migrate instruction authority
+24. self: migrate lore/memory
+25. self: migrate knowledge/search
+26. self: migrate public chat execution
+27. council: harden canonical conversation sequencing
+28. self: migrate conversation writes
+29. self: reconcile From the Noise
+30. self: archive/remove duplicate agent tables
+31. self: generalise component/template integration
+32. tests: add cross-interface suite
+33. docs: record final architecture and deviations
 ```
 
 Do not create one enormous "V2 complete" commit.
