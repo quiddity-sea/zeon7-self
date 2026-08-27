@@ -28,7 +28,7 @@ The objective is to implement the architecture described by `hermes-integrate-v2
 8. **Do not assume an API exists because V2 names it conceptually.** Inspect current Council routes/controllers and extend them using existing conventions.
 9. **Do not remove existing functionality simply because it is being migrated.** Redirect, verify, then remove the duplicate.
 10. **Every migration phase must end with an acceptance test across at least two interfaces.**
-11. **Do not introduce Cloudflare or any alternative tunnel/proxy architecture.** The deployment topology is Tailscale-based unless the user explicitly changes it later.
+11. **Do not introduce Cloudflare or any alternative tunnel/proxy architecture.** The deployment topology is Tailscale-based unless the user explicitly changes it.
 12. **Do not treat the local PC as the primary server.** The VPS is the primary Council + Hermes runtime and primary canonical database host.
 13. **Do not make local and VPS MariaDB co-equal writable databases.** The intended model is VPS primary, with any local database being development/replica only.
 14. **Do not require the local PC to be online for the canonical agent system to exist.** Local models are compute resources, not the location of agent identity/state.
@@ -459,31 +459,37 @@ It is not in `council-library/schema/`. A fresh Council deployment from the sche
 
 ---
 
-## 6.4 Precondition D — Secrets Remediation
+## 6.4 Precondition D — Secrets and Configuration Audit
 
-**Problem:** Multiple `.env` files, config files, and scripts contain inline credentials committed to Git. The committed history must be treated as potentially compromised.
+**Problem:** Configuration files and `.env` files are committed to Git in places where production credentials or unnecessary environment values may be present. The committed values must be audited, but **do not assume that every committed value is a real or live credential**.
 
 **Required resolution:**
 
 ```text
-identify committed secrets
+identify committed configuration values
         ↓
-inventory where each secret is used
+audit each value:
+  placeholder / development-only / real-live credential
         ↓
-rotate/revoke each live credential
+remove unnecessary sensitive values from tracked files
         ↓
-remove secrets from active tracked files
+rotate/revoke ONLY genuinely live credentials that were exposed
         ↓
-introduce runtime secret configuration (env vars, secret store)
+introduce runtime secret configuration
         ↓
-verify no active credential remains exposed in tracked files
+verify production secrets are supplied outside the repository
 ```
 
-Because credentials have been committed to Git history, merely deleting the current files is insufficient. The relevant history should be treated as compromised and live credentials must be rotated.
+The builder must not perform blanket credential rotation without first establishing that a real live credential is involved.
 
 **Important:** Do not put literal credentials into architecture or implementation documents. The coding model needs instructions for secret handling, not the secrets themselves.
 
-**Verification:** No live credential is present in any tracked file. All production secrets are supplied at runtime via environment configuration.
+**Verification:**
+
+- no live production credential remains unnecessarily exposed in tracked source files
+- placeholder/development values are explicitly identified
+- production secrets are supplied at runtime
+- genuinely exposed live credentials, if any, have been rotated/revoked
 
 ---
 
@@ -552,8 +558,9 @@ response schema
 - [ ] Council authentication rejects invalid tokens on all protected routes
 - [ ] A single canonical SOUL/head representation exists and is consumed by both Hermes and the REST API
 - [ ] All Council-owned schemas exist in Council's deployment/schema directory
-- [ ] All live credentials have been rotated and removed from tracked files
-- [ ] Runtime secret configuration is in place
+- [ ] Configuration audit is complete
+- [ ] Production secrets are supplied at runtime
+- [ ] Any genuinely exposed live credentials have been rotated
 - [ ] The embedding contract is documented and schema dimensions are aligned
 - [ ] All Council API routes pass contract tests with correct parameter handling
 
@@ -569,7 +576,7 @@ This is a **deployment/data migration phase**, not an application rewrite.
 
 The sequence must be completed and verified before dependent application integration work begins.
 
-## 6.1 Inventory the current local runtime
+## 7.1 Inventory the current local runtime
 
 On the main PC, identify the actual current locations and runtime mechanisms for:
 
@@ -603,7 +610,7 @@ with a table:
 | vectors/indexes | local | Council | VPS | rebuild or controlled migration | retrieval tests |
 | config | local | relevant service | VPS | secure configuration | startup/health |
 
-## 6.2 Prepare the VPS
+## 7.2 Prepare the VPS
 
 Install/configure the required runtime components on the VPS without disturbing the working local environment:
 
@@ -624,7 +631,7 @@ Use existing project requirements and deployment documentation where available.
 
 Do not invent a new software stack simply because it seems fashionable.
 
-## 6.3 Establish Tailscale connectivity first
+## 7.3 Establish Tailscale connectivity first
 
 Before moving application traffic:
 
@@ -642,7 +649,7 @@ Verify from both directions as required:
 
 Do not expose MariaDB or internal Council services publicly merely to simplify migration.
 
-## 6.4 Migrate MariaDB
+## 7.4 Migrate MariaDB
 
 Create a verified backup/dump of the current local Council database.
 
@@ -667,7 +674,7 @@ Do not switch writes until the restored database passes reconciliation.
 
 Record migration timestamp and source/destination identifiers.
 
-## 6.5 Migrate ForeverBox Data
+## 7.5 Migrate ForeverBox Data
 
 Deploy the operational `foreverbox-data` copy to the VPS.
 
@@ -684,7 +691,7 @@ Verify at minimum:
 
 Use Git history/checksums where appropriate to verify that the VPS copy corresponds to the intended source-controlled revision.
 
-## 6.6 Migrate Quiddity Lore Sea
+## 7.6 Migrate Quiddity Lore Sea
 
 Copy the operational Lore Sea to the VPS.
 
@@ -699,7 +706,7 @@ Verify:
 
 Do not delete the local copy at this stage.
 
-## 6.7 Install/configure VPS Hermes as PRIMARY
+## 7.7 Install/configure VPS Hermes as PRIMARY
 
 Install the primary Hermes instance on the VPS.
 
@@ -713,7 +720,7 @@ Configure it to use:
 
 The VPS Hermes instance must be capable of running a canonical agent without requiring the local PC Hermes process.
 
-## 6.8 Configure local model access
+## 7.8 Configure local model access
 
 Expose the main-PC local model service through Tailscale only as required.
 
@@ -735,7 +742,7 @@ Then stop/disable the local model service temporarily and confirm that Council/H
 
 The fallback test must prove that **loss of local inference does not imply loss of agent state**.
 
-## 6.9 Switch primary operation to VPS
+## 7.9 Switch primary operation to VPS
 
 Only after verification:
 
@@ -749,7 +756,7 @@ VPS Lore Sea = operational primary copy
 
 The local PC retains its copies for development/replication until the migration is formally complete.
 
-## 6.10 Configure local Hermes as secondary/remote
+## 7.10 Configure local Hermes as secondary/remote
 
 The local Hermes instance should now be treated as a secondary client/runtime.
 
@@ -757,7 +764,7 @@ Where it needs canonical agent state, it should resolve against the VPS Council/
 
 The exact local Hermes arrangement should follow what Hermes supports natively. Do not fabricate a new synchronization protocol just to make two installations look symmetrical.
 
-## 6.11 Define the local database role
+## 7.11 Define the local database role
 
 If local MariaDB is retained:
 
@@ -769,7 +776,7 @@ If one-way MariaDB replication is later introduced, configure it deliberately af
 
 It is not required to complete the core Self/Council integration.
 
-## 6.12 Back up before decommissioning local authority
+## 7.12 Back up before decommissioning local authority
 
 Before the local environment is downgraded from primary:
 
@@ -780,7 +787,7 @@ Before the local environment is downgraded from primary:
 - verify VPS backup
 - test VPS restore enough to establish recovery confidence
 
-## 6.13 Initial migration acceptance test
+## 7.13 Initial migration acceptance test
 
 The local PC must be completely unnecessary for the following:
 
@@ -816,7 +823,7 @@ response
 
 The two paths must be independently demonstrable.
 
-## Exit condition
+## Phase 0 exit condition
 
 Do not proceed to the Self application migration until:
 
@@ -835,7 +842,7 @@ Do not proceed to the Self application migration until:
 
 ---
 
-# 7. Phase 1 — Repository and Self Database Inventory
+# 8. Phase 1 — Repository and Self Database Inventory
 
 ## Objective
 
@@ -918,7 +925,7 @@ A migration matrix exists for both application data and deployment topology.
 
 ---
 
-# 8. Phase 2 — Establish Canonical Council APIs
+# 9. Phase 2 — Establish Canonical Council APIs
 
 ## Objective
 
@@ -986,7 +993,7 @@ The canonical operations required by Self exist in Council or have a documented 
 
 ---
 
-# 9. Phase 3 — Build Self's Council Client
+# 10. Phase 3 — Build Self's Council Client
 
 Create a single reusable integration layer in Self.
 
@@ -1046,7 +1053,7 @@ When Council is unavailable:
 
 ---
 
-# 10. Phase 4 — Self Admin Becomes the Council Management Front End
+# 11. Phase 4 — Self Admin Becomes the Council Management Front End
 
 The current Self Admin remains the UI foundation.
 
@@ -1105,7 +1112,7 @@ An authorised administrator can change canonical agent configuration from Self a
 
 ---
 
-# 11. Phase 5 — Replace Self's Agent Instruction Authority
+# 12. Phase 5 — Replace Self's Agent Instruction Authority
 
 Trace `InstructionService`, `instructions.php`, and associated APIs.
 
@@ -1131,7 +1138,7 @@ Changing a canonical head/Soul in Council changes effective agent behaviour cons
 
 ---
 
-# 12. Phase 6 — Replace Self's Agent Memory and Knowledge Authority
+# 13. Phase 6 — Replace Self's Agent Memory and Knowledge Authority
 
 Audit:
 
@@ -1171,48 +1178,59 @@ Self knowledge/memory screens operate as UI over canonical Council facilities.
 
 ---
 
-# 13. Phase 7 — Configure Primary VPS Hermes and Local Model Compute
+# 14. Phase 7 — Move Primary Runtime to VPS Hermes
 
-This phase formalises the runtime already established in Phase 0.
+## Objective
 
-## VPS Hermes
+Install/configure Hermes on the VPS as the primary Hermes instance before finalising Self runtime integration.
 
-Primary Hermes runs on the VPS and is the default Hermes runtime for the ForeverBox ecosystem.
+### VPS Hermes requirements
 
-## Main PC
+The primary Hermes instance must be able to reach:
 
-The main PC provides local inference when available.
+- Council
+- VPS MariaDB where required through Council
+- VPS ForeverBox Data
+- Quiddity Lore Sea
+- relevant skills/tools
+- configured model endpoints
 
-It is not the canonical location of:
+### Main PC Hermes
 
-- agent identity
-- agent memory
-- agent conversations
-- heads
-- canonical model configuration
-- canonical knowledge
+The local Hermes installation becomes a remote/secondary instance.
 
-## Routing
+Where its purpose is simply to interact with the canonical system, it should resolve agent state through the VPS Council/Hermes architecture rather than creating another sovereign copy.
+
+### Local models
+
+Expose local inference to the VPS over Tailscale using the actual model-serving mechanism already used in the environment.
+
+Conceptually:
 
 ```text
-Council Router
-      |
-      +--> local PC model via Tailscale
-      |
-      +--> VPS model if configured
-      |
-      +--> cloud model if required
+VPS Council/Hermes
+       |
+       | Tailscale
+       v
+Main PC model server
+       |
+       v
+RTX GPU
 ```
 
-The router must own the decision.
+If the local model endpoint is unavailable, Council's existing model routing/fallback logic may select an alternative configured model.
+
+This is **model availability**, not agent-state availability. The agent remains in Council.
 
 ## Exit condition
 
-Primary VPS Hermes can execute a canonical agent using either a local-PC model or an available fallback without changing canonical agent state.
+VPS Hermes can execute a canonical agent without requiring the local PC.
+
+A local model can be used when available without becoming the source of agent identity or state.
 
 ---
 
-# 14. Phase 8 — Rebuild Self Public Chat Around Council/Hermes
+# 15. Phase 8 — Rebuild Self Public Chat Around Council/Hermes
 
 The current `/api/chat.php` must become an adapter to the canonical runtime.
 
@@ -1286,7 +1304,7 @@ Do not delete old providers until the new path has passed acceptance tests.
 
 ---
 
-# 15. Phase 9 — Canonical Conversation and Semantic Reference System
+# 16. Phase 9 — Canonical Conversation and Semantic Reference System
 
 ## Objective
 
@@ -1339,7 +1357,7 @@ The vector must not become the authoritative transcript.
 
 ### Sequence safety
 
-The current conversation append implementation uses `MAX(message_seq)+1`. Harden this for concurrent writes before declaring the shared runtime complete.
+The current conversation append implementation uses `MAX(message_seq) + 1`. Harden this for concurrent writes before declaring the shared runtime complete.
 
 Possible approaches:
 
@@ -1355,7 +1373,7 @@ A message written by Self is retrievable by Hermes and vice versa, with no dupli
 
 ---
 
-# 16. Phase 10 — From the Noise Reconciliation
+# 17. Phase 10 — From the Noise Reconciliation
 
 From the Noise already lives in Self and should remain a Self workflow/presentation concern.
 
@@ -1392,7 +1410,7 @@ Generate a controlled test item from From the Noise, then verify its agent/head/
 
 ---
 
-# 17. Phase 11 — Self Database Reduction
+# 18. Phase 11 — Self Database Reduction
 
 After all migration tests pass, shrink Self to web/application concerns.
 
@@ -1459,7 +1477,7 @@ snapshot
 
 ---
 
-# 18. Phase 12 — Self Component and Template System as the Permanent UI Foundation
+# 19. Phase 12 — Self Component and Template System as the Permanent UI Foundation
 
 The existing component/template system must remain the foundation.
 
@@ -1515,7 +1533,7 @@ Changing templates must not change the underlying agent state.
 
 ---
 
-# 19. Phase 13 — User / Agent / Template Assignment
+# 20. Phase 13 — User / Agent / Template Assignment
 
 The user access relationship is:
 
@@ -1540,7 +1558,7 @@ The current Council AssignmentController already provides the basis for this rel
 
 ---
 
-# 20. Phase 14 — Security Hardening for the Distributed Runtime
+# 21. Phase 14 — Security Hardening for the Distributed Runtime
 
 Verify:
 
@@ -1560,13 +1578,13 @@ Test unauthorized access both from Self and direct API requests.
 
 ---
 
-# 21. Phase 15 — VPS Data Deployment and Source-Control Rules
+# 22. Phase 15 — VPS Data Deployment and Synchronisation Rules
 
 ## Goal
 
-Keep the VPS operationally self-contained without turning it into an uncontrolled editing environment.
+Make the VPS self-sufficient as the primary ForeverBox runtime.
 
-### Controlled source flow
+### Controlled data flow
 
 ```text
 GitHub controlled files
@@ -1579,7 +1597,7 @@ VPS deployment
         +--> Council configuration
 ```
 
-### Runtime state flow
+Runtime memory/conversation flow:
 
 ```text
 Self / From Noise / Hermes
@@ -1591,7 +1609,7 @@ Self / From Noise / Hermes
        VPS MariaDB
 ```
 
-### Local model flow
+Local model flow:
 
 ```text
 Council/Hermes VPS
@@ -1602,11 +1620,18 @@ Council/Hermes VPS
 Main PC local model
 ```
 
-Do not make local and VPS filesystem edits automatically authoritative in both directions.
+### Do not implement
+
+```text
+local filesystem <-> VPS filesystem
+bidirectional uncontrolled edits
+```
+
+for this phase.
 
 ---
 
-# 22. Phase 16 — Migration Tooling and Rollback
+# 23. Phase 16 — Migration Tooling and Rollback
 
 Create/revise scripts for:
 
@@ -1628,11 +1653,13 @@ migration timestamp
 migration status
 ```
 
+This makes failed or partial migrations diagnosable.
+
 Maintain a rollback checkpoint before each destructive step.
 
 ---
 
-# 23. Phase 17 — Automated Cross-Interface Test Suite
+# 24. Phase 17 — Automated Cross-Interface Test Suite
 
 The most important tests are architectural, not just page-level.
 
@@ -1693,7 +1720,7 @@ This explicitly tests the distinction between **compute availability** and **age
 
 ---
 
-# 24. Phase 18 — Manual End-to-End Acceptance Scenarios
+# 25. Phase 18 — Manual End-to-End Acceptance Scenarios
 
 ### Scenario A — Build a new head from Self
 
@@ -1732,7 +1759,7 @@ Retrieve it in Self through semantic/contextual search.
 
 ### Scenario D — Learn through Self
 
-Write a durable test memory.
+Write a controlled memory.
 
 Retrieve it through Hermes.
 
@@ -1762,7 +1789,7 @@ Verify the underlying agent state is identical.
 
 ---
 
-# 25. Phase 19 — Documentation and Status Tracking
+# 26. Phase 19 — Documentation and Status Tracking
 
 Update documentation only after verified implementation.
 
@@ -1800,58 +1827,46 @@ hermes-integrate-v2.md
        ↓
 hermes-integrate-v2-implementation-plan.md
        ↓
-actual implementation commits
+future V3 documents if architecture changes
 ```
 
 Do not rewrite historical reasoning out of the repository.
 
 ---
 
-# 26. Recommended Commit Sequence
+# 27. Recommended Commit Sequence
 
 Keep commits small and phase-aligned.
 
 ```text
-1. docs: inventory current local deployment and identify secrets
-2. security: rotate live credentials and remove secrets from git
-3. council: implement active API token authentication
-4. council: repair routing parameter mismatches and add tests
-5. council: establish canonical SOUL/head resolution path
-6. council: consolidate all schemas into deployment path
-7. council: align vector dimensions to embedding contract
-8. docs: record VPS/Tailscale topology
-9. infra: prepare VPS runtime
-10. infra: migrate/verify Council MariaDB to VPS
-11. infra: deploy foreverbox-data and Lore Sea to VPS
-12. infra: install/configure primary VPS Hermes
-13. infra: connect local model endpoint over Tailscale
-14. infra: make VPS primary / local Hermes secondary
-15. docs: record migration acceptance
-16. council: expose agent catalogue
-17. council: expose/extend head management
-18. council: expose model/routing management
-19. self: add Council API client
-20. self: migrate admin agent reads
-21. self: migrate head management
-22. self: migrate model management
-23. self: migrate instruction authority
-24. self: migrate lore/memory
-25. self: migrate knowledge/search
-26. self: migrate public chat execution
-27. council: harden canonical conversation sequencing
-28. self: migrate conversation writes
-29. self: reconcile From the Noise
-30. self: archive/remove duplicate agent tables
-31. self: generalise component/template integration
-32. tests: add cross-interface suite
-33. docs: record final architecture and deviations
+1. docs: inventory Self/Council data ownership
+2. docs: record VPS/Tailscale topology
+3. council: expose agent catalogue
+4. council: expose/extend head management
+5. council: expose model/routing management
+6. self: add Council API client
+7. self: migrate admin agent reads
+8. self: migrate head management
+9. self: migrate model management
+10. self: migrate instruction authority
+11. self: migrate lore/memory
+12. self: migrate knowledge/search
+13. hermes: configure VPS primary runtime
+14. self: migrate public chat execution
+15. council: harden canonical conversation sequencing
+16. self: migrate conversation writes
+17. self: reconcile From the Noise
+18. self: archive/remove duplicate agent tables
+19. self: generalise component/template integration
+20. tests: add cross-interface suite
+21. docs: record final architecture and deviations
 ```
 
 Do not create one enormous "V2 complete" commit.
 
 ---
 
-# 27. Known Risks to Verify During Implementation
+# 28. Known Risks to Verify During Implementation
 
 ## Risk 1 — File versus DB authority
 
@@ -1887,7 +1902,7 @@ After switching to Council, search for dormant paths that still read old Self ag
 
 ---
 
-# 28. Explicitly Out of Scope
+# 29. Explicitly Out of Scope
 
 This implementation does **not** include:
 
@@ -1907,7 +1922,7 @@ This build creates the clean technical foundation on which those future systems 
 
 ---
 
-# 29. Final Definition of Done
+# 30. Final Definition of Done
 
 The migration is complete only when:
 
@@ -1930,7 +1945,6 @@ The migration is complete only when:
 - [ ] Local models are compute endpoints reachable over Tailscale.
 - [ ] Cloud fallback works when a local model endpoint is unavailable.
 - [ ] The local PC is not required for canonical agent identity/state.
-- [ ] VPS can run the canonical agent without the main PC.
 
 ## Networking
 
@@ -1971,11 +1985,10 @@ The migration is complete only when:
 - [ ] VPS-primary independence test passes.
 - [ ] Local-model/fallback test passes.
 - [ ] Security tests pass.
-- [ ] Restore/recovery validation passes.
 
 ---
 
-# 30. Builder's Final Instruction
+# 31. Builder's Final Instruction
 
 Do not reinterpret the architecture while implementing it.
 
