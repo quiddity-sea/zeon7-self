@@ -139,6 +139,16 @@ class CouncilClient
         return $this->listCommonsFiles($query);
     }
 
+    /**
+     * Get chunks for a specific file in the Commons.
+     * @param int $fileId
+     * @return array
+     */
+    public function getFileChunks(int $fileId): array
+    {
+        return $this->get("/v1/commons/files/{$fileId}/chunks");
+    }
+
     // ─── CONVERSATIONS ───────────────────────────────────────
 
     /**

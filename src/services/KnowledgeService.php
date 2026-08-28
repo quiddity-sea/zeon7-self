@@ -1,12 +1,21 @@
 <?php
 /**
- * KnowledgeService - Manage knowledge file uploads, chunking, and retrieval
+ * KnowledgeService - Manage knowledge file uploads, chunking, and retrieval (Council Commons & Local fallback)
  */
 
 require_once __DIR__ . '/../core/BaseService.php';
 require_once __DIR__ . '/../core/Exceptions.php';
+require_once __DIR__ . '/CouncilClient.php';
 
 class KnowledgeService extends BaseService {
+    private CouncilClient $councilClient;
+    private bool $useCouncil;
+
+    public function __construct() {
+        parent::__construct();
+        $this->councilClient = new CouncilClient();
+        $this->useCouncil = ($_ENV['KNOWLEDGE_BACKEND'] ?? 'council') === 'council';
+    }
     
     /**
      * Upload and store knowledge file metadata
@@ -44,9 +53,34 @@ class KnowledgeService extends BaseService {
     }
 
     /**
-     * Get all knowledge files with chunk counts
+     * Get all knowledge files with chunk counts (from Council Commons or Local DB)
      */
     public function getAllFiles(): array {
+        if ($this->useCouncil) {
+            try {
+                $res = $this->councilClient->listFiles(['limit' => 100]);
+                if (isset($res['files']) && is_array($res['files'])) {
+                    $files = [];
+                    foreach ($res['files'] as $f) {
+                        $files[] = [
+                            'id'           => (int)$f['id'],
+                            'filename'     => $f['relative_path'] ?? 'file.md',
+                            'file_hash'    => $f['content_hash'] ?? '',
+                            'file_size'    => (int)($f['file_size_bytes'] ?? 0),
+                            'is_public'    => 1,
+                            'chunk_count'  => 0, // dynamic count
+                            'status'       => $f['indexing_status'] ?? 'indexed',
+                            'created_at'   => $f['last_modified'] ?? date('Y-m-d H:i:s'),
+                            'updated_at'   => $f['indexed_at'] ?? date('Y-m-d H:i:s')
+                        ];
+                    }
+                    return $files;
+                }
+            } catch (\Throwable $e) {
+                // Fallback to local DB
+            }
+        }
+
         $sql = "SELECT kd.*, COUNT(kc.id) as chunk_count 
                 FROM knowledge_doc kd 
                 LEFT JOIN knowledge_chunk kc ON kd.id = kc.doc_id 
@@ -56,6 +90,24 @@ class KnowledgeService extends BaseService {
     }
 
     public function getChunksByDocId(int $docId): array {
+        if ($this->useCouncil) {
+            try {
+                $res = $this->councilClient->getFileChunks($docId);
+                if (isset($res['chunks']) && is_array($res['chunks'])) {
+                    $chunks = [];
+                    foreach ($res['chunks'] as $c) {
+                        $meta = json_decode($c['chunk_metadata'] ?? '[]', true);
+                        $chunks[] = [
+                            'heading'     => $meta['heading'] ?? ('Chunk #' . ($c['chunk_index'] ?? 0)),
+                            'content'     => $c['chunk_text'] ?? '',
+                            'chunk_index' => (int)($c['chunk_index'] ?? 0)
+                        ];
+                    }
+                    return $chunks;
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT heading, content, chunk_index 
                 FROM knowledge_chunk 
                 WHERE doc_id = ? 
@@ -64,10 +116,29 @@ class KnowledgeService extends BaseService {
     }
     
     /**
-     * Full-text search across all knowledge chunks
-     * Optional: Filter by public access
+     * Search across all knowledge chunks (Council Commons Vector/Hybrid or Local FULLTEXT)
      */
     public function searchChunks(string $query, bool $publicOnly = false): array {
+        if ($this->useCouncil) {
+            try {
+                $res = $this->councilClient->searchCommons($query, 10);
+                if (isset($res['results']) && is_array($res['results'])) {
+                    $results = [];
+                    foreach ($res['results'] as $r) {
+                        $results[] = [
+                            'id'         => $r['id'] ?? 0,
+                            'doc_id'     => $r['file_id'] ?? 0,
+                            'filename'   => $r['relative_path'] ?? '',
+                            'content'    => $r['chunk_text'] ?? '',
+                            'heading'    => 'Similarity: ' . round((float)($r['similarity'] ?? 1.0), 3),
+                            'created_at' => date('Y-m-d H:i:s')
+                        ];
+                    }
+                    return $results;
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT kc.*, kd.filename 
                 FROM knowledge_chunk kc
                 JOIN knowledge_doc kd ON kc.doc_id = kd.id

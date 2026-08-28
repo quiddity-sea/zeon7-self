@@ -85,6 +85,21 @@ if ($sid) {
 $budget = $client->getBudget();
 check("Council Token Budget Ledger", ($budget['success'] ?? false) === true);
 
+// 7. LoreService Council Authority
+require_once __DIR__ . '/../src/services/LoreService.php';
+$loreService = new LoreService();
+$allLore = $loreService->getAll();
+check("LoreService Routing to Council Sanctum", is_array($allLore));
+
+// 8. KnowledgeService Council Authority
+require_once __DIR__ . '/../src/services/KnowledgeService.php';
+$knowService = new KnowledgeService();
+$allFiles = $knowService->getAllFiles();
+check("KnowledgeService Routing to Council Commons Files", is_array($allFiles) && count($allFiles) > 0);
+
+$knowSearch = $knowService->searchChunks('Foreverbox');
+check("KnowledgeService Vector/Hybrid Search over Commons", is_array($knowSearch));
+
 echo "\n----------------------------------------------------\n";
 echo "Results: {$pass} / {$total} Tests Passed.\n";
 if ($pass === $total) {
