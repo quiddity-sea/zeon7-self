@@ -120,13 +120,23 @@ class CouncilClient
         ]);
     }
 
+    public function searchKnowledge(string $query, int $limit = 5): array
+    {
+        return $this->searchCommons($query, $limit);
+    }
+
     /**
      * List indexed files in the Commons.
      * @return array
      */
-    public function listCommonsFiles(): array
+    public function listCommonsFiles(array $query = []): array
     {
-        return $this->get('/v1/commons/files');
+        return $this->get('/v1/commons/files', $query);
+    }
+
+    public function listFiles(array $query = []): array
+    {
+        return $this->listCommonsFiles($query);
     }
 
     // ─── CONVERSATIONS ───────────────────────────────────────
@@ -184,6 +194,18 @@ class CouncilClient
     public function getConversation(string $sessionId): array
     {
         return $this->get("/v1/sanctum/conversations/{$sessionId}");
+    }
+
+    // ─── TOKEN BUDGET & PRIVILEGED ACTIONS ──────────────────
+
+    /**
+     * Get daily token budget usage.
+     * @param string $tier
+     * @return array
+     */
+    public function getBudget(string $tier = 'default'): array
+    {
+        return $this->get('/v1/registry/budget', ['tier' => $tier]);
     }
 
     // ─── WOLF / TASK DISPATCH ────────────────────────────────
