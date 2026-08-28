@@ -168,6 +168,11 @@ class CouncilClient
      * @param array  $metadata   Optional metadata (model, tokens, provider)
      * @param string|null $ipAddress
      * @param int|null $operatorId
+     * @param string $sourceInterface 'self_public' | 'self_admin' | 'from_the_noise' | 'hermes_cli' | 'other'
+     * @param string|null $headUsed
+     * @param string|null $requestId
+     * @param int|null $tokensInput
+     * @param int|null $tokensOutput
      * @return array
      */
     public function appendMessage(
@@ -176,14 +181,24 @@ class CouncilClient
         string $content,
         array $metadata = [],
         ?string $ipAddress = null,
-        ?int $operatorId = null
+        ?int $operatorId = null,
+        string $sourceInterface = 'self_public',
+        ?string $headUsed = null,
+        ?string $requestId = null,
+        ?int $tokensInput = null,
+        ?int $tokensOutput = null
     ): array {
         return $this->post("/v1/sanctum/conversations/{$sessionId}/messages", [
-            'role'        => $role,
-            'content'     => $content,
-            'metadata'    => $metadata,
-            'ip_address'  => $ipAddress,
-            'operator_id' => $operatorId,
+            'role'             => $role,
+            'content'          => $content,
+            'metadata'         => $metadata,
+            'ip_address'       => $ipAddress,
+            'operator_id'      => $operatorId,
+            'source_interface' => $sourceInterface,
+            'head_used'        => $headUsed,
+            'request_id'       => $requestId,
+            'tokens_input'     => $tokensInput,
+            'tokens_output'    => $tokensOutput,
         ]);
     }
 

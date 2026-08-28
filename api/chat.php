@@ -275,17 +275,22 @@ class ChatController extends BaseController {
                 ip:        $ip
             );
 
-            // Council conversation turn logging
+            $sourceInterface = $currentUser ? 'self_admin' : 'self_public';
+            $activeAgent = $this->agentContext->getAgentId();
+            $this->councilClient->withAgent($activeAgent);
+
+            // Council conversation user turn logging
             if (($_ENV['CONVERSATION_BACKEND'] ?? 'local') === 'council') {
                 try {
                     if ($this->councilClient->isAvailable()) {
                         $this->councilClient->appendMessage(
-                            sessionId:  $sessionId,
-                            role:       'user',
-                            content:    $message,
-                            metadata:   ['model' => $model, 'provider' => $provider],
-                            ipAddress:  $ip,
-                            operatorId: $userId
+                            sessionId:       $sessionId,
+                            role:            'user',
+                            content:         $message,
+                            metadata:        ['model' => $model, 'provider' => $provider],
+                            ipAddress:       $ip,
+                            operatorId:      $userId,
+                            sourceInterface: $sourceInterface
                         );
                     }
                 } catch (\Throwable $e) {
@@ -297,6 +302,8 @@ class ChatController extends BaseController {
             $result    = $aiService->chat($message, $history, $systemPrompt);
 
             $tokensUsed = $result['usage']['total_tokens'] ?? $result['usage']['output_tokens'] ?? null;
+            $tokensIn   = $result['usage']['prompt_tokens'] ?? null;
+            $tokensOut  = $result['usage']['completion_tokens'] ?? $tokensUsed;
 
             // Local assistant turn logging
             $this->chatLogService->log(
@@ -311,21 +318,24 @@ class ChatController extends BaseController {
                 ip:        $ip
             );
 
-            // Council assistant turn logging
+            // Council conversation assistant turn logging
             if (($_ENV['CONVERSATION_BACKEND'] ?? 'local') === 'council') {
                 try {
                     if ($this->councilClient->isAvailable()) {
                         $this->councilClient->appendMessage(
-                            sessionId:  $sessionId,
-                            role:       'assistant',
-                            content:    $result['reply'],
-                            metadata:   [
+                            sessionId:       $sessionId,
+                            role:            'assistant',
+                            content:         $result['reply'],
+                            metadata:        [
                                 'model'    => $model,
                                 'provider' => $provider,
                                 'tokens'   => $tokensUsed
                             ],
-                            ipAddress:  $ip,
-                            operatorId: $userId
+                            ipAddress:       $ip,
+                            operatorId:      $userId,
+                            sourceInterface: $sourceInterface,
+                            tokensInput:     $tokensIn,
+                            tokensOutput:    $tokensOut
                         );
                     }
                 } catch (\Throwable $e) {
