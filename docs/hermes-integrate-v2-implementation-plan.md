@@ -1230,6 +1230,21 @@ A local model can be used when available without becoming the source of agent id
 
 ---
 
+### Phase 7 Amendment: Elimination of Composer & Migration to Vanilla PHP REST Dispatcher
+
+#### Architectural Context & Rationale
+* `zeon7-self` is designed as a 100% vanilla PHP application with zero external package dependencies (`require_once` core architecture).
+* `council-library/php-api` historically carried a dependency on the Slim 4 framework, introducing `composer`, `composer.lock`, and `vendor/` requirements onto the VPS and development runtime.
+* To ensure consistent, frameworkless architecture across the entire ForeverBox stack, Composer is explicitly eliminated from `council-library`.
+
+#### Implementation Scope
+1. **Remove Composer Stack:** Strip out `composer.json`, `composer.lock`, and `vendor/` from `council-library/php-api`.
+2. **Native Lightweight Router:** Implement a native, zero-dependency REST request dispatcher and controller invoker inside `council-library/php-api/public/index.php` and `src/Core/Router.php`.
+3. **Native PSR-7 / JSON Responses:** Replace third-party PSR-7 and DI bridges with lightweight native request parsing, token authentication, and JSON response helpers.
+4. **Deploy & Verify:** Ensure VPS deployment and local development require only `git pull` and native `php -S 0.0.0.0:8080`, with 100% passing tests on all canonical endpoints.
+
+---
+
 # 15. Phase 8 — Rebuild Self Public Chat Around Council/Hermes
 
 The current `/api/chat.php` must become an adapter to the canonical runtime.
