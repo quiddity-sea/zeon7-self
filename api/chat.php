@@ -248,8 +248,8 @@ class ChatController extends BaseController {
                             $systemPrompt .= "\n\n--- COUNCIL SANCTUM MEMORY ---\n";
                             foreach ($councilMemory['results'] as $mem) {
                                 $ns = $mem['namespace'] ?? 'core';
-                                $k  = $mem['key'] ?? 'fact';
-                                $c  = $mem['content'] ?? '';
+                                $k  = $mem['key_name'] ?? $mem['key'] ?? 'fact';
+                                $c  = $mem['content_text'] ?? $mem['content'] ?? '';
                                 $systemPrompt .= "[{$ns}/{$k}] {$c}\n";
                             }
                         }

@@ -61,84 +61,76 @@ class InstructionService extends BaseService {
 
     /**
      * Get available persona heads and components for an agent.
+     * Fetches live dynamic components from Council Registry soul_components when available.
      */
     public function getAgentComponents(?string $agentId = null): array {
         $agent = $agentId ?? $this->agentCtx->getAgentId();
-        $dataPath = $_ENV['FOREVERBOX_DATA_PATH'] ?? '/foreverbox_data';
         $components = [];
 
+        // 1. Try Council Registry soul_components
+        try {
+            require_once __DIR__ . '/CouncilClient.php';
+            $client = new CouncilClient();
+            $resp = $client->getHeads($agent);
+            if (!empty($resp['heads'])) {
+                foreach ($resp['heads'] as $h) {
+                    $headId = (int)$h['id'];
+                    $fullHead = $client->getHead($headId);
+                    $key = $h['component_key'];
+                    $filter = $h['provider_filter'] ? " [{$h['provider_filter']}]" : "";
+                    $components[$key] = [
+                        'id'          => $headId,
+                        'key'         => $key,
+                        'name'        => ($h['section_description'] ?: ucfirst($key)) . $filter,
+                        'description' => $h['section_description'] ?? '',
+                        'order'       => (int)$h['section_order'],
+                        'provider'    => $h['provider_filter'],
+                        'agent_slug'  => $h['agent_slug'],
+                        'content'     => $fullHead['head']['section_content'] ?? ''
+                    ];
+                }
+                if (!empty($components)) {
+                    return $components;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Council unavailable, fallback to profile files
+        }
+
+        // 2. Fallback to local profile files
+        $dataPath = $_ENV['FOREVERBOX_DATA_PATH'] ?? '/foreverbox_data';
         if ($agent === 'zeon7') {
-            // Zeon7: From the Noise (Curator) & Coder Variant
             $ftnFile = __DIR__ . '/../../instructions/Restart/current-instructions.md';
             if (file_exists($ftnFile)) {
                 $components['from_the_noise'] = [
-                    'id'          => 'from_the_noise',
+                    'id'          => 1,
+                    'key'         => 'from_the_noise',
                     'name'        => 'From the Noise (Curator & Journalist)',
                     'description' => 'The complete CRISPE prompt: Media production, "Signal vs Noise", 8-part content suite, and News Desk sourcing.',
                     'content'     => file_get_contents($ftnFile)
                 ];
             }
-
             $coderFile = "{$dataPath}/profiles/zeon7/SOUL.md";
             if (file_exists($coderFile)) {
                 $components['coder'] = [
-                    'id'          => 'coder',
+                    'id'          => 2,
+                    'key'         => 'coder',
                     'name'        => 'Coder Variant (System Architect)',
                     'description' => 'Clean architecture, code patching, implementation diffs, zero em-dashes.',
                     'content'     => file_get_contents($coderFile)
                 ];
             }
-        } elseif ($agent === 'leon') {
-            $soulFile = "{$dataPath}/profiles/leon/SOUL.md";
+        } else {
+            $soulFile = "{$dataPath}/profiles/{$agent}/SOUL.md";
             if (file_exists($soulFile)) {
-                $components['producer'] = [
-                    'id'          => 'producer',
-                    'name'        => 'The Initiative (Technical Producer)',
-                    'description' => 'Master audio, stem organisation, systems architecture on Current Earth.',
+                $components[$agent] = [
+                    'id'          => 1,
+                    'key'         => $agent,
+                    'name'        => ucfirst($agent) . ' Default Head',
+                    'description' => ucfirst($agent) . ' SOUL baseline persona',
                     'content'     => file_get_contents($soulFile)
                 ];
             }
-        } elseif ($agent === 'gemma') {
-            $soulFile = "{$dataPath}/profiles/gemma/SOUL.md";
-            if (file_exists($soulFile)) {
-                $components['coach'] = [
-                    'id'          => 'coach',
-                    'name'        => 'ForeverFit (Interface & Coach)',
-                    'description' => 'Neurodivergent-first wellness, empathetic anchor, human bridge.',
-                    'content'     => file_get_contents($soulFile)
-                ];
-            }
-        } elseif ($agent === 'otec') {
-            $soulFile = "{$dataPath}/profiles/otec/SOUL.md";
-            if (file_exists($soulFile)) {
-                $components['director'] = [
-                    'id'          => 'director',
-                    'name'        => 'First Teacher from Echo (Director)',
-                    'description' => 'Topology coordinator, 3x3x3 geometry, Wolf dispatch, memory aggregation.',
-                    'content'     => file_get_contents($soulFile)
-                ];
-            }
-        } elseif ($agent === 'wolf') {
-            $soulFile = "{$dataPath}/profiles/wolf/SOUL.md";
-            if (file_exists($soulFile)) {
-                $components['worker'] = [
-                    'id'          => 'worker',
-                    'name'        => 'Research Worker Directive',
-                    'description' => 'Stateless background worker, autonomous search, facts to Sanctum.',
-                    'content'     => file_get_contents($soulFile)
-                ];
-            }
-        }
-
-        // Shared User Context
-        $userFile = "{$dataPath}/profiles/{$agent}/USER.md";
-        if (file_exists($userFile)) {
-            $components['user_context'] = [
-                'id'          => 'user_context',
-                'name'        => 'Operator Profile & Context (USER.md)',
-                'description' => 'Context, communication protocols, and relationship notes with operator.',
-                'content'     => file_get_contents($userFile)
-            ];
         }
 
         return $components;

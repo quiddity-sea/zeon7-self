@@ -120,13 +120,39 @@ class AgentContextService
 
     /**
      * List all available agents in the ForeverBox ecosystem.
+     * Queries Council Registry API first, falling back to local profile directory.
      */
     public function listAvailableAgents(): array
     {
+        // Try Council Registry API first
+        try {
+            require_once __DIR__ . '/CouncilClient.php';
+            $client = new CouncilClient();
+            $resp = $client->getAgents();
+            if (!empty($resp['agents'])) {
+                $agents = [];
+                foreach ($resp['agents'] as $a) {
+                    $slug = $a['slug'];
+                    $manifest = $this->getManifestForAgent($slug);
+                    $agents[$slug] = [
+                        'id'        => $slug,
+                        'name'      => $a['display_name'] ?? $manifest['display_name'] ?? ucfirst($slug),
+                        'tagline'   => $manifest['tagline'] ?? $a['description'] ?? '',
+                        'role'      => $a['role'] ?? $manifest['role'] ?? '',
+                        'accent'    => $manifest['theme']['accent'] ?? '#00ffff',
+                        'heads'     => $a['heads'] ?? [],
+                        'is_active' => ($slug === $this->agentId)
+                    ];
+                }
+                return $agents;
+            }
+        } catch (\Throwable $e) {
+            // Council unavailable, fallback to local directory scan
+        }
+
         $dataPath = $_ENV['FOREVERBOX_DATA_PATH'] ?? '/foreverbox_data';
         $profilesDir = "{$dataPath}/profiles";
         $agents = [];
-
         $known = ['zeon7', 'leon', 'gemma', 'otec', 'wolf'];
         
         if (is_dir($profilesDir)) {
@@ -141,32 +167,32 @@ class AgentContextService
         }
 
         foreach ($known as $slug) {
-            $manifestFile = "{$profilesDir}/{$slug}/ui-manifest.yaml";
-            $name = ucfirst($slug);
-            $tagline = '';
-            $role = '';
-            $accent = '#00ffff';
-
-            if (file_exists($manifestFile)) {
-                $content = file_get_contents($manifestFile);
-                $parsed = $this->parseSimpleYaml($content);
-                $name = $parsed['display_name'] ?? ucfirst($slug);
-                $tagline = $parsed['tagline'] ?? '';
-                $role = $parsed['role'] ?? '';
-                $accent = $parsed['theme']['accent'] ?? '#00ffff';
-            }
-
+            $manifest = $this->getManifestForAgent($slug);
             $agents[$slug] = [
                 'id'        => $slug,
-                'name'      => $name,
-                'tagline'   => $tagline,
-                'role'      => $role,
-                'accent'    => $accent,
+                'name'      => $manifest['display_name'] ?? ucfirst($slug),
+                'tagline'   => $manifest['tagline'] ?? '',
+                'role'      => $manifest['role'] ?? '',
+                'accent'    => $manifest['theme']['accent'] ?? '#00ffff',
+                'heads'     => [],
                 'is_active' => ($slug === $this->agentId)
             ];
         }
 
         return $agents;
+    }
+
+    private function getManifestForAgent(string $slug): array
+    {
+        $dataPath = $_ENV['FOREVERBOX_DATA_PATH'] ?? '/foreverbox_data';
+        $manifestFile = "{$dataPath}/profiles/{$slug}/ui-manifest.yaml";
+        if (file_exists($manifestFile)) {
+            if (function_exists('yaml_parse_file')) {
+                return yaml_parse_file($manifestFile) ?: [];
+            }
+            return $this->parseSimpleYaml(file_get_contents($manifestFile));
+        }
+        return [];
     }
 
     private function getManifest(): array

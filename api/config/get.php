@@ -22,10 +22,25 @@ class ConfigGetController extends BaseController {
         
         try {
             $config = $this->configService->getAll();
-            
+
+            $councilInfo = ['available' => false];
+            try {
+                require_once __DIR__ . '/../../src/services/CouncilClient.php';
+                $client = new CouncilClient();
+                if ($client->isAvailable()) {
+                    $models = $client->getModels();
+                    $councilInfo = [
+                        'available' => true,
+                        'profiles'  => $models['profiles'] ?? [],
+                        'endpoint'  => $models['local_endpoint'] ?? ''
+                    ];
+                }
+            } catch (\Throwable $e) {}
+
             $this->sendResponse([
-                'success' => true,
-                'config' => $config,
+                'success'      => true,
+                'config'       => $config,
+                'council'      => $councilInfo,
                 'total_tokens' => $this->configService->getTotalTokens()
             ]);
             

@@ -230,6 +230,103 @@ class CouncilClient
         return $this->put('/v1/registry/assignments', $assignment);
     }
 
+    // ─── AGENT CATALOGUE & HEAD MANAGEMENT (REGISTRY) ───────
+
+    /**
+     * Get complete canonical agent roster with head summaries.
+     * @return array{success: bool, count: int, agents: array}
+     */
+    public function getAgents(): array
+    {
+        return $this->get('/v1/registry/agents');
+    }
+
+    /**
+     * Get single agent detail including allowed scopes and available heads.
+     * @param string $slug
+     * @return array{success: bool, agent: array}
+     */
+    public function getAgent(string $slug): array
+    {
+        return $this->get("/v1/registry/agents/{$slug}");
+    }
+
+    /**
+     * List all dynamic SOUL components / heads, optionally filtered by agent.
+     * @param string|null $agentSlug
+     * @return array{success: bool, count: int, heads: array}
+     */
+    public function getHeads(?string $agentSlug = null): array
+    {
+        $query = [];
+        if ($agentSlug !== null) {
+            $query['agent_slug'] = $agentSlug;
+        }
+        return $this->get('/v1/registry/heads', $query);
+    }
+
+    /**
+     * Get full head component including section content.
+     * @param int $id
+     * @return array{success: bool, head: array}
+     */
+    public function getHead(int $id): array
+    {
+        return $this->get("/v1/registry/heads/{$id}");
+    }
+
+    /**
+     * Create a new dynamic SOUL component / head.
+     * @param array $data  {component_key, agent_slug, provider_filter, section_order, section_description, section_content}
+     * @return array{success: bool, id: int, message: string}
+     */
+    public function createHead(array $data): array
+    {
+        return $this->post('/v1/registry/heads', $data);
+    }
+
+    /**
+     * Update an existing SOUL component / head.
+     * @param int   $id
+     * @param array $data  Partial fields to update
+     * @return array{success: bool, message: string}
+     */
+    public function updateHead(int $id, array $data): array
+    {
+        return $this->put("/v1/registry/heads/{$id}", $data);
+    }
+
+    /**
+     * Delete a SOUL component / head.
+     * @param int $id
+     * @return array{success: bool, message: string}
+     */
+    public function deleteHead(int $id): array
+    {
+        return $this->delete("/v1/registry/heads/{$id}");
+    }
+
+    /**
+     * Get cognitive router model profiles and tier assignments.
+     * @return array{success: bool, profiles: array, local_endpoint: string}
+     */
+    public function getModels(): array
+    {
+        return $this->get('/v1/registry/models');
+    }
+
+    /**
+     * Create a new client instance targeting a different agent.
+     * @param string $agentSlug
+     * @return self
+     */
+    public function withAgent(string $agentSlug): self
+    {
+        $clone = clone $this;
+        $clone->agentId = $agentSlug;
+        return $clone;
+    }
+
     // ─── AGENT MANIFEST (from foreverbox-data) ───────────────
 
     /**
