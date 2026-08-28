@@ -31,6 +31,11 @@ class AgentContextService
         return $this->agentId;
     }
 
+    public function getActiveAgentSlug(): string
+    {
+        return $this->getAgentId();
+    }
+
     public function setAgentId(string $agentId): void
     {
         $this->agentId = strtolower(trim($agentId));
@@ -118,11 +123,12 @@ class AgentContextService
         return $this->getManifest()['layout']['type'] ?? 'cockpit';
     }
 
-    /**
-     * List all available agents in the ForeverBox ecosystem.
-     * Queries Council Registry API first, falling back to local profile directory.
-     */
     public function listAvailableAgents(): array
+    {
+        return $this->getAvailableAgents();
+    }
+
+    public function getAvailableAgents(): array
     {
         // Try Council Registry API first
         try {
