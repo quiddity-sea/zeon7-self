@@ -68,7 +68,7 @@ class ConfigService extends BaseService {
 
         $this->executeQuery($sql, [
             $provider,
-            $encryptedData['encrypted'],
+            $encryptedData['data'],
             $encryptedData['iv']
         ]);
     }

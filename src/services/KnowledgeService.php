@@ -43,7 +43,17 @@ class KnowledgeService extends BaseService {
         }
     }
 
-    // ... (skipping unchanged)
+    /**
+     * Get all knowledge files with chunk counts
+     */
+    public function getAllFiles(): array {
+        $sql = "SELECT kd.*, COUNT(kc.id) as chunk_count 
+                FROM knowledge_doc kd 
+                LEFT JOIN knowledge_chunk kc ON kd.id = kc.doc_id 
+                GROUP BY kd.id 
+                ORDER BY kd.created_at DESC";
+        return $this->fetchAll($sql);
+    }
 
     public function getChunksByDocId(int $docId): array {
         $sql = "SELECT heading, content, chunk_index 
