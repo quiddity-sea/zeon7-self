@@ -21,6 +21,33 @@ class InstructionService extends BaseService {
     public function getCurrentVersion(?string $agentId = null): ?array {
         $agent = $agentId ?? $this->agentCtx->getAgentId();
 
+        // 1. Council SOUL Authority
+        if (($_ENV['SOUL_BACKEND'] ?? 'council') === 'council') {
+            try {
+                $components = $this->getAgentComponents($agent);
+                if (!empty($components)) {
+                    uasort($components, fn($a, $b) => ($a['order'] ?? 50) <=> ($b['order'] ?? 50));
+                    $sections = [];
+                    foreach ($components as $c) {
+                        if (!empty($c['content'])) {
+                            $sections[] = $c['content'];
+                        }
+                    }
+                    if (!empty($sections)) {
+                        return [
+                            'version'    => 1,
+                            'agent_id'   => $agent,
+                            'component'  => 'canonical_soul',
+                            'content'    => implode("\n\n", $sections),
+                            'created_at' => date('Y-m-d H:i:s'),
+                            'created_by' => 'council'
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 2. Local fallback table
         $sql = "SELECT * FROM system_instructions 
                 WHERE agent_id = ? AND is_active = 1
                 ORDER BY created_at DESC 

@@ -77,6 +77,27 @@ class LoreService extends BaseService {
     /**
      * Create new lore entry
      */
+    public function add(string $type, string $content, bool $isPublic = false, array $tags = [], ?string $keyName = null, ?string $namespace = null): array {
+        if ($this->useCouncil) {
+            try {
+                $key = $keyName ?: (preg_replace('/[^a-z0-9_-]/i', '_', substr($content, 0, 32)) ?: 'fact_' . bin2hex(random_bytes(4)));
+                $client = $this->councilClient->withAgent($this->agentCtx->getAgentId());
+                $res = $client->upsertMemory($namespace ?: ($type ?: 'general'), $key, [
+                    'content'     => $content,
+                    'importance'  => 75,
+                    'tags'        => $tags,
+                    'source_type' => 'user_directive'
+                ]);
+                return ['success' => true, 'key' => $key, 'result' => $res];
+            } catch (\Throwable $e) {
+                return ['success' => false, 'error' => $e->getMessage()];
+            }
+        }
+
+        $id = $this->create($type, $content, $tags, $isPublic);
+        return ['success' => $id > 0, 'id' => $id];
+    }
+
     public function create(string $type, string $content, array $tags = [], bool $isPublic = false): int {
         if ($this->useCouncil) {
             try {
@@ -86,7 +107,7 @@ class LoreService extends BaseService {
                     'content'     => $content,
                     'importance'  => 75,
                     'tags'        => $tags,
-                    'source_type' => 'self_admin'
+                    'source_type' => 'user_directive'
                 ]);
             } catch (\Throwable $e) {}
         }
@@ -111,7 +132,7 @@ class LoreService extends BaseService {
                     'content'     => $content,
                     'importance'  => 75,
                     'tags'        => $tags,
-                    'source_type' => 'self_admin'
+                    'source_type' => 'user_directive'
                 ]);
             } catch (\Throwable $e) {}
         }
