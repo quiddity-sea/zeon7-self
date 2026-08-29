@@ -1943,63 +1943,63 @@ The migration is complete only when:
 
 ## Canonical state
 
-- [ ] Council + ForeverBox Data are authoritative for agent function/state.
-- [ ] VPS MariaDB is the canonical production database.
-- [ ] Self contains no competing agent database.
-- [ ] Heads are canonical and editable through Self.
-- [ ] Models/routing are canonical and editable through Self.
-- [ ] Agent identity is canonical.
-- [ ] Memory is canonical.
-- [ ] Knowledge is canonical.
-- [ ] Conversation logs are canonical.
+- [x] Council + ForeverBox Data are authoritative for agent function/state.
+- [x] VPS MariaDB is the canonical production database.
+- [x] Self contains no competing agent database.
+- [x] Heads are canonical and editable through Self.
+- [x] Models/routing are canonical and editable through Self.
+- [x] Agent identity is canonical.
+- [x] Memory is canonical.
+- [x] Knowledge is canonical.
+- [x] Conversation logs are canonical.
 
 ## Runtime
 
-- [ ] VPS Hermes is the primary Hermes runtime.
-- [ ] Main-PC Hermes is secondary/remote where used.
-- [ ] Local models are compute endpoints reachable over Tailscale.
-- [ ] Cloud fallback works when a local model endpoint is unavailable.
-- [ ] The local PC is not required for canonical agent identity/state.
+- [x] VPS Hermes is the primary Hermes runtime.
+- [x] Main-PC Hermes is secondary/remote where used.
+- [x] Local models are compute endpoints reachable over Tailscale.
+- [x] Cloud fallback works when a local model endpoint is unavailable.
+- [x] The local PC is not required for canonical agent identity/state.
 
 ## Networking
 
-- [ ] Self -> Council uses the intended Tailscale/private path.
-- [ ] Council/internal database services are not publicly exposed unnecessarily.
-- [ ] No Cloudflare tunnel/proxy dependency has been introduced.
-- [ ] Endpoint configuration is deployment-controlled.
+- [x] Self -> Council uses the intended Tailscale/private path.
+- [x] Council/internal database services are not publicly exposed unnecessarily.
+- [x] No Cloudflare tunnel/proxy dependency has been introduced.
+- [x] Endpoint configuration is deployment-controlled.
 
 ## Data
 
-- [ ] Operational `foreverbox-data` is available on VPS.
-- [ ] Operational Quiddity Lore Sea is available on VPS.
-- [ ] GitHub remains source-controlled.
-- [ ] Backup/recovery is separate from replication.
-- [ ] Local data copies are not competing authorities.
+- [x] Operational `foreverbox-data` is available on VPS.
+- [x] Operational Quiddity Lore Sea is available on VPS.
+- [x] GitHub remains source-controlled.
+- [x] Backup/recovery is separate from replication.
+- [x] Local data copies are not competing authorities.
 
 ## Interfaces
 
-- [ ] Self Public uses canonical Council/Hermes execution.
-- [ ] Self Admin manages canonical agents.
-- [ ] From the Noise uses canonical agent state.
-- [ ] Hermes CLI uses the same canonical state.
+- [x] Self Public uses canonical Council/Hermes execution.
+- [x] Self Admin manages canonical agents.
+- [x] From the Noise uses canonical agent state.
+- [x] Hermes CLI uses the same canonical state.
 
 ## UI
 
-- [ ] Existing component system remains intact.
-- [ ] Existing template architecture remains foundational.
-- [ ] Different agents can use different UI compositions.
-- [ ] A new agent does not require cloning the application.
+- [x] Existing component system remains intact.
+- [x] Existing template architecture remains foundational.
+- [x] Different agents can use different UI compositions.
+- [x] A new agent does not require cloning the application.
 
 ## Verification
 
-- [ ] Cross-interface tests pass.
-- [ ] Memory continuity passes.
-- [ ] Conversation continuity passes.
-- [ ] Model/head continuity passes.
-- [ ] From the Noise continuity passes.
-- [ ] VPS-primary independence test passes.
-- [ ] Local-model/fallback test passes.
-- [ ] Security tests pass.
+- [x] Cross-interface tests pass.
+- [x] Memory continuity passes.
+- [x] Conversation continuity passes.
+- [x] Model/head continuity passes.
+- [x] From the Noise continuity passes.
+- [x] VPS-primary independence test passes.
+- [x] Local-model/fallback test passes.
+- [x] Security tests pass.
 
 ---
 
