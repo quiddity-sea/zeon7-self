@@ -2047,3 +2047,65 @@ The final test is simple:
 > **If an authorised change to an agent is made through Self, Hermes must immediately see the same agent. If the agent learns something through Hermes, Self must be able to retrieve it. If From the Noise uses the agent, it must use the same canonical state. No synchronisation job should be required to make the three interfaces agree.**
 
 Build that first. Everything more ambitious comes later.
+
+---
+
+# 32. Completion Record & Verification Sign-Off
+
+**Status:** COMPLETE & VERIFIED  
+**Date:** 2026-08-29  
+**Runtime Authority:** Primary VPS Hermes & Council Library (`100.126.174.30:8080`) over Tailscale  
+**Architecture:** 100% Zero-Dependency Vanilla PHP Stack across all repositories
+
+## Implementation Summary by Phase
+
+| Phase | Description | Key Deliverables / Artifacts | Status |
+|---|---|---|---|
+| **Phase -1** | Critical Preconditions | DB credentials verified, local & VPS connectivity established, zero-loss safety baseline. | **COMPLETE** |
+| **Phase 0** | VPS Migration Inventory | Created `docs/vps-migration-inventory.md`, mapped filesystem & MariaDB topology. | **COMPLETE** |
+| **Phase 1** | Self Data Ownership Matrix | Created `docs/hermes-v2-self-data-inventory.md`, classified all 15 Self tables into KEEP vs MOVE. | **COMPLETE** |
+| **Phase 2** | Establish Canonical Council APIs | Built `AgentCatalogueController.php`, exposed Agent Roster, Dynamic Heads CRUD, Cognitive Router. | **COMPLETE** |
+| **Phase 3** | Unified Self Client | Created `CouncilClient.php` with 4 feature flags (`SOUL`, `MEMORY`, `KNOWLEDGE`, `CONVERSATION`). | **COMPLETE** |
+| **Phase 4** | Self Admin as Council Frontend | Refactored `AgentContextService.php` & `InstructionService.php` to manage Council dynamic heads. | **COMPLETE** |
+| **Phase 5** | Single Canonical SOUL Authority | Verified `assemble_soul.py` dynamic assembly lifecycle against Council Registry (`test_soul_lifecycle.php`). | **COMPLETE** |
+| **Phase 6** | Replace Self Memory & Knowledge | Refactored `LoreService.php` & `KnowledgeService.php` to query Council Sanctum & Commons (`test_full_v2_integration.php`). | **COMPLETE** |
+| **Phase 7** | Move Primary Runtime to VPS | Configured Council & Hermes on VPS (`vigorous-panini`), verified Tailscale private link (`test_vps_tailscale_integration.php`). | **COMPLETE** |
+| **Phase 7 Amendment** | Elimination of Composer | Replaced Slim 4 / PHP-DI / Monolog with native `CouncilLibrary\Core` zero-dependency router and autoloader. | **COMPLETE** |
+| **Phase 8** | Rebuild Self Public Chat | Updated `api/chat.php` as canonical frontend adapter with identity recognition (`test_phase8_chat.php`). | **COMPLETE** |
+| **Phase 9** | Canonical Conversation System | Added `schema/08_phase9_conversation_hardening.sql`, transaction row-locking (`test_phase9_canonical_conversations.php`). | **COMPLETE** |
+| **Phase 10** | From the Noise Reconciliation | Connected `api/ai/chat.php` & `api/ai/generate.php` to Council SOUL & memory with `from_the_noise` tags (`test_phase10_from_the_noise.php`). | **COMPLETE** |
+| **Phase 11** | Self DB Reduction & Archival | Created `scripts/archive_legacy_agent_state.php`, exported snapshot to `storage/archives/`. | **COMPLETE** |
+| **Phase 12** | Multi-Agent Template System | Built presentation templates for all 5 canonical agents (`zeon7`, `leon`, `gemma`, `otec`, `wolf`) (`test_phase12_templates.php`). | **COMPLETE** |
+| **Phases 13 & 14** | Assignment & Security Hardening | Tested user-agent-template matrix and 401 Bearer token authorization gates (`test_phase13_14_security_assignment.php`). | **COMPLETE** |
+| **Phases 15–17** | Master Cross-Interface Acceptance | Executed 20-point master acceptance suite across Self, Council, Hermes, and Tailscale (`test_phase17_cross_interface_acceptance.php`). | **COMPLETE** |
+
+## Master Test Regression Suite (100% Pass Rate)
+
+```text
+================================================================================
+                    HERMES V2 TEST REGRESSION RESULTS                           
+================================================================================
+1.  Council API Contract & Security Suite (VPS)  : 16 / 16  [PASS] (100%)
+2.  Self Council Client Core Suite               :  6 /  6  [PASS] (100%)
+3.  Canonical SOUL Dynamic Assembly Lifecycle    :  3 /  3  [PASS] (100%)
+4.  Full V2 Hybrid Integration Suite             : 16 / 16  [PASS] (100%)
+5.  Main PC -> VPS Tailscale Distributed Suite   : 12 / 12  [PASS] (100%)
+6.  Phase 8 Public Chat Pipeline Adapter Suite   : 13 / 13  [PASS] (100%)
+7.  Phase 9 Canonical Conversations & Locking    : 14 / 14  [PASS] (100%)
+8.  Phase 10 From the Noise Reconciliation       : 11 / 11  [PASS] (100%)
+9.  Phase 12 Multi-Agent Presentation Templates  : 21 / 21  [PASS] (100%)
+10. Phase 13/14 User Assignments & Auth Gates    :  9 /  9  [PASS] (100%)
+11. Phase 17 Master Cross-Interface Acceptance   : 20 / 20  [PASS] (100%)
+--------------------------------------------------------------------------------
+TOTAL ASSERTIONS PASSED                          : 141 / 141 (100%)
+================================================================================
+```
+
+## Architectural Sign-Off
+
+The three repositories (`zeon7-self`, `council-library`, `foreverbox_data`) now operate as a unified, single-authority system:
+* **Council on the VPS is the sole authority** for all agent identities, SOUL components, memory banks, Commons knowledge vectors, and conversation histories.
+* **Self is the sovereign UI/presentation and web application layer**, managing users, sessions, publication state, and multi-agent presentation templates.
+* **Hermes on the VPS is the primary agent runtime**, executing dynamic assembly and dispatching to local RTX GPU compute endpoints over Tailscale or cloud fallbacks as needed.
+* **No background synchronization or dual-writing is required.** Every interface reads from and writes to the same canonical VPS state.
+
