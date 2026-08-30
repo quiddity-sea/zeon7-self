@@ -105,9 +105,16 @@ abstract class BaseController {
      */
     protected function getJsonBody(): array {
         $raw = file_get_contents('php://input');
+        if (empty($raw) || trim($raw) === '') {
+            return !empty($_POST) ? $_POST : [];
+        }
+
         $data = json_decode($raw, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
+            if (!empty($_POST)) {
+                return $_POST;
+            }
             $this->errorResponse('Invalid JSON: ' . json_last_error_msg(), 400);
         }
         
