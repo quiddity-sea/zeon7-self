@@ -37,11 +37,12 @@ abstract class BaseController {
     /**
      * Send error response
      */
-    /**
-     * Send error response
-     */
     protected function sendError(string $message, int $code = 400): void {
         $this->jsonResponse(['error' => $message], $code);
+    }
+
+    protected function errorResponse(string $message, int $code = 400): void {
+        $this->sendError($message, $code);
     }
     
     /**
