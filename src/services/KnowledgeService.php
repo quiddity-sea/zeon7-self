@@ -96,7 +96,7 @@ class KnowledgeService extends BaseService {
                 if (isset($res['chunks']) && is_array($res['chunks'])) {
                     $chunks = [];
                     foreach ($res['chunks'] as $c) {
-                        $meta = json_decode($c['chunk_metadata'] ?? '[]', true);
+                        $meta = is_array($c['chunk_metadata'] ?? null) ? $c['chunk_metadata'] : (json_decode($c['chunk_metadata'] ?? '[]', true) ?: []);
                         $chunks[] = [
                             'heading'     => $meta['heading'] ?? ('Chunk #' . ($c['chunk_index'] ?? 0)),
                             'content'     => $c['chunk_text'] ?? '',

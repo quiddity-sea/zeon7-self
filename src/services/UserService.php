@@ -162,7 +162,7 @@ class UserService extends BaseService {
         $user = $this->findById($userId);
         if (!$user) return;
 
-        $ips = json_decode($user['last_10_ips'] ?? '[]', true);
+        $ips = is_array($user['last_10_ips'] ?? null) ? $user['last_10_ips'] : (json_decode($user['last_10_ips'] ?? '[]', true) ?: []);
         if (!is_array($ips)) {
             $ips = [];
         }
@@ -185,7 +185,7 @@ class UserService extends BaseService {
         $user = $this->findById($userId);
         if (!$user) return false;
 
-        $ips = json_decode($user['last_10_ips'] ?? '[]', true);
+        $ips = is_array($user['last_10_ips'] ?? null) ? $user['last_10_ips'] : (json_decode($user['last_10_ips'] ?? '[]', true) ?: []);
         if (!is_array($ips)) {
             $ips = [];
         }

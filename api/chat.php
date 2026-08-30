@@ -208,7 +208,7 @@ class ChatController extends BaseController {
             if (!empty($publicLore)) {
                 $systemPrompt .= "\n\n--- PUBLIC MEMORY BANKS ---\n";
                 foreach ($publicLore as $item) {
-                    $tags   = json_decode($item['tags'] ?? '[]', true);
+                    $tags   = is_array($item['tags'] ?? null) ? $item['tags'] : (json_decode($item['tags'] ?? '[]', true) ?: []);
                     $tagStr = is_array($tags) ? implode(', ', $tags) : '';
                     $systemPrompt .= "[{$item['type']}] {$item['content']}" . ($tagStr ? " (Tags: $tagStr)" : '') . "\n";
                 }

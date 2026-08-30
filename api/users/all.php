@@ -27,7 +27,7 @@ class UserListController extends BaseController {
 
             // Decode last_10_ips for convenient frontend consumption
             foreach ($users as &$u) {
-                $ips = json_decode($u['last_10_ips'] ?? '[]', true);
+                $ips = is_array($u['last_10_ips'] ?? null) ? $u['last_10_ips'] : (json_decode($u['last_10_ips'] ?? '[]', true) ?: []);
                 $u['ip_history'] = is_array($ips) ? $ips : [];
             }
             unset($u);

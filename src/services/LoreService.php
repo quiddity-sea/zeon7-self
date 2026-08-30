@@ -36,7 +36,7 @@ class LoreService extends BaseService {
                             'type'       => $r['namespace'] ?? 'general',
                             'key_name'   => $r['key_name'] ?? 'fact',
                             'content'    => $r['content_text'] ?? '',
-                            'tags'       => json_decode($r['tags'] ?? '[]', true) ?: [],
+                            'tags'       => is_array($r['tags'] ?? null) ? $r['tags'] : (json_decode($r['tags'] ?? '[]', true) ?: []),
                             'importance' => (int)($r['importance'] ?? 70),
                             'is_public'  => 1,
                             'created_at' => $r['created_at'] ?? date('Y-m-d H:i:s'),
@@ -53,7 +53,11 @@ class LoreService extends BaseService {
         $sql = "SELECT id, type, content, tags, is_public, created_at, updated_at 
                 FROM lore 
                 ORDER BY created_at DESC";
-        return $this->fetchAll($sql);
+        $rows = $this->fetchAll($sql);
+        foreach ($rows as &$row) {
+            $row['tags'] = is_array($row['tags'] ?? null) ? $row['tags'] : (json_decode($row['tags'] ?? '[]', true) ?: []);
+        }
+        return $rows;
     }
 
     /**
@@ -180,7 +184,7 @@ class LoreService extends BaseService {
                             'type'       => $r['namespace'] ?? 'general',
                             'key_name'   => $r['key_name'] ?? 'fact',
                             'content'    => $r['content_text'] ?? '',
-                            'tags'       => json_decode($r['tags'] ?? '[]', true) ?: [],
+                            'tags'       => is_array($r['tags'] ?? null) ? $r['tags'] : (json_decode($r['tags'] ?? '[]', true) ?: []),
                             'importance' => (int)($r['importance'] ?? 70),
                             'is_public'  => 1,
                             'created_at' => $r['created_at'] ?? date('Y-m-d H:i:s'),
@@ -196,6 +200,10 @@ class LoreService extends BaseService {
                 WHERE content LIKE ? OR tags LIKE ? 
                 ORDER BY created_at DESC";
         $searchTerm = "%$query%";
-        return $this->fetchAll($sql, [$searchTerm, $searchTerm]);
+        $rows = $this->fetchAll($sql, [$searchTerm, $searchTerm]);
+        foreach ($rows as &$row) {
+            $row['tags'] = is_array($row['tags'] ?? null) ? $row['tags'] : (json_decode($row['tags'] ?? '[]', true) ?: []);
+        }
+        return $rows;
     }
 }

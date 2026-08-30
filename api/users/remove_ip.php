@@ -55,7 +55,7 @@ class UserRemoveIpController extends BaseController {
 
                 // Fetch updated IP history
                 $updatedUser = $this->userService->findById($userId);
-                $ips = json_decode($updatedUser['last_10_ips'] ?? '[]', true);
+                $ips = is_array($updatedUser['last_10_ips'] ?? null) ? $updatedUser['last_10_ips'] : (json_decode($updatedUser['last_10_ips'] ?? '[]', true) ?: []);
 
                 $this->sendResponse([
                     'success'    => true,
