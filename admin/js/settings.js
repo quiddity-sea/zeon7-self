@@ -37,7 +37,10 @@ const Settings = {
         this.authChatSelect = document.getElementById('authChatAgent');
         this.configAgentSelect = document.getElementById('configAgentSelect');
         this.agentProviderSelect = document.getElementById('agentProvider');
-        this.agentModelInput = document.getElementById('agentModel');
+        this.agentOllamaSelect = document.getElementById('agentOllamaModel');
+        this.agentGeminiSelect = document.getElementById('agentGeminiModel');
+        this.agentCustomInput = document.getElementById('agentCustomModel');
+        this.agentModelHelp = document.getElementById('agentModelHelp');
         this.agentThinkCheckbox = document.getElementById('agentThink');
         this.agentEngines = {};
         this.currentConfigAgent = 'zeon7';
@@ -46,10 +49,16 @@ const Settings = {
             this.configAgentSelect.addEventListener('change', () => this.handleConfigAgentChange());
         }
         if (this.agentProviderSelect) {
-            this.agentProviderSelect.addEventListener('change', () => this.syncCurrentAgentToState());
+            this.agentProviderSelect.addEventListener('change', () => this.handleAgentProviderChange());
         }
-        if (this.agentModelInput) {
-            this.agentModelInput.addEventListener('input', () => this.syncCurrentAgentToState());
+        if (this.agentOllamaSelect) {
+            this.agentOllamaSelect.addEventListener('change', () => this.syncCurrentAgentToState());
+        }
+        if (this.agentGeminiSelect) {
+            this.agentGeminiSelect.addEventListener('change', () => this.syncCurrentAgentToState());
+        }
+        if (this.agentCustomInput) {
+            this.agentCustomInput.addEventListener('input', () => this.syncCurrentAgentToState());
         }
         if (this.agentThinkCheckbox) {
             this.agentThinkCheckbox.addEventListener('change', () => this.syncCurrentAgentToState());
@@ -100,11 +109,41 @@ const Settings = {
         });
     },
 
+    handleAgentProviderChange() {
+        const prov = this.agentProviderSelect ? this.agentProviderSelect.value : 'gemini';
+        if (this.agentGeminiSelect) this.agentGeminiSelect.style.display = (prov === 'gemini') ? 'block' : 'none';
+        if (this.agentOllamaSelect) this.agentOllamaSelect.style.display = (prov === 'ollama') ? 'block' : 'none';
+        if (this.agentCustomInput) this.agentCustomInput.style.display = (prov === 'openrouter') ? 'block' : 'none';
+
+        if (this.agentModelHelp) {
+            if (prov === 'gemini') this.agentModelHelp.textContent = 'Google Gemini 2.5 models with web grounding and high speed.';
+            else if (prov === 'ollama') this.agentModelHelp.textContent = 'Local hardware / Tailscale VPN remote Ollama inference.';
+            else this.agentModelHelp.textContent = 'Specify OpenRouter multi-LLM model identifier.';
+        }
+        this.syncCurrentAgentToState();
+    },
+
+    getAgentCurrentModel() {
+        const prov = this.agentProviderSelect ? this.agentProviderSelect.value : 'gemini';
+        if (prov === 'gemini') {
+            return this.agentGeminiSelect ? this.agentGeminiSelect.value : 'gemini-2.5-flash';
+        } else if (prov === 'ollama') {
+            return this.agentOllamaSelect ? this.agentOllamaSelect.value : 'Brain32:latest';
+        } else {
+            return this.agentCustomInput ? this.agentCustomInput.value.trim() : '';
+        }
+    },
+
     syncCurrentAgentToState() {
         if (!this.currentConfigAgent) return;
+        const prov = this.agentProviderSelect ? this.agentProviderSelect.value : 'gemini';
+        let model = this.getAgentCurrentModel();
+        if (!model) {
+            model = (prov === 'ollama') ? 'Brain32:latest' : (prov === 'gemini' ? 'gemini-2.5-flash' : '');
+        }
         this.agentEngines[this.currentConfigAgent] = {
-            provider: this.agentProviderSelect ? this.agentProviderSelect.value : 'gemini',
-            model: this.agentModelInput ? this.agentModelInput.value.trim() : 'gemini-2.5-flash',
+            provider: prov,
+            model: model,
             think: this.agentThinkCheckbox ? this.agentThinkCheckbox.checked : false
         };
     },
@@ -114,8 +153,27 @@ const Settings = {
         const slug = this.configAgentSelect ? this.configAgentSelect.value : 'zeon7';
         this.currentConfigAgent = slug;
         const cfg = this.agentEngines[slug] || { provider: 'gemini', model: 'gemini-2.5-flash', think: false };
-        if (this.agentProviderSelect) this.agentProviderSelect.value = cfg.provider || 'gemini';
-        if (this.agentModelInput) this.agentModelInput.value = cfg.model || '';
+        
+        const prov = cfg.provider || 'gemini';
+        if (this.agentProviderSelect) this.agentProviderSelect.value = prov;
+        
+        let modelVal = cfg.model;
+        if (!modelVal) {
+            modelVal = (prov === 'ollama') ? 'Brain32:latest' : (prov === 'gemini' ? 'gemini-2.5-flash' : '');
+        }
+
+        if (prov === 'gemini' && this.agentGeminiSelect) {
+            this.agentGeminiSelect.value = modelVal;
+        } else if (prov === 'ollama' && this.agentOllamaSelect) {
+            this.agentOllamaSelect.value = modelVal;
+            if (!this.agentOllamaSelect.value) {
+                this.agentOllamaSelect.value = 'Brain32:latest';
+            }
+        } else if (this.agentCustomInput) {
+            this.agentCustomInput.value = modelVal;
+        }
+        
+        this.handleAgentProviderChange();
         if (this.agentThinkCheckbox) this.agentThinkCheckbox.checked = Boolean(cfg.think);
     },
 

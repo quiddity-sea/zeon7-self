@@ -287,8 +287,25 @@ AuthMiddleware::enforcePageAuth();
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="agentModel">Model Specification</label>
-                                    <input type="text" id="agentModel" class="input-box" placeholder="e.g. Brain32:latest or gemini-2.5-flash">
+                                    <label for="agentProvider">Model Specification</label>
+                                    <!-- Agent Ollama Dropdown -->
+                                    <select id="agentOllamaModel" class="input-box" style="display: none;">
+                                        <option value="Brain32:latest">Brain32:latest (Local Qwen3.5 9B)</option>
+                                        <option value="tripolskypetr/qwen3.5-uncensored-aggressive:9b">qwen3.5-uncensored-aggressive:9b</option>
+                                        <option value="Zeon7-Gemma:64k">Zeon7-Gemma:64k</option>
+                                        <option value="fredrezones55/Gemma-4-Uncensored-HauhauCS-Aggressive:e2b-SCN">Gemma-4-Uncensored</option>
+                                    </select>
+
+                                    <!-- Agent Gemini Dropdown -->
+                                    <select id="agentGeminiModel" class="input-box" style="display: none;">
+                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+                                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Reasoning)</option>
+                                        <option value="gemini-flash-latest">Gemini Flash Latest</option>
+                                    </select>
+
+                                    <!-- Agent OpenRouter / Custom Input -->
+                                    <input type="text" id="agentCustomModel" class="input-box" placeholder="e.g. anthropic/claude-3.5-sonnet" style="display: none;">
+                                    <span class="helper-text" id="agentModelHelp">Select target model for this agent frequency.</span>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0;">
                                     <div class="hud-toggle-container" style="margin-top: 0.25rem;">
@@ -342,7 +359,7 @@ AuthMiddleware::enforcePageAuth();
 </div>
 
 <script src="js/app.js"></script>
-<script src="js/settings.js?v=2.3"></script>
+<script src="js/settings.js?v=2.4"></script>
 <script>
     if (typeof App !== 'undefined') App.requireAuth();
     document.addEventListener('DOMContentLoaded', () => {
