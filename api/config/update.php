@@ -46,6 +46,30 @@ class ConfigUpdateController extends BaseController {
                 $this->configService->setOllamaHost($data['ollama_host']);
             }
             
+            if (isset($data['public_chat_agent'])) {
+                $this->configService->setPublicChatAgent($data['public_chat_agent']);
+            }
+
+            if (isset($data['authenticated_default_agent'])) {
+                $this->configService->setAuthenticatedDefaultAgent($data['authenticated_default_agent']);
+            }
+
+            if (isset($data['agent_engines']) && is_array($data['agent_engines'])) {
+                foreach ($data['agent_engines'] as $slug => $eng) {
+                    $prov = $eng['provider'] ?? 'gemini';
+                    $mod = $eng['model'] ?? 'gemini-2.5-flash';
+                    $thk = !empty($eng['think']);
+                    $this->configService->setAgentEngine($slug, $prov, $mod, $thk);
+                }
+            } elseif (isset($data['agents']) && is_array($data['agents'])) {
+                foreach ($data['agents'] as $slug => $eng) {
+                    $prov = $eng['provider'] ?? 'gemini';
+                    $mod = $eng['model'] ?? 'gemini-2.5-flash';
+                    $thk = !empty($eng['think']);
+                    $this->configService->setAgentEngine($slug, $prov, $mod, $thk);
+                }
+            }
+            
             $this->sendResponse([
                 'success' => true,
                 'message' => 'Configuration updated successfully',

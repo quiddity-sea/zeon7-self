@@ -142,6 +142,76 @@ AuthMiddleware::enforcePageAuth();
                         <span class="helper-text" id="apiKeyHelp">Enter new key to update keyring. Empty keeps current key.</span>
                     </div>
 
+                    <!-- CHAT MODES ASSIGNMENT -->
+                    <div style="border-top: 1px solid rgba(34, 211, 238, 0.2); margin-top: 1.5rem; padding-top: 1.25rem;">
+                        <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--color-cyan); display: block; margin-bottom: 1rem;">
+                            // NEURAL LINK CHAT CONFIGURATION
+                        </span>
+                        
+                        <div class="form-group">
+                            <label for="publicChatAgent">Public Chat Default Agent</label>
+                            <select id="publicChatAgent" class="input-box">
+                                <option value="zeon7">Zeon7 (The Curator)</option>
+                                <option value="leon">Leon (The Producer)</option>
+                                <option value="gemma">Gemma (The Coach)</option>
+                                <option value="otec">Otec (The Director)</option>
+                                <option value="wolf">Wolf (Research Swarm)</option>
+                            </select>
+                            <span class="helper-text">Agent that greets anonymous visitors on the FBOX: SELF Landing Page.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="authChatAgent">Authenticated Chat Default Agent</label>
+                            <select id="authChatAgent" class="input-box">
+                                <option value="zeon7">Zeon7 (The Curator)</option>
+                                <option value="leon">Leon (The Producer)</option>
+                                <option value="gemma">Gemma (The Coach)</option>
+                                <option value="otec">Otec (The Director)</option>
+                                <option value="wolf">Wolf (Research Swarm)</option>
+                            </select>
+                            <span class="helper-text">Initial agent selected when an authenticated operator opens the chat.</span>
+                        </div>
+                    </div>
+
+                    <!-- PER-AGENT ENGINE MATRIX -->
+                    <div style="border-top: 1px solid rgba(245, 158, 11, 0.2); margin-top: 1.5rem; padding-top: 1.25rem;">
+                        <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--color-gold); display: block; margin-bottom: 1rem;">
+                            // PER-AGENT ENGINE ASSIGNMENT
+                        </span>
+                        <div class="form-group">
+                            <label for="configAgentSelect">Select Agent to Configure</label>
+                            <select id="configAgentSelect" class="input-box">
+                                <option value="zeon7">⚡ Zeon7</option>
+                                <option value="leon">🛠️ Leon</option>
+                                <option value="gemma">🧭 Gemma</option>
+                                <option value="otec">👁️ Otec</option>
+                                <option value="wolf">🐺 Wolf</option>
+                            </select>
+                        </div>
+
+                        <!-- Active Agent Engine Settings Card -->
+                        <div id="agentEngineCard" style="border: 1px dashed rgba(0, 242, 254, 0.3); padding: 1rem; border-radius: 4px; background: rgba(0, 242, 254, 0.02); margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label for="agentProvider">AI Neural Provider</label>
+                                <select id="agentProvider" class="input-box">
+                                    <option value="gemini">Google Gemini AI</option>
+                                    <option value="ollama">Local / Remote Ollama (Tailscale)</option>
+                                    <option value="openrouter">OpenRouter Multi-LLM</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="agentModel">Model Specification</label>
+                                <input type="text" id="agentModel" class="input-box" placeholder="e.g. Brain32:latest or gemini-2.5-flash">
+                            </div>
+                            <div class="form-group">
+                                <div class="hud-toggle-container" style="margin-top: 0.25rem;">
+                                    <input type="checkbox" id="agentThink" style="width: 18px; height: 18px; accent-color: var(--color-cyan); cursor: pointer;">
+                                    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.5rem;">Enable Reasoning Mode (--think=true)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
                         <button type="button" class="btn btn-secondary" id="testAiBtn">TEST CONNECTION</button>
                         <button type="submit" class="btn btn-primary" id="saveBtn">UPDATE SYSTEM PROTOCOLS</button>

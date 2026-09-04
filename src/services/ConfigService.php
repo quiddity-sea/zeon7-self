@@ -121,8 +121,51 @@ class ConfigService extends BaseService {
         $this->saveConfigValue('ollama_host', rtrim(trim($host), '/'));
     }
 
+    public function getPublicChatAgent(): string {
+        return $this->config['public_chat_agent'] ?? 'zeon7';
+    }
+
+    public function setPublicChatAgent(string $agentSlug): void {
+        $this->saveConfigValue('public_chat_agent', strtolower(trim($agentSlug)));
+    }
+
+    public function getAuthenticatedDefaultAgent(): string {
+        return $this->config['authenticated_default_agent'] ?? 'zeon7';
+    }
+
+    public function setAuthenticatedDefaultAgent(string $agentSlug): void {
+        $this->saveConfigValue('authenticated_default_agent', strtolower(trim($agentSlug)));
+    }
+
+    public function getAgentProvider(string $agentSlug): string {
+        $slug = strtolower(trim($agentSlug));
+        $val = $this->config["agent_{$slug}_provider"] ?? null;
+        return !empty($val) ? $val : $this->getCurrentProvider();
+    }
+
+    public function getAgentModel(string $agentSlug): string {
+        $slug = strtolower(trim($agentSlug));
+        $val = $this->config["agent_{$slug}_model"] ?? null;
+        if (!empty($val)) return $val;
+        $provider = $this->getAgentProvider($slug);
+        return $this->getModel($provider);
+    }
+
+    public function getAgentThink(string $agentSlug): bool {
+        $slug = strtolower(trim($agentSlug));
+        $val = $this->config["agent_{$slug}_think"] ?? null;
+        return ($val !== null) ? ((string)$val === '1' || $val === true || $val === 'true') : $this->getOllamaThink();
+    }
+
+    public function setAgentEngine(string $agentSlug, string $provider, string $model, bool $think = false): void {
+        $slug = strtolower(trim($agentSlug));
+        $this->saveConfigValue("agent_{$slug}_provider", $provider);
+        $this->saveConfigValue("agent_{$slug}_model", $model);
+        $this->saveConfigValue("agent_{$slug}_think", $think ? '1' : '0');
+    }
+
     public function getAll(): array {
-        return [
+        $all = [
             'provider' => $this->getCurrentProvider(),
             'model' => $this->getCurrentModel(),
             'gemini_key_set' => !empty($this->getApiKey('gemini')),
@@ -132,8 +175,22 @@ class ConfigService extends BaseService {
             'openrouter_model' => $this->getModel('openrouter'),
             'ollama_model' => $this->getModel('ollama'),
             'ollama_think' => $this->getOllamaThink(),
-            'ollama_host' => $this->getOllamaHost()
+            'ollama_host' => $this->getOllamaHost(),
+            'public_chat_agent' => $this->getPublicChatAgent(),
+            'authenticated_default_agent' => $this->getAuthenticatedDefaultAgent(),
+            'agent_engines' => []
         ];
+
+        $knownAgents = ['zeon7', 'leon', 'gemma', 'otec', 'wolf'];
+        foreach ($knownAgents as $slug) {
+            $all['agent_engines'][$slug] = [
+                'provider' => $this->getAgentProvider($slug),
+                'model'    => $this->getAgentModel($slug),
+                'think'    => $this->getAgentThink($slug)
+            ];
+        }
+
+        return $all;
     }
 
     public function getTotalTokens(): int {

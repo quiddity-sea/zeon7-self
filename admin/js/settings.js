@@ -32,6 +32,29 @@ const Settings = {
         this.terminalOutput = document.getElementById('terminalOutput');
         this.tokenDisplay = document.getElementById('tokenDisplay');
 
+        // Neural Link Matrix elements
+        this.publicChatSelect = document.getElementById('publicChatAgent');
+        this.authChatSelect = document.getElementById('authChatAgent');
+        this.configAgentSelect = document.getElementById('configAgentSelect');
+        this.agentProviderSelect = document.getElementById('agentProvider');
+        this.agentModelInput = document.getElementById('agentModel');
+        this.agentThinkCheckbox = document.getElementById('agentThink');
+        this.agentEngines = {};
+        this.currentConfigAgent = 'zeon7';
+
+        if (this.configAgentSelect) {
+            this.configAgentSelect.addEventListener('change', () => this.handleConfigAgentChange());
+        }
+        if (this.agentProviderSelect) {
+            this.agentProviderSelect.addEventListener('change', () => this.syncCurrentAgentToState());
+        }
+        if (this.agentModelInput) {
+            this.agentModelInput.addEventListener('input', () => this.syncCurrentAgentToState());
+        }
+        if (this.agentThinkCheckbox) {
+            this.agentThinkCheckbox.addEventListener('change', () => this.syncCurrentAgentToState());
+        }
+
         // Handlers
         this.providerSelect.addEventListener('change', () => this.handleProviderChange());
         this.form.addEventListener('submit', (e) => this.save(e));
@@ -57,6 +80,25 @@ const Settings = {
         }
 
         await this.loadSettings();
+    },
+
+    syncCurrentAgentToState() {
+        if (!this.currentConfigAgent) return;
+        this.agentEngines[this.currentConfigAgent] = {
+            provider: this.agentProviderSelect ? this.agentProviderSelect.value : 'gemini',
+            model: this.agentModelInput ? this.agentModelInput.value.trim() : 'gemini-2.5-flash',
+            think: this.agentThinkCheckbox ? this.agentThinkCheckbox.checked : false
+        };
+    },
+
+    handleConfigAgentChange() {
+        this.syncCurrentAgentToState();
+        const slug = this.configAgentSelect ? this.configAgentSelect.value : 'zeon7';
+        this.currentConfigAgent = slug;
+        const cfg = this.agentEngines[slug] || { provider: 'gemini', model: 'gemini-2.5-flash', think: false };
+        if (this.agentProviderSelect) this.agentProviderSelect.value = cfg.provider || 'gemini';
+        if (this.agentModelInput) this.agentModelInput.value = cfg.model || '';
+        if (this.agentThinkCheckbox) this.agentThinkCheckbox.checked = Boolean(cfg.think);
     },
 
     updateThinkStatusText(checked) {
@@ -117,6 +159,18 @@ const Settings = {
 
             if (this.ollamaHostInput) {
                 this.ollamaHostInput.value = data.config.ollama_host || 'http://127.0.0.1:11434';
+            }
+
+            // Load Neural Link Chat Mode configurations
+            if (data.config.public_chat_agent && this.publicChatSelect) {
+                this.publicChatSelect.value = data.config.public_chat_agent;
+            }
+            if (data.config.authenticated_default_agent && this.authChatSelect) {
+                this.authChatSelect.value = data.config.authenticated_default_agent;
+            }
+            if (data.config.agent_engines) {
+                this.agentEngines = data.config.agent_engines;
+                this.handleConfigAgentChange();
             }
 
             this.handleProviderChange();
@@ -277,12 +331,17 @@ const Settings = {
             model = this.customInput.value;
         }
 
+        this.syncCurrentAgentToState();
+
         const config = {
             provider: provider,
             model: model,
             api_key: this.apiKeyInput.value,
             ollama_think: this.ollamaThinkCheckbox ? this.ollamaThinkCheckbox.checked : false,
-            ollama_host: this.ollamaHostInput ? this.ollamaHostInput.value.trim() : 'http://127.0.0.1:11434'
+            ollama_host: this.ollamaHostInput ? this.ollamaHostInput.value.trim() : 'http://127.0.0.1:11434',
+            public_chat_agent: this.publicChatSelect ? this.publicChatSelect.value : 'zeon7',
+            authenticated_default_agent: this.authChatSelect ? this.authChatSelect.value : 'zeon7',
+            agent_engines: this.agentEngines
         };
 
         this.saveBtn.disabled = true;

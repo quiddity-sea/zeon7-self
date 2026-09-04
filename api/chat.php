@@ -39,15 +39,36 @@ class ChatController extends BaseController {
     }
 
     public function handleRequest(): void {
-        // Return Public Status if GET
+        // Return Chat Handshake & Capabilities if GET
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $provider = $this->configService->getCurrentProvider();
+            $authService = new AuthService();
+            $currentUser = $authService->getCurrentUser();
+            $isOperator  = !empty($currentUser['user_id']);
+
+            $availableAgents = [];
+            foreach ($this->agentContext->getAvailableAgents() as $slug => $data) {
+                $availableAgents[] = [
+                    'id'     => $slug,
+                    'name'   => $data['name'],
+                    'role'   => $data['role'] ?? '',
+                    'accent' => $data['accent'] ?? '#00f2fe'
+                ];
+            }
+
+            $publicAgent = $this->configService->getPublicChatAgent();
+            $authDefault = $this->configService->getAuthenticatedDefaultAgent();
+            $activeAgent = $isOperator ? $authDefault : $publicAgent;
+
             $this->sendResponse([
-                'success'  => true,
-                'provider' => $provider,
-                'model'    => $this->configService->getCurrentModel(),
-                'think'    => $this->configService->getThinkMode(),
-                'agent'    => $this->agentContext->getDisplayName(),
+                'success'          => true,
+                'is_authenticated' => $isOperator,
+                'mode'             => $isOperator ? 'authenticated' : 'public',
+                'active_agent'     => $activeAgent,
+                'public_agent'     => $publicAgent,
+                'available_agents' => $availableAgents,
+                'provider'         => $this->configService->getAgentProvider($activeAgent),
+                'model'            => $this->configService->getAgentModel($activeAgent),
+                'think'            => $this->configService->getAgentThink($activeAgent),
             ]);
             return;
         }
@@ -78,31 +99,50 @@ class ChatController extends BaseController {
                 $ip = trim(explode(',', $ip)[0]);
             }
 
-            // AI Provider settings
-            $provider = $this->configService->getCurrentProvider();
-            $model    = $this->configService->getCurrentModel();
-            $apiKey   = $this->configService->getApiKey($provider);
+            // 1. Determine Caller Tier
+            $authService = new AuthService();
+            $currentUser = $authService->getCurrentUser();
+            $userId      = !empty($currentUser['user_id']) ? (int) $currentUser['user_id'] : null;
+            $isOperator  = ($userId !== null);
 
-            // System prompt resolution
-            $systemPrompt = $this->instructionService->getCurrentContent();
+            // 2. Resolve Target Agent Identity
+            if (!$isOperator) {
+                // Mode A: Public Chat — Strictly locked to global public chat agent setting
+                $agentId = $this->configService->getPublicChatAgent();
+            } else {
+                // Mode B: Authenticated Chat — Uses requested agent from payload or authenticated default
+                $reqAgent = strtolower(trim($body['agent'] ?? ''));
+                $validAgents = ['zeon7', 'leon', 'gemma', 'otec', 'wolf'];
+                if (in_array($reqAgent, $validAgents, true)) {
+                    $agentId = $reqAgent;
+                } else {
+                    $agentId = $this->configService->getAuthenticatedDefaultAgent();
+                }
+            }
+
+            // 3. AI Provider & Engine settings for the resolved agent
+            $provider  = $this->configService->getAgentProvider($agentId);
+            $model     = $this->configService->getAgentModel($agentId);
+            $apiKey    = $this->configService->getApiKey($provider);
+            $userThink = isset($body['think']) ? (bool) $body['think'] : $this->configService->getAgentThink($agentId);
+
+            // 4. System prompt resolution for the resolved agent
+            $systemPrompt = $this->instructionService->getCurrentContent($agentId);
             if (empty($systemPrompt)) {
-                $systemPrompt = $this->agentContext->getFallbackGreeting();
+                $manifest = $this->agentContext->getAvailableAgents()[$agentId] ?? [];
+                $systemPrompt = "You are {$agentId}.";
             }
             
-            // --- RUNTIME & TEMPORAL GROUNDING ---
+            // 5. Runtime & Temporal Grounding
             $systemPrompt .= "\n\n--- RUNTIME CONTEXT ---\n";
             $systemPrompt .= "Current Date & Time: " . date('l, j F Y, H:i T') . ".\n";
+            $systemPrompt .= "Active Agent: " . strtoupper($agentId) . ".\n";
             $systemPrompt .= "Active AI Engine: {$model} (Provider: " . strtoupper($provider) . ").\n";
             if ($provider === 'ollama') {
                 $systemPrompt .= "Execution Environment: Local / Remote Ollama Endpoint ({$this->configService->getOllamaHost()}).\n";
             } else {
                 $systemPrompt .= "Execution Environment: Cloud Provider (" . strtoupper($provider) . "). You are NOT running on a local GPU.\n";
             }
-
-            $authService = new AuthService();
-            $currentUser = $authService->getCurrentUser();
-            $userId      = !empty($currentUser['user_id']) ? (int) $currentUser['user_id'] : null;
-            $isOperator  = ($userId !== null);
 
             // --- IDENTITY EXTRACTION PIPELINE ---
             if (!$userId) {
@@ -286,8 +326,7 @@ class ChatController extends BaseController {
             );
 
             $sourceInterface = $isOperator ? 'self_admin' : 'self_public';
-            $activeAgent = $this->agentContext->getAgentId();
-            $this->councilClient->withAgent($activeAgent);
+            $this->councilClient->withAgent($agentId);
 
             // Council conversation user turn logging
             if (($_ENV['CONVERSATION_BACKEND'] ?? 'local') === 'council') {
@@ -297,7 +336,7 @@ class ChatController extends BaseController {
                             sessionId:       $sessionId,
                             role:            'user',
                             content:         $message,
-                            metadata:        ['model' => $model, 'provider' => $provider],
+                            metadata:        ['model' => $model, 'provider' => $provider, 'agent' => $agentId],
                             ipAddress:       $ip,
                             operatorId:      $userId,
                             sourceInterface: $sourceInterface
@@ -329,10 +368,14 @@ class ChatController extends BaseController {
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                    'model' => 'zeon7', 'messages' => $messages, 'stream' => false
+                    'model'             => $agentId,
+                    'override_model'    => $model,
+                    'override_provider' => $provider,
+                    'messages'          => $messages,
+                    'stream'            => false
                 ]));
                 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 280);
                 $gwResponse = curl_exec($ch);
                 $gwCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 curl_close($ch);
@@ -344,7 +387,7 @@ class ChatController extends BaseController {
                     $tokensIn = $data['usage']['prompt_tokens'] ?? null;
                     $tokensOut = $data['usage']['completion_tokens'] ?? null;
                 } else {
-                    $reply = "Hermes Gateway is currently unavailable (HTTP $gwCode). Please check if the daemon is running on port 8081.";
+                    $reply = "Hermes Gateway is currently unavailable for agent '{$agentId}' (HTTP $gwCode). Please check if the daemon is running on port 8081.";
                 }
             } else {
                 // Public Tier: MCP Tool Loop
@@ -413,13 +456,14 @@ class ChatController extends BaseController {
             if (($_ENV['CONVERSATION_BACKEND'] ?? 'local') === 'council') {
                 try {
                     if ($this->councilClient->isAvailable()) {
-                        $this->councilClient->appendMessage(
+                        $this->councilClient->withAgent($agentId)->appendMessage(
                             sessionId:       $sessionId,
                             role:            'assistant',
                             content:         $reply,
                             metadata:        [
                                 'model'    => $model,
                                 'provider' => $provider,
+                                'agent'    => $agentId,
                                 'tokens'   => $tokensUsed
                             ],
                             ipAddress:       $ip,

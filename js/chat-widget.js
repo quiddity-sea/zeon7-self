@@ -9,6 +9,10 @@ const ChatWidget = {
     isThinking: false,
     isFullWidth: false,
     sessionId: null,
+    isAuthenticated: false,
+    activeAgent: 'zeon7',
+    activeAgentName: 'Zeon7',
+    availableAgents: [],
 
     init() {
         this.sessionId = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
@@ -21,13 +25,75 @@ const ChatWidget = {
         try {
             const res = await fetch('/api/chat.php');
             const data = await res.json();
-            if (data.success && typeof data.think !== 'undefined') {
-                this.isThinking = Boolean(data.think);
-                this.updateThinkBadge();
+            if (data.success) {
+                this.isAuthenticated = Boolean(data.is_authenticated);
+                this.activeAgent = data.active_agent || 'zeon7';
+                this.availableAgents = data.available_agents || [];
+                if (typeof data.think !== 'undefined') {
+                    this.isThinking = Boolean(data.think);
+                    this.updateThinkBadge();
+                }
+
+                this.updateHeaderDisplay();
+                this.setupAgentSwitcher();
             }
         } catch (e) {
             console.warn('Could not fetch initial chat status', e);
+            this.updateHeaderDisplay();
         }
+    },
+
+    updateHeaderDisplay() {
+        const titleEl = document.getElementById('chat-header-title');
+        if (!titleEl) return;
+
+        const agentObj = this.availableAgents.find(a => a.id === this.activeAgent);
+        const displayName = agentObj ? agentObj.name : (this.activeAgent.charAt(0).toUpperCase() + this.activeAgent.slice(1));
+        this.activeAgentName = displayName;
+        const modeLabel = this.isAuthenticated ? 'AUTHENTICATED CHAT' : 'PUBLIC CHAT';
+
+        titleEl.textContent = `${displayName.toUpperCase()} NEURAL LINK — ${modeLabel}`;
+
+        const dot = document.getElementById('chat-status-dot');
+        if (dot && agentObj && agentObj.accent) {
+            dot.style.backgroundColor = agentObj.accent;
+            dot.style.boxShadow = `0 0 10px ${agentObj.accent}`;
+        }
+    },
+
+    setupAgentSwitcher() {
+        const container = document.getElementById('chat-agent-switcher-container');
+        const select = document.getElementById('chat-agent-select');
+        if (!container || !select) return;
+
+        // Rule: Hide switcher completely for public visitors
+        if (!this.isAuthenticated) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        select.innerHTML = '';
+
+        this.availableAgents.forEach(agent => {
+            const opt = document.createElement('option');
+            opt.value = agent.id;
+            opt.textContent = `${agent.name} (${agent.role || 'Agent'})`;
+            if (agent.id === this.activeAgent) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        select.onchange = (e) => {
+            const newAgent = e.target.value;
+            if (newAgent === this.activeAgent) return;
+
+            this.activeAgent = newAgent;
+            const agentObj = this.availableAgents.find(a => a.id === newAgent);
+            this.activeAgentName = agentObj ? agentObj.name : newAgent;
+
+            this.updateHeaderDisplay();
+            this.appendMessage('assistant', `[ Switched frequency to ${this.activeAgentName.toUpperCase()} // Sanctum Connected ]`);
+        };
     },
 
     render() {
@@ -46,10 +112,15 @@ const ChatWidget = {
                     <!-- Header -->
                     <div class="chat-header">
                         <div class="header-info">
-                            <span class="status-dot"></span>
-                            <span class="title">ZEON7 NEURAL LINK</span>
+                            <span class="status-dot" id="chat-status-dot"></span>
+                            <span class="title" id="chat-header-title">ZEON7 NEURAL LINK</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <!-- In-Widget Authenticated Agent Switcher (Hidden for Public) -->
+                            <div id="chat-agent-switcher-container" style="display: none;">
+                                <select id="chat-agent-select" class="chat-agent-dropdown" title="Switch Council Agent Frequency">
+                                </select>
+                            </div>
                             <button type="button" id="chat-think-toggle" class="think-badge think-off" title="Toggle Reasoning / Think Mode">
                                 [ THINKING OFF ]
                             </button>
@@ -182,6 +253,31 @@ const ChatWidget = {
                 margin: 0 auto;
                 width: 100%;
                 box-sizing: border-box;
+            }
+
+            .chat-agent-dropdown {
+                background: rgba(10, 14, 23, 0.95);
+                border: 1px solid var(--color-cyan, #22d3ee);
+                color: var(--color-cyan, #22d3ee);
+                font-family: var(--font-mono, monospace);
+                font-size: 0.72rem;
+                padding: 2px 6px;
+                border-radius: 3px;
+                cursor: pointer;
+                outline: none;
+            }
+            [data-theme="light"] .chat-agent-dropdown {
+                background: #ffffff;
+                border-color: #0284c7;
+                color: #0284c7;
+            }
+            .chat-agent-dropdown option {
+                background: #0a0e17;
+                color: #ffffff;
+            }
+            [data-theme="light"] .chat-agent-dropdown option {
+                background: #ffffff;
+                color: #0f172a;
             }
 
             .chat-header {
@@ -590,7 +686,8 @@ const ChatWidget = {
                     message: message,
                     session_id: this.sessionId,
                     history: this.history,
-                    think: this.isThinking
+                    think: this.isThinking,
+                    agent: this.activeAgent
                 })
             });
             const data = await res.json();
