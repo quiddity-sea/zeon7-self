@@ -55,6 +55,15 @@ const Settings = {
             this.agentThinkCheckbox.addEventListener('change', () => this.syncCurrentAgentToState());
         }
 
+        // Tab Switching Handlers
+        const tabBtns = document.querySelectorAll('.settings-tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-tab');
+                this.switchTab(targetId);
+            });
+        });
+
         // Handlers
         this.providerSelect.addEventListener('change', () => this.handleProviderChange());
         this.form.addEventListener('submit', (e) => this.save(e));
@@ -80,6 +89,15 @@ const Settings = {
         }
 
         await this.loadSettings();
+    },
+
+    switchTab(tabId) {
+        document.querySelectorAll('.settings-tab-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+        });
+        document.querySelectorAll('.settings-tab-pane').forEach(p => {
+            p.style.display = (p.id === tabId) ? 'block' : 'none';
+        });
     },
 
     syncCurrentAgentToState() {
