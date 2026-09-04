@@ -42,7 +42,7 @@ class OllamaService extends BaseService {
     /**
      * Send chat request to Ollama
      */
-    public function chat(string $message, array $history = [], string|array $context = ''): array {
+    public function chat(string $message, array $history = [], string|array $context = '', array $tools = []): array {
         $url = $this->host . '/api/chat';
         
         $messages = [];
@@ -80,7 +80,30 @@ class OllamaService extends BaseService {
             ]
         ];
         
+        // Ollama native tools support requires standard OpenAI format
+        if (!empty($tools)) {
+            $payload['tools'] = $tools;
+        }
+        
         $response = $this->makeRequest($url, $payload);
+        
+        // Check if Ollama decided to call a tool
+        if (!empty($response['message']['tool_calls'])) {
+            $toolCall = $response['message']['tool_calls'][0]['function'];
+            $tokens = [
+                'prompt' => $response['prompt_eval_count'] ?? 0,
+                'response' => $response['eval_count'] ?? 0,
+            ];
+            $tokens['total'] = $tokens['prompt'] + $tokens['response'];
+            
+            return [
+                'functionCall' => [
+                    'name' => $toolCall['name'],
+                    'args' => $toolCall['arguments'] ?? []
+                ],
+                'usage' => $tokens
+            ];
+        }
         
         $rawReply = $response['message']['content'] ?? '';
         

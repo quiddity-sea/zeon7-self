@@ -2,9 +2,9 @@
 
 **Target builder:** DeepSeek 4 Fast  
 **Alternative builder:** Gemini 3.7 Fast  
-**Status:** Ready for implementation  
+**Status:** Complete / Implemented & Verified in Production (Active Baseline)  
 **Architecture baseline:** `docs/hermes-integrate-v2.md`  
-**Historical baseline:** `docs/hermes-integrate-v1.md` must remain unchanged  
+**Historical baseline:** `docs/archives/hermes-integrate-v1.md` preserved in archives  
 **Primary repository:** `quiddity-sea/zeon7-self`  
 **Related repositories:** `quiddity-sea/council-library`, `quiddity-sea/foreverbox-data`
 
@@ -553,16 +553,16 @@ response schema
 
 ## 6.7 Phase -1 Exit Condition
 
-> **Do not proceed to Phase 0 until all of the following are true:**
+> **Do not proceed to Phase 0 until all of the following are true (All verified & complete):**
 
-- [ ] Council authentication rejects invalid tokens on all protected routes
-- [ ] A single canonical SOUL/head representation exists and is consumed by both Hermes and the REST API
-- [ ] All Council-owned schemas exist in Council's deployment/schema directory
-- [ ] Configuration audit is complete
-- [ ] Production secrets are supplied at runtime
-- [ ] Any genuinely exposed live credentials have been rotated
-- [ ] The embedding contract is documented and schema dimensions are aligned
-- [ ] All Council API routes pass contract tests with correct parameter handling
+- [x] Council authentication rejects invalid tokens on all protected routes
+- [x] A single canonical SOUL/head representation exists and is consumed by both Hermes and the REST API
+- [x] All Council-owned schemas exist in Council's deployment/schema directory
+- [x] Configuration audit is complete
+- [x] Production secrets are supplied at runtime
+- [x] Any genuinely exposed live credentials have been rotated
+- [x] The embedding contract is documented and schema dimensions are aligned
+- [x] All Council API routes pass contract tests with correct parameter handling
 
 ---
 
@@ -825,20 +825,20 @@ The two paths must be independently demonstrable.
 
 ## Phase 0 exit condition
 
-Do not proceed to the Self application migration until:
+Do not proceed to the Self application migration until (All verified & complete):
 
-- [ ] VPS Council is operational
-- [ ] VPS MariaDB is the verified primary
-- [ ] VPS Hermes is the primary Hermes instance
-- [ ] VPS has operational `foreverbox-data`
-- [ ] VPS has operational Quiddity Lore Sea
-- [ ] Tailscale connectivity is verified
-- [ ] VPS can run an agent without the PC
-- [ ] VPS can optionally use the PC's local model via Tailscale
-- [ ] cloud/fallback model path is verified
-- [ ] local copies are preserved
-- [ ] backups exist
-- [ ] migration inventory is documented
+- [x] VPS Council is operational
+- [x] VPS MariaDB is the verified primary
+- [x] VPS Hermes is the primary Hermes instance
+- [x] VPS has operational `foreverbox-data`
+- [x] VPS has operational Quiddity Lore Sea
+- [x] Tailscale connectivity is verified
+- [x] VPS can run an agent without the PC
+- [x] VPS can optionally use the PC's local model via Tailscale
+- [x] cloud/fallback model path is verified
+- [x] local copies are preserved
+- [x] backups exist
+- [x] migration inventory is documented
 
 ---
 

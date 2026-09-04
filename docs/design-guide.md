@@ -1,8 +1,8 @@
 # Zeon7 Design Guide
 
-**Version:** 1.0  
-**Last Updated:** 2025-11-26  
-**Design System:** Blended Professional + Zeon7 Brand Identity
+**Version:** 2.0  
+**Last Updated:** 2026-09-03  
+**Design System:** Cybernetic HUD Matrix + Responsive Persona Gateway
 
 ---
 
@@ -590,10 +590,18 @@ Controlled by `data-theme` attribute on `<html>`:
 **Implementation:**
 
 ```javascript
-// See public/js/theme-switcher.js
-const theme = localStorage.getItem('zeon7-theme') || 'light';
+// See js/theme-switcher.js
+const theme = localStorage.getItem('zeon7-theme') || 'cybernetic';
 document.documentElement.setAttribute('data-theme', theme);
 ```
+
+### Cybernetic HUD & Mobile Responsiveness
+
+The interface leverages **GSAP 3.12** (`js/animations.js`) and **Zeon7 Cybernetic Theme** (`css/zeon7-theme.css`) for high-contrast HUD displays:
+- **Scanline & CRT Effects**: High-contrast dark backgrounds (`#0a0e17`) with subtle glowing scanline borders and crosshairs (`hud-corner-tr`, `hud-corner-bl`).
+- **Responsive Viewport Breakpoints**:
+  - `@media (max-width: 900px)`: Responsive flex stacking of Centaur cards, fluid font scaling, and simplified navigation.
+  - `@media (max-width: 600px)`: Full-screen mobile chat overlay in `js/chat-widget.js` (`position: fixed !important; top: 0; bottom: 0; left: 0; right: 0; width: 100% !important; border-radius: 0;`).
 
 ---
 
@@ -698,16 +706,15 @@ Always test on:
 
 ### CSS Files
 
-- [variables.css](file:///e:/Dev/Projects/self/public/css/variables.css) - Design tokens
-- [base.css](file:///e:/Dev/Projects/self/public/css/base.css) - Typography and utilities
-- [components.css](file:///e:/Dev/Projects/self/public/css/components.css) - UI components
+- `css/zeon7-theme.css` - Primary Cybernetic HUD Design System
+- `css/base.css` - Core typography and responsive layout utilities
+- `css/components.css` - Reusable UI components & buttons
 
-### Demo & Inspiration
+### Client Scripts & Animations
 
-- [design-demo.html](file:///e:/Dev/Projects/self/public/design-demo.html) - Interactive component showcase
-- [design-inspiration-reference.md](file:///e:/Dev/Projects/self/docs/design-inspiration-reference.md) - Visual inspiration
-- [logo-integration.md](file:///e:/Dev/Projects/self/docs/logo-integration.md) - Brand identity
-- [ui-mockups.md](file:///e:/Dev/Projects/self/docs/ui-mockups.md) - Interface designs
+- `js/animations.js` - GSAP 3.12 kinetic animation & HUD crosshairs
+- `js/chat-widget.js` - Responsive floating/fullscreen chat widget
+- `js/theme-switcher.js` - Dynamic theme toggling & persistence
 
 ### External Tools
 
@@ -717,6 +724,6 @@ Always test on:
 
 ---
 
-**Last Updated:** 2025-11-26  
-**Maintained by:** Zeon7 Team  
-**Questions?** Refer to the master plan or implementation plan for additional context.
+**Last Updated:** 2026-09-03  
+**Maintained by:** Merrill Leo & The Foreverbox Initiative  
+**Questions?** Refer to `hermes-integrate-v2.md` and `hermes-integrate-v2-implementation-plan.md` for architecture context.

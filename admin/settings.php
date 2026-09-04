@@ -177,7 +177,7 @@ AuthMiddleware::enforcePageAuth();
 </div>
 
 <script src="js/app.js"></script>
-<script src="js/settings.js?v=16.0"></script>
+<script src="js/settings.js?v=2.2"></script>
 <script>
     if (typeof App !== 'undefined') App.requireAuth();
     document.addEventListener('DOMContentLoaded', () => {

@@ -113,3 +113,20 @@ Step 7: Connect Main PC Local RTX Model Endpoint via Tailscale
 Step 8: Independent VPS Acceptance Test (VPS executes cloud/local without Main PC dependency)
 ```
 
+---
+
+## 6. Migration Status & Active Production Topology
+
+**Status:** COMPLETE & VERIFIED IN PRODUCTION (Active Since 2026-08-30)
+
+| Service | Host / Address | Port | Status | Details |
+| :--- | :--- | :---: | :---: | :--- |
+| **Self Web App** | `87.106.74.66` (`self.foreverbox.co.uk`) | 443 | **LIVE** | Native PHP 8.1+ MVC, zero Composer, dual-tier chat routing |
+| **Hermes Gateway Daemon** | `127.0.0.1` (VPS Localhost) | 8081 | **LIVE** | `hermes_openai_proxy.py` bridging admin web chat to Hermes CLI |
+| **Hermes CLI** | `/foreverbox_data/venv/bin/hermes` | - | **LIVE** | Profile `zeon7` symlinked into `~/.hermes/profiles` |
+| **Council REST API** | `127.0.0.1` | 8080 | **LIVE** | Slim 4 REST API, MariaDB Vector + Fulltext Sanctums |
+| **Embedding Daemon** | `127.0.0.1` | 8900 | **LIVE** | `all-MiniLM-L6-v2` 384-dimensional dense vectors |
+| **Remote Ollama Host** | `100.106.5.121` (Tailscale) | 11434 | **LIVE** | `Brain32:latest` (custom Qwen 9B) & `Zeon7-Gemma:64k` |
+| **Nginx Web Server** | `87.106.74.66` | 80 / 443 | **HARDENED** | Global 300-second timeouts (`fastcgi_read_timeout 300s`) |
+| **MCP Search Layer** | `stdio` via Python | - | **LIVE** | Native PHP `McpClientService` executing Tavily search |
+

@@ -421,13 +421,20 @@ const ChatWidget = {
                 opacity: 0.5;
                 cursor: not-allowed;
             }
-            @media (max-width: 480px) {
+            @media (max-width: 600px) {
                 .chat-window {
-                    width: 100%;
-                    height: 100%;
-                    bottom: 0;
-                    right: 0;
-                    border-radius: 0;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    bottom: 0 !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-width: none !important;
+                    max-height: none !important;
+                    border-radius: 0 !important;
+                    border: none !important;
+                    z-index: 9999999 !important;
                 }
             }
         `;

@@ -122,6 +122,40 @@ $agentAccent = $agentCtx->getThemeAccent();
             color: var(--text-muted);
             background: rgba(3, 6, 9, 0.95);
         }
+
+        /* Mobile Responsive Fixes */
+        @media (max-width: 900px) {
+            .hero-title { font-size: 2.5rem; }
+            .hero-subtitle { font-size: 0.95rem; }
+            .hero-desc { font-size: 1rem; }
+            
+            .centaur-feature-card {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                padding: 1.5rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .hero-actions {
+                flex-direction: column;
+            }
+            
+            .public-nav .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .public-nav .nav-menu {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -246,7 +280,7 @@ $agentAccent = $agentCtx->getThemeAccent();
 
     <!-- Scripts -->
     <script src="js/theme-switcher.js"></script>
-    <script src="js/chat-widget.js?v=3.0"></script>
+    <script src="js/chat-widget.js?v=3.1"></script>
     <script src="js/public.js?v=3.0"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {

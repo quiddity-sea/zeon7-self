@@ -1,8 +1,8 @@
 # Hermes Agent Control & Unified Architecture V2
 
-**Status:** Architecture revision / implementation plan  
-**Supersedes for implementation:** `docs/hermes-integrate-v1.md`  
-**Preserves for history:** `docs/hermes-integrate-v1.md` remains unchanged as the previous architectural proposal.  
+**Status:** Complete / Active Production Architecture Baseline  
+**Supersedes for implementation:** `docs/archives/hermes-integrate-v1.md`  
+**Preserves for history:** `docs/archives/hermes-integrate-v1.md` preserved in archives as the previous architectural proposal.  
 **Scope:** `zeon7-self` / future `i-am-self`, `council-library`, `foreverbox-data`, Hermes CLI, and the existing From the Noise production interface.
 
 ## 1. Why V2 Exists
@@ -992,24 +992,24 @@ V1 remains unchanged as the previous architecture proposal. V2 records the clari
 
 ---
 
-# 27. Immediate Implementation Checklist
+# 27. Immediate Implementation Checklist (All Complete & Verified)
 
-- [ ] Inventory Self database tables and agent-related dependencies.
-- [ ] Inventory existing Council agent-management endpoints/controllers.
-- [ ] Identify missing Council API operations required by Self Admin.
-- [ ] Define canonical ownership for every existing Self agent-data table.
-- [ ] Implement/extend Council Agent Management API as needed.
-- [ ] Build the Self agent/head/model management UI using existing components.
-- [ ] Replace local agent management operations with Council calls.
-- [ ] Trace `api/chat.php` and replace the independent agent pipeline with the canonical Council/Hermes pipeline.
-- [ ] Trace `InstructionService.php` and remove its role as an independent agent instruction authority.
-- [ ] Trace Self memory/knowledge code and map each operation to Council/ForeverBox facilities.
-- [ ] Trace the From the Noise workflow and identify any remaining duplicated agent state.
-- [ ] Establish canonical conversation persistence and retrieval through Council.
-- [ ] Migrate or archive historical Self agent data as appropriate.
-- [ ] Remove redundant Self agent tables only after successful migration and verification.
-- [ ] Build cross-interface acceptance tests.
-- [ ] Keep `docs/hermes-integrate-v1.md` unchanged as the architectural history.
+- [x] Inventory Self database tables and agent-related dependencies.
+- [x] Inventory existing Council agent-management endpoints/controllers.
+- [x] Identify missing Council API operations required by Self Admin.
+- [x] Define canonical ownership for every existing Self agent-data table.
+- [x] Implement/extend Council Agent Management API as needed.
+- [x] Build the Self agent/head/model management UI using existing components.
+- [x] Replace local agent management operations with Council calls.
+- [x] Trace `api/chat.php` and replace the independent agent pipeline with the canonical Council/Hermes pipeline.
+- [x] Trace `InstructionService.php` and remove its role as an independent agent instruction authority.
+- [x] Trace Self memory/knowledge code and map each operation to Council/ForeverBox facilities.
+- [x] Trace the From the Noise workflow and identify any remaining duplicated agent state.
+- [x] Establish canonical conversation persistence and retrieval through Council.
+- [x] Migrate or archive historical Self agent data as appropriate.
+- [x] Remove redundant Self agent tables only after successful migration and verification.
+- [x] Build cross-interface acceptance tests.
+- [x] Keep `docs/archives/hermes-integrate-v1.md` unchanged as the architectural history.
 
 ---
 

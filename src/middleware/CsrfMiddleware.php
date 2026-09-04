@@ -15,14 +15,20 @@ class CsrfMiddleware {
         } catch (CsrfException $e) {
             http_response_code(403);
             header('Content-Type: application/json');
+            $debug = [
+                'error' => $e->getMessage(),
+                'session_started' => session_status() === PHP_SESSION_ACTIVE,
+                'session_token' => $_SESSION['csrf_token'] ?? 'missing',
+                'post_token' => $_POST['csrf_token'] ?? 'missing',
+                'header_token' => $_SERVER['HTTP_X_CSRF_TOKEN'] ?? 'missing',
+                'headers' => function_exists('getallheaders') ? getallheaders() : []
+            ];
+            file_put_contents(__DIR__ . '/../../debug_csrf.log', print_r($debug, true), FILE_APPEND);
             echo json_encode(['error' => $e->getMessage()]);
             exit;
         }
     }
 
-    /**
-     * Generate CSRF token for current session
-     */
     public static function generateToken(): string {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -35,10 +41,6 @@ class CsrfMiddleware {
         return $_SESSION['csrf_token'];
     }
     
-    /**
-     * Validate CSRF token from request
-     * Checks both POST data and custom header
-     */
     public static function validate(): bool {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -50,34 +52,32 @@ class CsrfMiddleware {
             return false;
         }
         
-        // Check POST parameter first
         $requestToken = $_POST['csrf_token'] ?? null;
         
-        // Fall back to custom header (for AJAX requests)
         if (!$requestToken) {
             $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        }
+        
+        if (!$requestToken) {
+            $json = json_decode(file_get_contents('php://input'), true);
+            if (is_array($json) && isset($json['csrf_token'])) {
+                $requestToken = $json['csrf_token'];
+            }
         }
         
         if (!$requestToken) {
             return false;
         }
         
-        // Timing-safe comparison
         return hash_equals($sessionToken, $requestToken);
     }
     
-    /**
-     * Require valid CSRF token or throw exception
-     */
     public static function requireValidToken(): void {
         if (!self::validate()) {
             throw new CsrfException("Invalid or missing CSRF token", 403);
         }
     }
     
-    /**
-     * Get token for inclusion in forms/AJAX headers
-     */
     public static function getToken(): string {
         return self::generateToken();
     }

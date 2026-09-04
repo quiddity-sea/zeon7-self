@@ -206,7 +206,8 @@ const Settings = {
         this.log(`Target: ${provider.toUpperCase()} // Model: ${targetModel}${hostInfo} // [${thinkFlag}]`, 'info');
 
         try {
-            const res = await fetch('/api/config/test_connection.php');
+            const url = `/api/config/test_connection.php?provider=${encodeURIComponent(provider)}&model=${encodeURIComponent(targetModel)}`;
+            const res = await fetch(url);
             const text = await res.text();
             let data;
             try {

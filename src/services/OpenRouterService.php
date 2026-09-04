@@ -32,7 +32,7 @@ class OpenRouterService extends BaseService {
     /**
      * Conversational chat with history and system instruction
      */
-    public function chat(string $message, array $history = [], string $systemPrompt = ''): array {
+    public function chat(string $message, array $history = [], string $systemPrompt = '', array $tools = []): array {
         $messages = [];
 
         if (!empty($systemPrompt)) {
@@ -59,10 +59,34 @@ class OpenRouterService extends BaseService {
             'messages' => $messages
         ];
         
+        if (!empty($tools)) {
+            $requestBody['tools'] = $tools;
+            // Some models require tool_choice to be explicitly set
+            $requestBody['tool_choice'] = 'auto';
+        }
+        
         $response = $this->makeRequest($requestBody);
         
+        $messageObj = $response['choices'][0]['message'] ?? [];
+        
+        // Check if the model decided to call a tool
+        if (!empty($messageObj['tool_calls'])) {
+            $toolCall = $messageObj['tool_calls'][0]['function'];
+            return [
+                'functionCall' => [
+                    'name' => $toolCall['name'],
+                    'args' => is_string($toolCall['arguments']) ? json_decode($toolCall['arguments'], true) : ($toolCall['arguments'] ?? [])
+                ],
+                'usage' => [
+                    'prompt' => $response['usage']['prompt_tokens'] ?? 0,
+                    'response' => $response['usage']['completion_tokens'] ?? 0,
+                    'total' => $response['usage']['total_tokens'] ?? 0
+                ]
+            ];
+        }
+        
         return [
-            'reply' => $response['choices'][0]['message']['content'] ?? '',
+            'reply' => $messageObj['content'] ?? '',
             'usage' => [
                 'prompt' => $response['usage']['prompt_tokens'] ?? 0,
                 'response' => $response['usage']['completion_tokens'] ?? 0,

@@ -15,9 +15,9 @@ class TestConnectionController extends BaseController {
         $this->requireMethod('GET');
         
         try {
-            $provider = $this->configService->getCurrentProvider();
+            $provider = $_GET['provider'] ?? $this->configService->getCurrentProvider();
             $key = $this->configService->getApiKey($provider) ?? '';
-            $model = $this->configService->getModel($provider);
+            $model = $_GET['model'] ?? $this->configService->getModel($provider);
             
             if ($provider !== 'ollama' && empty($key)) {
                 $this->jsonResponse(['success' => false, 'error' => "No API key found for $provider"]);

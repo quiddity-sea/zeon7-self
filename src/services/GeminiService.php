@@ -51,15 +51,25 @@ class GeminiService extends BaseService {
     /**
      * Conversational chat with history and system instruction
      */
-    public function chat(string $message, array $history = [], string $systemPrompt = ''): array {
+    public function chat(string $message, array $history = [], string $systemPrompt = '', array $tools = []): array {
         $url = $this->apiUrl . $this->model . ':generateContent?key=' . $this->apiKey;
         
         $contents = [];
         foreach ($history as $turn) {
             $role = (isset($turn['role']) && ($turn['role'] === 'assistant' || $turn['role'] === 'model')) ? 'model' : 'user';
+            
+            $part = [];
+            if (isset($turn['functionCall'])) {
+                $part['functionCall'] = $turn['functionCall'];
+            } elseif (isset($turn['functionResponse'])) {
+                $part['functionResponse'] = $turn['functionResponse'];
+            } else {
+                $part['text'] = $turn['content'] ?? '';
+            }
+            
             $contents[] = [
                 'role' => $role,
-                'parts' => [['text' => $turn['content'] ?? '']]
+                'parts' => [$part]
             ];
         }
         
@@ -76,8 +86,16 @@ class GeminiService extends BaseService {
             ];
         }
         
+        if (!empty($tools)) {
+            $requestBody['tools'] = [['functionDeclarations' => $tools]];
+        }
+        
         $response = $this->makeRequest($url, $requestBody);
-        $reply = $this->extractText($response);
+        
+        // Extract reply or function call
+        $part = $response['candidates'][0]['content']['parts'][0] ?? [];
+        $reply = $part['text'] ?? '';
+        $functionCall = $part['functionCall'] ?? null;
         
         // Log usage
         $tokens = $this->extractTokenUsage($response);
@@ -85,10 +103,16 @@ class GeminiService extends BaseService {
             $this->logUsage($tokens['prompt'], $tokens['response'], 'success');
         } catch (Exception $e) {}
         
-        return [
+        $result = [
             'reply' => $reply,
             'usage' => $tokens
         ];
+        
+        if ($functionCall) {
+            $result['functionCall'] = $functionCall;
+        }
+        
+        return $result;
     }
     
     /**
@@ -99,7 +123,7 @@ class GeminiService extends BaseService {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Increased timeout for tool use
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json'

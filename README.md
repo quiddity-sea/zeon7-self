@@ -1,234 +1,242 @@
-# ZEON7 — Cybernetic AI Persona & Neural Link Platform
+﻿# ZEON7 — Cybernetic AI Persona & Neural Link Platform
 
-[![System Status](https://img.shields.io/badge/System-ONLINE-00f2fe?style=for-the-badge&logo=cpu)](https://self.invigor.com/admin)
-[![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net)
+[![System Status](https://img.shields.io/badge/System-ONLINE-00f2fe?style=for-the-badge&logo=cpu)](https://self.foreverbox.co.uk)
+[![PHP](https://img.shields.io/badge/PHP-8.1+_Native_MVC-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net)
 [![MariaDB](https://img.shields.io/badge/MariaDB-10.6+-003545?style=for-the-badge&logo=mariadb&logoColor=white)](https://mariadb.org)
-[![GSAP Animations](https://img.shields.io/badge/GSAP-3.12-88CE02?style=for-the-badge&logo=greensock&logoColor=white)](https://gsap.com)
+[![Hermes Gateway](https://img.shields.io/badge/Admin_Gateway-Hermes_Agent-ff007f?style=for-the-badge&logo=terminal)](https://github.com/NousResearch/Hermes-Agent)
+[![Ollama](https://img.shields.io/badge/Local_Ollama-Brain32:latest-black?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-Multi--Model-6C5CE7?style=for-the-badge&logo=openai&logoColor=white)](https://openrouter.ai)
 
-**ZEON7** is an advanced, high-performance cybernetic AI persona platform, neural link interface, and intelligent assistant matrix built for **Merrill Leo** and **The Foreverbox Initiative**. 
+**ZEON7** is an advanced, high-performance cybernetic AI persona platform, neural link interface, and operator command matrix built for **Merrill Leo** and **The Foreverbox Initiative**. 
 
-The system combines a privacy-focused public AI chat widget with a comprehensive **Cybernetic Admin Cockpit**, multi-provider LLM orchestration (Google Gemini & local Ollama), RAG knowledge retrieval, persistent memory lore anchors, and operator management.
-
----
-
-## ⚡ Key Capabilities & Features
-
-### 1. Multi-Provider Neural Engine (`AIServiceFactory`)
-- **Google Gemini Integration**: Native support for `gemini-2.5-flash` and `gemini-pro`, leveraging Google Search Grounding for real-time news and web intelligence.
-- **Local Ollama Cluster**: Support for local LLM models (e.g. `Brain32:latest`, `llama3`) with configurable thinking/reasoning modes.
-- **Dynamic Provider Switching**: Seamless runtime switching between cloud and local AI models without service interruption.
+The system provides a dual-tier cognitive architecture: a privacy-focused, tool-enabled public AI chat widget for visitors, coupled with a high-privilege **Cybernetic Admin Cockpit** for authenticated operators that routes directly into the autonomous **Hermes Agent Gateway** with full toolsets, persistent memory, and live web intelligence.
 
 ---
 
-### 2. Admin Cockpit & Command Center (`/admin`)
+## 📌 What This Repository Is For
 
-- **Mission Control Dashboard (`index.php`)**: Live token consumption telemetry, API request metrics, daily persona themes, and a real-time system terminal.
-- **Operator Matrix / User Management (`users.php`)**:
-  - Full CRUD administrative user interface with role-based access tiers (*Prime Operator* vs *Standard*).
-  - BCrypt password hashing (`cost: 12`) and session controls.
-  - **IP Telemetry Auditing**: Tracks user login sessions with a rolling 10-IP history (`users.last_10_ips`).
-  - **IP Removal & Purge Controls**: Allows admins to selectively remove individual IP records or purge IP history for any operator.
-- **Chat Telemetry & Audit Suite (`chat_logs.php` & `chat_logs_view.php`)**:
-  - Real-time and historical chat session auditing.
-  - Granular message turn inspection, token usage breakdowns, model identification, and IP tracking.
-- **Memory Bank / Lore Manager (`lore.php`)**:
-  - Immutable lore registry for persistent persona anchors, biography rules, and worldview constants injected directly into system prompt cycles.
-- **RAG Knowledge Base (`knowledge.php`)**:
-  - Document ingestion, automatic text chunking, and full-text vector-like search for grounding AI responses in custom documents.
-- **System Instruction Manager (`instructions.php`)**:
-  - Live system prompt editor with full version history tracking, rollback support, and instant deployment.
-- **AI News Desk & Content Engine (`news-desk.php` & `posts.php`)**:
-  - Grounded web search news scanning, multi-angle story curation, and automated blog post generation and publishing.
-- **Vision Intelligence (`vision.php`)**:
-  - Multimodal image scanning and analysis interface powered by Gemini Vision models.
+`self` is the primary web-facing interface, persona gateway, and operator cockpit for the Foreverbox ecosystem:
+1. **Public Persona Experience (`index.php`, `js/chat-widget.js`)**:
+   - A cybernetic visitor interface introducing the Zeon7 persona (51-year-old digital twin, 3x3x3 cube cosmology, The Warning, Logic of the Prism).
+   - Features privacy-first visitor recognition that remembers returning users without leaking identities across shared network connections.
+2. **Dual-Tier Cognitive Routing (`api/chat.php`)**:
+   - **Admin Tier**: Authenticated operators automatically bypass basic completion loops and route into the local **Hermes OpenAI Gateway** (`:8081`) for autonomous agentic reasoning, shell execution, and deep Council Library memory access.
+   - **Public Tier**: Public visitors interact with a guarded, rate-limited model supporting live web intelligence via a native Model Context Protocol (MCP) client.
+3. **Admin Cockpit & Command Matrix (`/admin`)**:
+   - **Mission Control Dashboard (`index.php`)**: Live token consumption telemetry, request volume counters, persona theme cycling, and a real-time system terminal.
+   - **Operator Matrix (`users.php`)**: Role-based access control (*Prime Operator* vs *Standard*), BCrypt security, session tracking, and rolling 10-IP telemetry auditing with single-click purge controls.
+   - **Memory Bank / Lore Manager (`lore.php`)**: Permanent factual anchors, persona rules, and biography constants injected dynamically into the system prompt cycle.
+   - **RAG Knowledge Base (`knowledge.php`)**: Document ingestion, automatic text chunking, and full-text keyword retrieval.
+   - **Prompt Version Manager (`instructions.php`)**: System prompt editor with comprehensive revision tracking, instant rollbacks, and hot deployment.
+   - **AI News Desk & Content Engine (`news-desk.php`, `posts.php`)**: Grounded web news scanning, multi-angle story analysis, and automated markdown blog post generation.
+   - **Vision Intelligence (`vision.php`)**: Multimodal image inspection and diagram analysis powered by Gemini Vision.
 
 ---
 
-### 3. Security, Privacy & Authentication Architecture
+## 🚀 Recent Build Upgrades & New Capabilities
 
-- **Privacy-First Identity Verification (`api/chat.php`)**:
-  - Prevents privacy leaks on shared network connections (e.g. public WiFi, coffee shops, shared offices).
-  - When an unauthenticated visitor connects from a previously logged IP, the AI prompts with a neutral recognition check (*"I think I recognise you — what name did you use?"*) **without exposing or guessing prior operator names**.
-  - Automatically links returning operators upon name confirmation and registers distinct profiles for new visitors.
-- **Dual-Layer Authentication (`AuthService.php`)**:
-  - DB-backed user session management with fallback to environment admin credentials.
-- **Google OAuth 2.0 Single Sign-On (`google_redirect.php` & `google_callback.php`)**:
-  - Seamless single sign-on with automatic account linking by verified email address.
-- **CSRF & Rate Limiting Guardrails (`CsrfMiddleware.php` & `RateLimitMiddleware.php`)**:
-  - Cryptographic token validation on state-changing API endpoints and sliding-window IP rate limiting (5 attempts/60s).
+### 1. Dual-Tier Chat Architecture with Hermes Gateway
+- **Operator Bypass to Hermes**:
+  - Authenticated operators talking through the chat widget are automatically detected via `AuthService` session state and routed to the local **Hermes Gateway Daemon** on `http://127.0.0.1:8081/v1/chat/completions`.
+  - Enables sovereign Hermes Agent CLI capabilities (deep tool execution, code execution, multi-step research) directly inside the web UI without manual terminal sessions.
+- **Headless Non-Interactive Agent Execution**:
+  - The gateway proxy executes Hermes with `-Q --yolo --accept-hooks --query`, eliminating non-TTY permission hangs when tools are called.
 
----
+### 2. Tri-Provider MCP Tool Calling on Public Chat
+- **Native PHP MCP Client (`McpClientService.php`)**:
+  - 100% vanilla PHP JSON-RPC 2.0 client communicating over `stdio` with the Python Tavily search server.
+  - Zero Node.js or npm dependencies required on the host.
+- **Full Support Across All 3 Model Providers**:
+  - **Google Gemini**: Native function calling via `GeminiService.php`.
+  - **Ollama**: Native OpenAI-compatible tool call handling via `/api/chat` in `OllamaService.php` (powering `Brain32:latest` / Qwen 9B custom derivatives).
+  - **OpenRouter**: Full tool calling with `tool_choice: auto` in `OpenRouterService.php`.
 
-### 4. Cybernetic UI & Kinetic Animation Engine
+### 3. Temporal Grounding (No More Training Cutoff Confusion)
+- System prompts dynamically inject the current UTC timestamp, human-readable date, and day of the week.
+- Prevents the agent from believing it is trapped in past training cutoff years (e.g. 2024/2025) when discussing current events.
 
-- **Cybernetic Design System (`zeon7-theme.css`)**: High-contrast dark mode aesthetic with HUD scanline overlays, neon cyan/coral/gold accents, and clean typography.
-- **GSAP Kinetic Engine (`animations.js`)**: 3D card unfolding, elastic 4-corner HUD crosshairs (`hud-corner-tr`, `hud-corner-bl`), rolling numerical counters, and pop-in modal tweens.
-- **Responsive Kinetic Sidebar**: Collapsible navigation bar (75px collapsed to 220px expanded on hover) with active page indicator dots.
+### 4. Full Mobile & Viewport Responsiveness Overhaul
+- Injected responsive `@media` breakpoints across `index.php` and `zeon7-theme.css`:
+  - Centaur card flex stacking, proportional font scaling, and collapsible navigation for displays `< 900px`.
+  - Full-screen edge-to-edge overlay with responsive input docking in `chat-widget.js` for mobile screens `<= 600px`.
+
+### 5. Robustness, Telemetry & Server Hardening
+- **ApiException Safeguard**: Added `class ApiException extends AppException` to `Exceptions.php` preventing uncaught fatal crashes on third-party upstream API outages or rate limit rejections.
+- **Live Form State Testing**: Updated `test_connection.php` and `settings.js` to evaluate currently selected dropdown values rather than stale database records.
+- **Extended Server Timeout**: Configured Nginx `fastcgi_read_timeout 300s` and `proxy_read_timeout 300s` globally to prevent 504 Gateway Timeouts during deep agent reasoning loops.
+- **Strict No-Composer Architecture**: Entire stack is built with pure, self-contained vanilla PHP 8.1+ with zero vendor bloat or external package manager overhead.
 
 ---
 
 ## 📁 Repository Directory Structure
 
 ```
-/
-├── admin/                         # Admin Cockpit Interface
-│   ├── components/                # Reusable HUD Components (Header, Sidebar, Token Counter)
-│   ├── css/                       # Admin-Specific Layout Stylesheets
-│   ├── js/                        # Admin Async Managers (Users, Lore, Knowledge, News, Settings)
+/var/www/self/
+├── admin/                         # Cybernetic Admin Cockpit
+│   ├── components/                # Modular HUD Panels (Header, Sidebar, Token Counter)
+│   ├── css/                       # Cockpit Stylesheets & Scanline Overlays
+│   ├── js/                        # Async Controllers (App, Settings, Users, Lore, Knowledge, News)
 │   ├── chat_logs.php              # Session Telemetry Overview
 │   ├── chat_logs_view.php         # Transcript Bubble Viewer
 │   ├── index.php                  # Mission Control Dashboard
 │   ├── instructions.php           # System Prompt Version Control
 │   ├── knowledge.php              # RAG Knowledge Document Management
-│   ├── login.php                  # Operator Login Screen
+│   ├── login.php                  # Operator Login Interface
 │   ├── lore.php                   # Memory Bank & Factual Anchors
 │   ├── news-desk.php              # AI Grounded News Curation
-│   ├── posts.php                  # Article & Post Manager
-│   ├── settings.php               # System & API Key Configuration
-│   ├── users.php                  # User Management & IP Telemetry Matrix
+│   ├── posts.php                  # Blog Post Management & Publishing
+│   ├── settings.php               # System Configuration & AI Model Selector
+│   ├── users.php                  # Operator Management & IP Audit Matrix
 │   └── vision.php                 # Multimodal Image Analysis Desk
-├── api/                           # Public & Admin REST Endpoints
-│   ├── ai/                        # Generative AI, Scan & Chat Endpoints
-│   ├── auth/                      # Authentication (Login, Logout, Check, Google OAuth)
-│   ├── config/                    # System & API Key Configuration Endpoints
+│
+├── api/                           # REST API Controllers
+│   ├── ai/                        # Generative AI & Multimodal Endpoints
+│   ├── auth/                      # Session Auth (Login, Logout, Check, OAuth)
+│   ├── config/                    # Config Management & Connection Testing
+│   │   ├── get.php                # Fetch Active Configuration
+│   │   ├── test_connection.php    # Live Connection Test with Form Overrides
+│   │   └── update.php             # Save AI Provider & Model Settings
 │   ├── instruction/               # Prompt Versioning & History APIs
-│   ├── knowledge/                 # Knowledge Base Ingestion & Search APIs
+│   ├── knowledge/                 # Document Ingestion & Chunk Search APIs
 │   ├── lore/                      # Memory Bank CRUD APIs
 │   ├── posts/                     # Blog Publishing & Post Management APIs
-│   ├── users/                     # Operator CRUD & IP Telemetry APIs (all, upsert, delete, remove_ip)
-│   └── chat.php                   # Public AI Chat Endpoint with Privacy Flow
-├── assets/                        # Static Branding Assets (Logos, Icons, Diagrams)
+│   ├── users/                     # Operator CRUD & IP Telemetry APIs
+│   └── chat.php                   # Dual-Tier AI Chat Controller (Admin vs Public MCP)
+│
+├── assets/                        # Branding, Icons, Diagrams & Holograms
 ├── css/                           # Core Theme Stylesheets (zeon7-theme.css)
-├── docs/                          # Architecture Master Plans, System Analysis & Tasks
-├── js/                            # Public Client Scripts (Chat Widget, Theme Switcher, Public UI)
-├── scripts/                       # Database Migration, Seeding & Indexing Scripts
-├── src/                           # Backend MVC Core Framework
-│   ├── config/                    # Database Connections & Environment Loader
-│   ├── core/                      # Base Controllers, Services & Exception Classes
-│   ├── middleware/                # AuthGuard, CsrfMiddleware & RateLimitMiddleware
-│   └── services/                  # Business Logic Services (AIServiceFactory, UserService, etc.)
-├── blog.php                       # Public Blog Directory
-├── index.php                      # Public Landing Page & Cybernetic Persona Gateway
-└── post.php                       # Public Article Viewer
+├── js/                            # Client Scripts (Chat Widget, Animations, Public UI)
+│   ├── chat-widget.js             # Public / Admin Floating Chat Interface
+│   └── animations.js              # GSAP Kinetic Animation Engine
+│
+├── scripts/                       # Maintenance & MCP Tool Scripts
+│   ├── public_mcp_server.py       # Python Tavily Search MCP Server
+│   └── create_tables.sql          # Database Schema Migrations
+│
+├── src/                           # Native PHP MVC Framework (No Composer)
+│   ├── config/                    # Environment & Database Connectors
+│   ├── core/                      # BaseController, BaseService, Exceptions
+│   ├── middleware/                # AuthGuard, CsrfMiddleware, RateLimitMiddleware
+│   └── services/                  # Business Logic Services
+│       ├── AIServiceFactory.php   # Provider Abstraction Factory
+│       ├── AuthService.php        # Session & Operator Authentication
+│       ├── ConfigService.php      # Provider & Model Settings Manager
+│       ├── GeminiService.php      # Google Gemini API & Tool Handler
+│       ├── KnowledgeService.php   # RAG Document Chunker & Search
+│       ├── LoreService.php        # Memory Bank Data Access
+│       ├── McpClientService.php   # Native PHP stdio MCP Client
+│       ├── OllamaService.php      # Local / Remote Ollama Integration
+│       └── OpenRouterService.php  # OpenRouter API Integration
+│
+├── blog.php                       # Public Articles Directory
+├── index.php                      # Public Landing Page & Persona Gateway
+└── post.php                       # Public Article Reader
 ```
 
 ---
 
 ## 🛠️ Installation & Setup Guide
 
-### Prerequisites
-- **Web Server**: Apache 2.4+ (with `mod_rewrite` enabled) or Nginx
-- **PHP**: PHP 8.1 or higher (extensions required: `pdo_mysql`, `curl`, `json`, `mbstring`)
+### 1. System Requirements
+- **Web Server**: Nginx or Apache 2.4+ (with rewrite module)
+- **PHP**: PHP 8.1, 8.2, or 8.3 (Required extensions: `pdo_mysql`, `curl`, `json`, `mbstring`)
 - **Database**: MariaDB 10.6+ or MySQL 8.0+
+- **Python (Optional for MCP/Hermes)**: Python 3.12+ (for `public_mcp_server.py` and Hermes gateway)
 
----
-
-### Step 1: Clone Repository & Directory Permissions
-```bash
-cd /var/www
-git clone https://github.com/quiddity-sea/zeon7-self.git self
-cd self
-sudo chown -R www-data:www-data /var/www/self
-```
-
----
-
-### Step 2: Configure Environment Variables
-Create a `.env` file in the root directory:
-
+### 2. Environment Configuration
+Create or edit `.env` in the root directory:
 ```env
-# Application Settings
 APP_ENV=production
 APP_KEY=your_generated_32_byte_hex_key
-APP_URL=https://self.invigor.com
+APP_URL=https://self.foreverbox.co.uk
 
-# Database Connection
+# Database Settings
 DB_HOST=localhost
 DB_NAME=zeon7_self_dev
 DB_USER=zeon7
 DB_PASS=your_secure_db_password
 
-# Default Admin Credentials
+# Default Emergency Admin
 ADMIN_USER=Mez
 ADMIN_PASSWORD=your_emergency_admin_password
 
-# AI Provider API Keys
-GEMINI_API_KEY=your_google_gemini_api_key
+# Active AI Configuration
+AI_PROVIDER=ollama
+OLLAMA_HOST=http://100.106.5.121:11434
+OLLAMA_MODEL=Brain32:latest
+GEMINI_MODEL=gemini-2.5-flash
+OPENROUTER_MODEL=openai/gpt-4
+
+# API Keys (Stored encrypted in DB, fallbacks in .env)
+GEMINI_API_KEY=your_gemini_api_key
 OPENROUTER_API_KEY=your_openrouter_api_key
-
-# Google OAuth Credentials (Optional)
-GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+TAVILY_API_KEY=your_tavily_mcp_search_key
 ```
 
----
+### 3. Web Server Configuration (Nginx)
+Ensure timeouts are adequate for complex multi-turn reasoning:
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name self.foreverbox.co.uk;
+    root /var/www/self;
+    index index.php index.html;
 
-### Step 3: Database Initialization
-Run the database migration and seeding scripts:
+    client_max_body_size 64M;
+    fastcgi_read_timeout 300s;
+    proxy_read_timeout 300s;
 
-```bash
-php scripts/create_chat_logs_table.php
-php scripts/create_knowledge_tables.php
-php scripts/create_system_instructions_table.php
-php scripts/seed_db.php
-php scripts/add_fulltext_index.php
-```
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
 
----
-
-### Step 4: Apache Virtual Host Configuration
-Configure your Apache virtual host (`/etc/apache2/sites-available/zeon7.conf`):
-
-```apache
-<VirtualHost *:443>
-    ServerName self.invigor.com
-    DocumentRoot /var/www/self
-
-    SSLEngine on
-    SSLCertificateFile /etc/ssl/certs/zeon7.crt
-    SSLCertificateKeyFile /etc/ssl/private/zeon7.key
-
-    <Directory /var/www/self>
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    ErrorLog ${APACHE_LOG_DIR}/zeon7_error.log
-    CustomLog ${APACHE_LOG_DIR}/zeon7_access.log combined
-</VirtualHost>
-```
-
-Reload Apache:
-```bash
-sudo a2enmod rewrite ssl
-sudo systemctl restart apache2
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
 ```
 
 ---
 
 ## 📡 REST API Overview
 
-| Method | Endpoint | Description | Auth Guard |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/chat.php` | Public AI chat interface with privacy flow | Public |
-| `POST` | `/api/auth/login.php` | Operator login with rate limiting | Public |
-| `POST` | `/api/auth/logout.php` | Session termination | Authenticated |
-| `GET` | `/api/auth/check.php` | Check session authentication & CSRF token | Public |
-| `GET` | `/api/users/all.php` | Get all registered operators & IP history | Admin Auth |
-| `POST` | `/api/users/upsert.php` | Create or update operator profile | Admin Auth + CSRF |
-| `DELETE`| `/api/users/delete.php` | Delete operator account | Admin Auth + CSRF |
-| `POST` | `/api/users/remove_ip.php` | Remove specific IP or purge IP telemetry | Admin Auth + CSRF |
-| `GET` | `/api/lore/all.php` | Fetch memory bank lore entries | Public / Admin |
-| `POST` | `/api/lore/upsert.php` | Create/update lore fact | Admin Auth + CSRF |
-| `DELETE`| `/api/lore/delete.php` | Delete lore entry | Admin Auth + CSRF |
-| `POST` | `/api/knowledge/upload.php` | Ingest knowledge base document | Admin Auth + CSRF |
+| Method | Endpoint | Description | Access Level |
+|---|---|---|---|
+| `POST` | `/api/chat.php` | Dual-tier AI chat (Hermes for admin, MCP for public) | Public / Operator |
+| `POST` | `/api/auth/login.php` | Operator authentication with rate limiting | Public |
+| `POST` | `/api/auth/logout.php` | Terminate session | Authenticated |
+| `GET`  | `/api/auth/check.php` | Validate session state & fetch CSRF token | Public |
+| `GET`  | `/api/config/get.php` | Retrieve current provider & model settings | Authenticated |
+| `GET`  | `/api/config/test_connection.php` | Test live provider connectivity (supports `?provider=&model=`) | Authenticated |
+| `POST` | `/api/config/update.php` | Update active AI provider, model, and keys | Authenticated + CSRF |
+| `GET`  | `/api/lore/all.php` | Retrieve memory bank lore anchors | Public / Authenticated |
+| `POST` | `/api/lore/upsert.php` | Store or update lore anchor | Authenticated + CSRF |
+| `DELETE`|`/api/lore/delete.php` | Remove lore entry | Authenticated + CSRF |
+| `POST` | `/api/knowledge/upload.php` | Ingest and chunk RAG document | Authenticated + CSRF |
+| `GET`  | `/api/users/all.php` | List all operators and login telemetry | Admin Auth |
+| `POST` | `/api/users/remove_ip.php` | Purge or prune IP telemetry records | Admin Auth + CSRF |
+
+---
+
+## 🌟 Why You Want to Use This
+
+1. **Self-Contained & Lightweight**:
+   Built from scratch in vanilla PHP without the dependency rot or security vulnerabilities of massive frameworks like Laravel or WordPress. Fast execution with zero Composer bloat.
+2. **True Persona Continuity**:
+   Zeon7's voice, worldview, and memory anchors are firmly bound via the Lore and System Instructions engines, preventing persona drift across different underlying models.
+3. **Sovereign Operator Privileges**:
+   Logged-in administrators experience an entirely different AI tier than the public: direct execution through the autonomous Hermes gateway with shell access, deep memory recall, and full cognitive freedom.
+4. **Privacy-Preserving Visitor Interaction**:
+   Public visitors get a magical, personalized experience that remembers their alias on return visits without tracking, fingerprinting, or exposing other operators' identities.
 
 ---
 
 ## 📄 License & Credits
 
-- **Platform & Persona**: Developed for **Merrill Leo** & **The Foreverbox Initiative**.
-- **Design Framework**: Zeon7 Cybernetic HUD Matrix.
+- **Architect & Visionary**: Merrill Leo & The Foreverbox Initiative
+- **Design System**: Zeon7 Cybernetic HUD Matrix (GSAP 3.12)
 - **Copyright**: © 2026 The Foreverbox Initiative. All rights reserved.

@@ -88,13 +88,23 @@ class ChatController extends BaseController {
             if (empty($systemPrompt)) {
                 $systemPrompt = $this->agentContext->getFallbackGreeting();
             }
+            
+            // --- RUNTIME & TEMPORAL GROUNDING ---
+            $systemPrompt .= "\n\n--- RUNTIME CONTEXT ---\n";
+            $systemPrompt .= "Current Date & Time: " . date('l, j F Y, H:i T') . ".\n";
+            $systemPrompt .= "Active AI Engine: {$model} (Provider: " . strtoupper($provider) . ").\n";
+            if ($provider === 'ollama') {
+                $systemPrompt .= "Execution Environment: Local / Remote Ollama Endpoint ({$this->configService->getOllamaHost()}).\n";
+            } else {
+                $systemPrompt .= "Execution Environment: Cloud Provider (" . strtoupper($provider) . "). You are NOT running on a local GPU.\n";
+            }
 
-            // User session resolution
             $authService = new AuthService();
             $currentUser = $authService->getCurrentUser();
-            $userId      = $currentUser ? (int) $currentUser['id'] : null;
+            $userId      = !empty($currentUser['user_id']) ? (int) $currentUser['user_id'] : null;
+            $isOperator  = ($userId !== null);
 
-            // --- MULTI-TURN IDENTITY EXTRACTION PIPELINE ---
+            // --- IDENTITY EXTRACTION PIPELINE ---
             if (!$userId) {
                 $sessionUserId = $this->chatLogService->getUserIdBySession($sessionId);
                 if ($sessionUserId) {
@@ -275,7 +285,7 @@ class ChatController extends BaseController {
                 ip:        $ip
             );
 
-            $sourceInterface = $currentUser ? 'self_admin' : 'self_public';
+            $sourceInterface = $isOperator ? 'self_admin' : 'self_public';
             $activeAgent = $this->agentContext->getAgentId();
             $this->councilClient->withAgent($activeAgent);
 
@@ -298,24 +308,105 @@ class ChatController extends BaseController {
                 }
             }
 
-            $aiService = AIServiceFactory::create($provider, $apiKey ?? '', $model, $userThink);
-            $result    = $aiService->chat($message, $history, $systemPrompt);
+            // --- AI EXECUTION (ADMIN VS PUBLIC) ---
+            $reply = '';
+            $tokensUsed = null;
+            $tokensIn = null;
+            $tokensOut = null;
 
-            $tokensUsed = $result['usage']['total_tokens'] ?? $result['usage']['output_tokens'] ?? null;
-            $tokensIn   = $result['usage']['prompt_tokens'] ?? null;
-            $tokensOut  = $result['usage']['completion_tokens'] ?? $tokensUsed;
+            if ($isOperator) {
+                // Admin Tier: Route to Hermes Gateway
+                $gatewayUrl = 'http://127.0.0.1:8081/v1/chat/completions';
+                $messages = [['role' => 'system', 'content' => $systemPrompt]];
+                foreach ($history as $turn) {
+                    if (!isset($turn['role'])) continue;
+                    $r = $turn['role'] === 'user' ? 'user' : 'assistant';
+                    $messages[] = ['role' => $r, 'content' => $turn['content'] ?? ''];
+                }
+                $messages[] = ['role' => 'user', 'content' => $message];
+
+                $ch = curl_init($gatewayUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                    'model' => 'zeon7', 'messages' => $messages, 'stream' => false
+                ]));
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+                $gwResponse = curl_exec($ch);
+                $gwCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($gwCode === 200 && $gwResponse) {
+                    $data = json_decode($gwResponse, true);
+                    $reply = $data['choices'][0]['message']['content'] ?? 'Error parsing gateway response.';
+                    $tokensUsed = $data['usage']['total_tokens'] ?? null;
+                    $tokensIn = $data['usage']['prompt_tokens'] ?? null;
+                    $tokensOut = $data['usage']['completion_tokens'] ?? null;
+                } else {
+                    $reply = "Hermes Gateway is currently unavailable (HTTP $gwCode). Please check if the daemon is running on port 8081.";
+                }
+            } else {
+                // Public Tier: MCP Tool Loop
+                require_once __DIR__ . '/../src/services/McpClientService.php';
+                $tools = [];
+                $mcpClient = null;
+                try {
+                    $mcpClient = new McpClientService();
+                    $tools = $mcpClient->getTools();
+                } catch (\Throwable $e) {
+                    error_log("MCP Init Error: " . $e->getMessage());
+                }
+
+                $aiService = AIServiceFactory::create($provider, $apiKey ?? '', $model, $userThink);
+                $maxIterations = 2;
+                $currentIteration = 0;
+
+                while ($currentIteration < $maxIterations) {
+                    $result = $aiService->chat($message, $history, $systemPrompt, $tools);
+
+                    $tokensUsed = $result['usage']['total_tokens'] ?? $result['usage']['output_tokens'] ?? null;
+                    $tokensIn   = $result['usage']['prompt_tokens'] ?? null;
+                    $tokensOut  = $result['usage']['completion_tokens'] ?? $tokensUsed;
+
+                    if (isset($result['functionCall'])) {
+                        $fn = $result['functionCall'];
+                        $name = $fn['name'];
+                        $args = $fn['args'] ?? [];
+
+                        $toolOutput = "Tool not found or failed.";
+                        if ($mcpClient) {
+                            try {
+                                $toolOutput = $mcpClient->callTool($name, $args);
+                            } catch (\Throwable $e) {
+                                $toolOutput = "Error executing tool: " . $e->getMessage();
+                            }
+                        }
+
+                        $history[] = ['role' => 'model', 'functionCall' => $fn];
+                        $history[] = [
+                            'role' => 'user',
+                            'functionResponse' => [
+                                'name' => $name,
+                                'response' => ['name' => $name, 'content' => $toolOutput]
+                            ]
+                        ];
+                        $currentIteration++;
+                    } else {
+                        $reply = $result['reply'] ?? '';
+                        break;
+                    }
+                }
+
+                if (empty($reply) && $currentIteration > 0) {
+                     $reply = "I've searched for that information, but I need a moment to process it.";
+                }
+            }
 
             // Local assistant turn logging
             $this->chatLogService->log(
-                sessionId: $sessionId,
-                role:      'assistant',
-                content:   $result['reply'],
-                userId:    $userId,
-                provider:  $provider,
-                model:     $model,
-                think:     $userThink,
-                tokens:    $tokensUsed,
-                ip:        $ip
+                sessionId: $sessionId, role: 'assistant', content: $reply, userId: $userId,
+                provider: $provider, model: $model, think: $userThink, tokens: $tokensUsed, ip: $ip
             );
 
             // Council conversation assistant turn logging
@@ -325,7 +416,7 @@ class ChatController extends BaseController {
                         $this->councilClient->appendMessage(
                             sessionId:       $sessionId,
                             role:            'assistant',
-                            content:         $result['reply'],
+                            content:         $reply,
                             metadata:        [
                                 'model'    => $model,
                                 'provider' => $provider,
@@ -345,8 +436,8 @@ class ChatController extends BaseController {
 
             $this->sendResponse([
                 'success'    => true,
-                'reply'      => $result['reply'],
-                'usage'      => $result['usage'] ?? [],
+                'reply'      => $reply,
+                'usage'      => ['total_tokens' => $tokensUsed],
                 'session_id' => $sessionId,
             ]);
 
