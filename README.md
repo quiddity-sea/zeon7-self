@@ -1,33 +1,32 @@
-﻿# ZEON7 — Cybernetic AI Persona & Neural Link Platform
+# Zeon7: SELF — Sovereign AI Persona, Cockpit & Memory Engine
 
-[![System Status](https://img.shields.io/badge/System-ONLINE-00f2fe?style=for-the-badge&logo=cpu)](https://self.foreverbox.co.uk)
-[![PHP](https://img.shields.io/badge/PHP-8.1+_Native_MVC-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net)
-[![MariaDB](https://img.shields.io/badge/MariaDB-10.6+-003545?style=for-the-badge&logo=mariadb&logoColor=white)](https://mariadb.org)
-[![Hermes Gateway](https://img.shields.io/badge/Admin_Gateway-Hermes_Agent-ff007f?style=for-the-badge&logo=terminal)](https://github.com/NousResearch/Hermes-Agent)
-[![Ollama](https://img.shields.io/badge/Local_Ollama-Brain32:latest-black?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
-[![OpenRouter](https://img.shields.io/badge/OpenRouter-Multi--Model-6C5CE7?style=for-the-badge&logo=openai&logoColor=white)](https://openrouter.ai)
+[![Architecture](https://img.shields.io/badge/Architecture-Sovereign_AI_Persona-00f2fe?style=for-the-badge&logo=cpu)](https://self.foreverbox.co.uk)
+[![PHP](https://img.shields.io/badge/PHP-8.3_Native_MVC-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
+[![MariaDB](https://img.shields.io/badge/MariaDB-11.8+_Vector-003545?style=for-the-badge&logo=mariadb&logoColor=white)](https://mariadb.org)
+[![Tailscale](https://img.shields.io/badge/Mesh_Network-Tailscale-1b1f23?style=for-the-badge&logo=tailscale&logoColor=white)](https://tailscale.com)
+[![Hermes Agent](https://img.shields.io/badge/Agent_Engine-Hermes_2.0-ff007f?style=for-the-badge&logo=terminal)](https://github.com/NousResearch/Hermes-Agent)
+[![MCP](https://img.shields.io/badge/Protocol-MCP_stdio_Tavily-brightgreen?style=for-the-badge)](https://modelcontextprotocol.io)
 
-**ZEON7** is an advanced, high-performance cybernetic AI persona platform, neural link interface, and operator command matrix built for **Merrill Leo** and **The Foreverbox Initiative**. 
+**Zeon7: SELF** is the public web identity, sovereign AI persona interface, and administrative command cockpit for **Zeon7** — the digital twin and cognitive curator of Merrill Leo's *Foreverbox Initiative*.
 
-The system provides a dual-tier cognitive architecture: a privacy-focused, tool-enabled public AI chat widget for visitors, coupled with a high-privilege **Cybernetic Admin Cockpit** for authenticated operators that routes directly into the autonomous **Hermes Agent Gateway** with full toolsets, persistent memory, and live web intelligence.
+Hosted at [`https://self.foreverbox.co.uk`](https://self.foreverbox.co.uk), the application combines a lightweight, zero-dependency PHP 8.3 MVC architecture with dual-tier cognitive routing, real-time Model Context Protocol (MCP) web intelligence, persistent memory anchors, and direct integration with the autonomous **Council Library** and **Hermes Agent** runtime.
 
 ---
 
 ## 📌 What This Repository Is For
 
-`self` is the primary web-facing interface, persona gateway, and operator cockpit for the Foreverbox ecosystem:
+`zeon7-self` serves as the primary operational surface for:
 1. **Public Persona Experience (`index.php`, `js/chat-widget.js`)**:
    - A cybernetic visitor interface introducing the Zeon7 persona (51-year-old digital twin, 3x3x3 cube cosmology, The Warning, Logic of the Prism).
    - Features privacy-first visitor recognition that remembers returning users without leaking identities across shared network connections.
 2. **Dual-Tier Cognitive Routing (`api/chat.php`)**:
-   - **Admin Tier**: Authenticated operators automatically bypass basic completion loops and route into the local **Hermes OpenAI Gateway** (`:8081`) for autonomous agentic reasoning, shell execution, and deep Council Library memory access.
+   - **Admin Tier**: Authenticated operators automatically bypass basic completion loops and route into the **Hermes OpenAI Gateway** (`:8081`) for autonomous agentic reasoning, shell execution, and deep Council Library memory access.
    - **Public Tier**: Public visitors interact with a guarded, rate-limited model supporting live web intelligence via a native Model Context Protocol (MCP) client.
 3. **Admin Cockpit & Command Matrix (`/admin`)**:
    - **Mission Control Dashboard (`index.php`)**: Live token consumption telemetry, request volume counters, persona theme cycling, and a real-time system terminal.
    - **Operator Matrix (`users.php`)**: Role-based access control (*Prime Operator* vs *Standard*), BCrypt security, session tracking, and rolling 10-IP telemetry auditing with single-click purge controls.
    - **Memory Bank / Lore Manager (`lore.php`)**: Permanent factual anchors, persona rules, and biography constants injected dynamically into the system prompt cycle.
-   - **RAG Knowledge Base (`knowledge.php`)**: Document ingestion, automatic text chunking, and full-text keyword retrieval.
+   - **Unified Knowledge Manager (`knowledge.php`)**: Target Lore Sea subfolder selector, document upload directly to Quiddity Lore Sea, status telemetry badges (`INDEXED`, `PENDING`, `PROCESSING`, `FAILED`), and in-table **RE-INGEST** and **DELETE** controls.
    - **Prompt Version Manager (`instructions.php`)**: System prompt editor with comprehensive revision tracking, instant rollbacks, and hot deployment.
    - **AI News Desk & Content Engine (`news-desk.php`, `posts.php`)**: Grounded web news scanning, multi-angle story analysis, and automated markdown blog post generation.
    - **Vision Intelligence (`vision.php`)**: Multimodal image inspection and diagram analysis powered by Gemini Vision.
@@ -36,14 +35,26 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
 
 ## 🚀 Recent Build Upgrades & New Capabilities
 
-### 1. Dual-Tier Chat Architecture with Hermes Gateway
+### 1. Unified Knowledge Ingestion Pipeline (Single Source of Truth)
+- **Direct Quiddity Lore Sea Ingestion**:
+  - Web UI document uploads (`admin/knowledge.php`) no longer write to disconnected local tables. Uploads are forwarded via `CouncilClient::uploadToCommons` directly to the Council REST API (`/v1/commons/files/upload`).
+  - Saves documents physically to `/foreverbox_data/Quiddity_Lore_Sea/{subfolder}/`, registers them in `quiddity_files`, paragraph-chunks text (~1,000 chars), and embeds chunks into 384-dimensional dense vectors (`all-MiniLM-L6-v2`) on `quiddity_vector_references`.
+- **Automated Embedding Daemon Auto-Wakeup**:
+  - `IngestionService.php` performs pre-flight health checks on `http://127.0.0.1:8900` and automatically starts `council-embedding.service` if offline.
+- **Synchronized Deletion and Re-indexing**:
+  - Deleting a document from `admin/knowledge.php` removes the physical file from the Lore Sea filesystem and cascades database removal of all vector chunk embeddings.
+  - Added in-table **RE-INGEST** action via `api/knowledge/reingest.php` to recalculate embeddings and refresh centroids on demand.
+- **Deduplicated Chat Retrieval**:
+  - Cleaned up `api/chat.php` to query Council Commons exactly once per turn, eliminating redundant prompt pollution and duplicate knowledge context.
+
+### 2. Dual-Tier Chat Architecture with Hermes Gateway
 - **Operator Bypass to Hermes**:
-  - Authenticated operators talking through the chat widget are automatically detected via `AuthService` session state and routed to the local **Hermes Gateway Daemon** on `http://127.0.0.1:8081/v1/chat/completions`.
+  - Authenticated operators talking through the chat widget are automatically detected via `AuthService` session state and routed to the **Hermes Gateway Daemon** on `http://127.0.0.1:8081/v1/chat/completions`.
   - Enables sovereign Hermes Agent CLI capabilities (deep tool execution, code execution, multi-step research) directly inside the web UI without manual terminal sessions.
 - **Headless Non-Interactive Agent Execution**:
   - The gateway proxy executes Hermes with `-Q --yolo --accept-hooks --query`, eliminating non-TTY permission hangs when tools are called.
 
-### 2. Tri-Provider MCP Tool Calling on Public Chat
+### 3. Tri-Provider MCP Tool Calling on Public Chat
 - **Native PHP MCP Client (`McpClientService.php`)**:
   - 100% vanilla PHP JSON-RPC 2.0 client communicating over `stdio` with the Python Tavily search server.
   - Zero Node.js or npm dependencies required on the host.
@@ -51,10 +62,6 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
   - **Google Gemini**: Native function calling via `GeminiService.php`.
   - **Ollama**: Native OpenAI-compatible tool call handling via `/api/chat` in `OllamaService.php` (powering `Brain32:latest` / Qwen 9B custom derivatives).
   - **OpenRouter**: Full tool calling with `tool_choice: auto` in `OpenRouterService.php`.
-
-### 3. Temporal Grounding (No More Training Cutoff Confusion)
-- System prompts dynamically inject the current UTC timestamp, human-readable date, and day of the week.
-- Prevents the agent from believing it is trapped in past training cutoff years (e.g. 2024/2025) when discussing current events.
 
 ### 4. Full Mobile & Viewport Responsiveness Overhaul
 - Injected responsive `@media` breakpoints across `index.php` and `zeon7-theme.css`:
@@ -65,7 +72,7 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
 - **ApiException Safeguard**: Added `class ApiException extends AppException` to `Exceptions.php` preventing uncaught fatal crashes on third-party upstream API outages or rate limit rejections.
 - **Live Form State Testing**: Updated `test_connection.php` and `settings.js` to evaluate currently selected dropdown values rather than stale database records.
 - **Extended Server Timeout**: Configured Nginx `fastcgi_read_timeout 300s` and `proxy_read_timeout 300s` globally to prevent 504 Gateway Timeouts during deep agent reasoning loops.
-- **Strict No-Composer Architecture**: Entire stack is built with pure, self-contained vanilla PHP 8.1+ with zero vendor bloat or external package manager overhead.
+- **Strict No-Composer Architecture**: Entire stack is built with pure, self-contained vanilla PHP 8.3 with zero vendor bloat or external package manager overhead.
 
 ---
 
@@ -81,7 +88,7 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
 │   ├── chat_logs_view.php         # Transcript Bubble Viewer
 │   ├── index.php                  # Mission Control Dashboard
 │   ├── instructions.php           # System Prompt Version Control
-│   ├── knowledge.php              # RAG Knowledge Document Management
+│   ├── knowledge.php              # Unified Quiddity Lore Sea Ingestion Desk
 │   ├── login.php                  # Operator Login Interface
 │   ├── lore.php                   # Memory Bank & Factual Anchors
 │   ├── news-desk.php              # AI Grounded News Curation
@@ -98,7 +105,11 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
 │   │   ├── test_connection.php    # Live Connection Test with Form Overrides
 │   │   └── update.php             # Save AI Provider & Model Settings
 │   ├── instruction/               # Prompt Versioning & History APIs
-│   ├── knowledge/                 # Document Ingestion & Chunk Search APIs
+│   ├── knowledge/                 # Unified Document Ingestion & Reingest APIs
+│   │   ├── upload.php             # Multipart Forwarder to Council Commons
+│   │   ├── reingest.php           # Re-indexing & Embedding Trigger
+│   │   ├── delete.php             # Cascaded Filesystem & Vector Deletion
+│   │   └── list.php               # Quiddity Lore Sea Document Catalogue
 │   ├── lore/                      # Memory Bank CRUD APIs
 │   ├── posts/                     # Blog Publishing & Post Management APIs
 │   ├── users/                     # Operator CRUD & IP Telemetry APIs
@@ -122,13 +133,16 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
 │       ├── AIServiceFactory.php   # Provider Abstraction Factory
 │       ├── AuthService.php        # Session & Operator Authentication
 │       ├── ConfigService.php      # Provider & Model Settings Manager
+│       ├── CouncilClient.php      # Council Commons & Sanctum Memory API Client
 │       ├── GeminiService.php      # Google Gemini API & Tool Handler
-│       ├── KnowledgeService.php   # RAG Document Chunker & Search
+│       ├── KnowledgeService.php   # RAG Document & Vector Commons Bridge
 │       ├── LoreService.php        # Memory Bank Data Access
 │       ├── McpClientService.php   # Native PHP stdio MCP Client
 │       ├── OllamaService.php      # Local / Remote Ollama Integration
 │       └── OpenRouterService.php  # OpenRouter API Integration
 │
+├── tests/                         # Verification Suites
+│   └── test_unified_pipeline.php  # 9-Point Regression Test Suite
 ├── blog.php                       # Public Articles Directory
 ├── index.php                      # Public Landing Page & Persona Gateway
 └── post.php                       # Public Article Reader
@@ -141,8 +155,9 @@ The system provides a dual-tier cognitive architecture: a privacy-focused, tool-
 ### 1. System Requirements
 - **Web Server**: Nginx or Apache 2.4+ (with rewrite module)
 - **PHP**: PHP 8.1, 8.2, or 8.3 (Required extensions: `pdo_mysql`, `curl`, `json`, `mbstring`)
-- **Database**: MariaDB 10.6+ or MySQL 8.0+
-- **Python (Optional for MCP/Hermes)**: Python 3.12+ (for `public_mcp_server.py` and Hermes gateway)
+- **Database**: MariaDB 11.8+ with Vector search extensions enabled
+- **Council Library**: PHP REST API daemon listening on port 8080
+- **Embedding Microservice**: Sentence-Transformers listening on port 8900
 
 ### 2. Environment Configuration
 Create or edit `.env` in the root directory:
@@ -151,8 +166,8 @@ APP_ENV=production
 APP_KEY=your_generated_32_byte_hex_key
 APP_URL=https://self.foreverbox.co.uk
 
-# Database Settings
-DB_HOST=localhost
+# Database Settings (VPS MariaDB)
+DB_HOST=100.126.174.30
 DB_NAME=zeon7_self_dev
 DB_USER=zeon7
 DB_PASS=your_secure_db_password
@@ -168,10 +183,14 @@ OLLAMA_MODEL=Brain32:latest
 GEMINI_MODEL=gemini-2.5-flash
 OPENROUTER_MODEL=openai/gpt-4
 
-# API Keys (Stored encrypted in DB, fallbacks in .env)
-GEMINI_API_KEY=your_gemini_api_key
-OPENROUTER_API_KEY=your_openrouter_api_key
-TAVILY_API_KEY=your_tavily_mcp_search_key
+# Council Library Integration
+COUNCIL_API_URL=http://100.126.174.30:8080
+COUNCIL_AGENT_ID=zeon7
+COUNCIL_API_KEY=your_council_api_key
+KNOWLEDGE_BACKEND=council
+MEMORY_BACKEND=council
+CONVERSATION_BACKEND=council
+SOUL_BACKEND=council
 ```
 
 ### 3. Web Server Configuration (Nginx)
@@ -216,7 +235,10 @@ server {
 | `GET`  | `/api/lore/all.php` | Retrieve memory bank lore anchors | Public / Authenticated |
 | `POST` | `/api/lore/upsert.php` | Store or update lore anchor | Authenticated + CSRF |
 | `DELETE`|`/api/lore/delete.php` | Remove lore entry | Authenticated + CSRF |
-| `POST` | `/api/knowledge/upload.php` | Ingest and chunk RAG document | Authenticated + CSRF |
+| `POST` | `/api/knowledge/upload.php` | Upload document to Quiddity Lore Sea & generate vectors | Authenticated + CSRF |
+| `POST` | `/api/knowledge/reingest.php`| Trigger re-indexing & embedding recalculation | Authenticated + CSRF |
+| `DELETE`|`/api/knowledge/delete.php` | Cascade delete file from Lore Sea and vector DB | Authenticated + CSRF |
+| `GET`  | `/api/knowledge/list.php` | List documents in Quiddity Lore Sea with status badges | Authenticated |
 | `GET`  | `/api/users/all.php` | List all operators and login telemetry | Admin Auth |
 | `POST` | `/api/users/remove_ip.php` | Purge or prune IP telemetry records | Admin Auth + CSRF |
 
@@ -224,14 +246,16 @@ server {
 
 ## 🌟 Why You Want to Use This
 
-1. **Self-Contained & Lightweight**:
-   Built from scratch in vanilla PHP without the dependency rot or security vulnerabilities of massive frameworks like Laravel or WordPress. Fast execution with zero Composer bloat.
-2. **True Persona Continuity**:
-   Zeon7's voice, worldview, and memory anchors are firmly bound via the Lore and System Instructions engines, preventing persona drift across different underlying models.
-3. **Sovereign Operator Privileges**:
-   Logged-in administrators experience an entirely different AI tier than the public: direct execution through the autonomous Hermes gateway with shell access, deep memory recall, and full cognitive freedom.
-4. **Privacy-Preserving Visitor Interaction**:
-   Public visitors get a magical, personalized experience that remembers their alias on return visits without tracking, fingerprinting, or exposing other operators' identities.
+1. **One Pipeline, One Truth**:
+   Web document uploads and CLI agent research share the exact same physical Lore Sea filesystem, chunking rules, and vector embedding store.
+2. **Self-Contained & Lightweight**:
+   Built from scratch in vanilla PHP without the dependency rot or security vulnerabilities of massive frameworks. Fast execution with zero Composer bloat.
+3. **True Persona Continuity**:
+   Zeon7's voice, worldview, and memory anchors are firmly bound via the Lore, SOUL, and System Instructions engines, preventing persona drift across different underlying models.
+4. **Sovereign Operator Privileges**:
+   Logged-in administrators experience direct execution through the autonomous Hermes gateway with shell access, deep memory recall, and full cognitive freedom.
+5. **Privacy-Preserving Visitor Interaction**:
+   Public visitors get a personalized experience that remembers their alias on return visits without tracking, fingerprinting, or exposing other operators' identities.
 
 ---
 
