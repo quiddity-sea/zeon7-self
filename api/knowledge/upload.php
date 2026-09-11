@@ -1,19 +1,19 @@
 <?php
 /**
- * API: Upload Knowledge File
+ * API: Upload Knowledge File to Council Commons (Quiddity Lore Sea)
  * Endpoint: POST /api/knowledge/upload.php
  */
 
 require_once __DIR__ . '/../../src/core/BaseController.php';
-require_once __DIR__ . '/../../src/services/KnowledgeService.php';
+require_once __DIR__ . '/../../src/services/CouncilClient.php';
 require_once __DIR__ . '/../../src/middleware/CsrfMiddleware.php';
 
 class UploadController extends BaseController {
-    private KnowledgeService $knowledgeService;
+    private CouncilClient $councilClient;
     
     public function __construct() {
         parent::__construct();
-        $this->knowledgeService = new KnowledgeService();
+        $this->councilClient = new CouncilClient();
         
         // Protect with CSRF
         CsrfMiddleware::handle();
@@ -32,88 +32,35 @@ class UploadController extends BaseController {
         $file = $_FILES['file'];
         $filename = $file['name'];
         $tmpPath = $file['tmp_name'];
-        $size = $file['size'];
         
         // Validate extension
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if ($ext !== 'md' && $ext !== 'txt') {
-            $this->sendError('Only .md and .txt files are allowed', 400);
+        if (!in_array($ext, ['md', 'txt', 'pdf'], true)) {
+            $this->sendError('Only .md, .txt, and .pdf files are allowed', 400);
         }
-        
-        // Read content
-        $content = file_get_contents($tmpPath);
-        if ($content === false) {
-            $this->sendError('Failed to read file content', 500);
-        }
-        
-        // Calculate hash
-        $hash = hash('sha256', $content);
         
         try {
-            // Check if exists
-            if ($this->knowledgeService->fileExists($filename)) {
-                $this->sendError("File '$filename' already exists", 409);
-            }
-            
-            // Get Public Flag
-            $isPublic = isset($_POST['is_public']) && $_POST['is_public'] === '1';
+            $subfolder = !empty($_POST['subfolder']) ? trim((string)$_POST['subfolder']) : null;
 
-            // Upload metadata
-            $docId = $this->knowledgeService->uploadFile($filename, $content, $hash, $size, $isPublic);
-            
-            // Chunk content (simple splitting by headers for now)
-            $chunks = $this->parseChunks($content);
-            $this->knowledgeService->chunkFile($docId, $chunks);
+            // Forward to Council API — the single source of truth
+            $result = $this->councilClient->uploadToCommons(
+                $tmpPath,
+                $filename,
+                $subfolder
+            );
             
             $this->sendResponse([
-                'success' => true,
-                'id' => $docId,
-                'filename' => $filename,
-                'chunks_count' => count($chunks),
-                'message' => 'File uploaded and processed successfully'
+                'success'      => true,
+                'id'           => $result['file_id'] ?? 0,
+                'filename'     => $result['relative_path'] ?? $filename,
+                'chunks_count' => $result['chunk_count'] ?? 0,
+                'status'       => $result['indexing_status'] ?? 'indexed',
+                'message'      => 'File uploaded to Quiddity Lore Sea and ingested successfully'
             ]);
             
         } catch (Exception $e) {
             $this->sendError($e->getMessage(), 500);
         }
-    }
-    
-    /**
-     * Parse markdown content into chunks based on headers
-     */
-    private function parseChunks(string $content): array {
-        $lines = explode("\n", $content);
-        $chunks = [];
-        $currentHeading = 'Introduction';
-        $currentContent = '';
-        
-        foreach ($lines as $line) {
-            // Check for headers (H1-H3)
-            if (preg_match('/^#{1,3}\s+(.+)$/', $line, $matches)) {
-                // Save previous chunk if not empty
-                if (!empty(trim($currentContent))) {
-                    $chunks[] = [
-                        'heading' => $currentHeading,
-                        'content' => trim($currentContent)
-                    ];
-                }
-                
-                $currentHeading = $matches[1];
-                $currentContent = $line . "\n";
-            } else {
-                $currentContent .= $line . "\n";
-            }
-        }
-        
-        // Save last chunk
-        if (!empty(trim($currentContent))) {
-            $chunks[] = [
-                'heading' => $currentHeading,
-                'content' => trim($currentContent)
-            ];
-        }
-        
-        return $chunks;
     }
 }
 

@@ -149,6 +149,88 @@ class CouncilClient
         return $this->get("/v1/commons/files/{$fileId}/chunks");
     }
 
+    /**
+     * Upload a file to Council Commons (Quiddity Lore Sea).
+     * Uses multipart/form-data instead of JSON.
+     * Council ALWAYS ingests inline: writes file to Sea, chunks, embeds,
+     * and wakes up the embedding microservice if needed.
+     *
+     * @param string      $tmpFilePath  PHP temp file path
+     * @param string      $filename     Original filename
+     * @param string|null $subfolder    Target subfolder in Lore Sea
+     * @return array  { file_id, relative_path, indexing_status, chunk_count }
+     */
+    public function uploadToCommons(
+        string $tmpFilePath,
+        string $filename,
+        ?string $subfolder = null
+    ): array {
+        $url = $this->baseUrl . "/v1/commons/files/upload";
+
+        $postFields = [
+            "file" => new \CURLFile($tmpFilePath, "text/plain", $filename),
+        ];
+        if ($subfolder) {
+            $postFields["subfolder"] = $subfolder;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $postFields,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 120,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_HTTPHEADER     => [
+                "Accept: application/json",
+                "X-Agent-ID: " . $this->agentId,
+                "Authorization: Bearer " . $this->apiKey,
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error    = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            throw new \RuntimeException("Council upload error: {$error}");
+        }
+
+        $decoded = json_decode($response, true);
+        if ($httpCode >= 400) {
+            throw new \RuntimeException(
+                "Council upload failed: " . ($decoded["error"] ?? "HTTP {$httpCode}")
+            );
+        }
+
+        return $decoded ?? [];
+    }
+
+    /**
+     * Delete a file from Council Commons (removes from DB + Lore Sea filesystem).
+     */
+    public function deleteCommonsFile(int $fileId): array
+    {
+        return $this->delete("/v1/commons/files/{$fileId}");
+    }
+
+    /**
+     * Trigger re-ingestion for one or more files in Commons.
+     */
+    public function reingestFiles(array $fileIds = []): array
+    {
+        return $this->post("/v1/commons/ingest/batch", ["files" => $fileIds]);
+    }
+
+    /**
+     * List registered folders in the Commons.
+     */
+    public function listFolders(): array
+    {
+        return $this->get("/v1/commons/folders");
+    }
+
     // ─── CONVERSATIONS ───────────────────────────────────────
 
     /**

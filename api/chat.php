@@ -271,23 +271,7 @@ class ChatController extends BaseController {
                 }
             }
 
-            // Council Commons Hybrid Search Injection
-            if (($_ENV['KNOWLEDGE_BACKEND'] ?? 'local') === 'council') {
-                try {
-                    if ($this->councilClient->isAvailable()) {
-                        $councilResults = $this->councilClient->searchCommons($message, 5);
-                        if (!empty($councilResults['results'])) {
-                            $systemPrompt .= "\n\n--- COUNCIL KNOWLEDGE BASE ---\n";
-                            foreach ($councilResults['results'] as $result) {
-                                $source = $result['filename'] ?? 'Quiddity Lore';
-                                $systemPrompt .= "Source: {$source}\n" . ($result['content'] ?? '') . "\n\n";
-                            }
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    error_log("Council knowledge retrieval warning: " . $e->getMessage());
-                }
-            }
+
 
             // Council Sanctum Memory Search Injection
             if (($_ENV['MEMORY_BACKEND'] ?? 'local') === 'council') {

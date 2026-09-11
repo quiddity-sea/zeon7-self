@@ -1,6 +1,6 @@
 <?php
 /**
- * KnowledgeService - Manage knowledge file uploads, chunking, and retrieval (Council Commons & Local fallback)
+ * KnowledgeService - Manage knowledge file retrieval and deletion (Council Commons & Local fallback)
  */
 
 require_once __DIR__ . '/../core/BaseService.php';
@@ -18,7 +18,7 @@ class KnowledgeService extends BaseService {
     }
     
     /**
-     * Upload and store knowledge file metadata
+     * Upload and store knowledge file metadata (Legacy fallback)
      */
     public function uploadFile(string $filename, string $content, string $hash, int $size, bool $isPublic = false): int {
         $sql = "INSERT INTO knowledge_doc (filename, file_hash, file_size, is_public) 
@@ -29,7 +29,7 @@ class KnowledgeService extends BaseService {
     }
     
     /**
-     * Store file chunks for selective retrieval
+     * Store file chunks for selective retrieval (Legacy fallback)
      */
     public function chunkFile(int $docId, array $chunks): void {
         $sql = "INSERT INTO knowledge_chunk (doc_id, heading, content, chunk_index) 
@@ -58,18 +58,21 @@ class KnowledgeService extends BaseService {
     public function getAllFiles(): array {
         if ($this->useCouncil) {
             try {
-                $res = $this->councilClient->listFiles(['limit' => 100]);
+                $res = $this->councilClient->listFiles(['limit' => 200]);
                 if (isset($res['files']) && is_array($res['files'])) {
                     $files = [];
                     foreach ($res['files'] as $f) {
                         $files[] = [
                             'id'           => (int)$f['id'],
-                            'filename'     => $f['relative_path'] ?? 'file.md',
+                            'filename'     => basename($f['relative_path'] ?? 'file.md'),
+                            'sea_path'     => $f['relative_path'] ?? '',
                             'file_hash'    => $f['content_hash'] ?? '',
                             'file_size'    => (int)($f['file_size_bytes'] ?? 0),
+                            'size'         => (int)($f['file_size_bytes'] ?? 0),
                             'is_public'    => 1,
-                            'chunk_count'  => 0, // dynamic count
+                            'chunk_count'  => 0,
                             'status'       => $f['indexing_status'] ?? 'indexed',
+                            'error'        => $f['error_message'] ?? null,
                             'created_at'   => $f['last_modified'] ?? date('Y-m-d H:i:s'),
                             'updated_at'   => $f['indexed_at'] ?? date('Y-m-d H:i:s')
                         ];
@@ -154,9 +157,18 @@ class KnowledgeService extends BaseService {
     }
     
     /**
-     * Delete knowledge file and all chunks (CASCADE)
+     * Delete knowledge file and all chunks
      */
     public function deleteFile(int $id): bool {
+        if ($this->useCouncil) {
+            try {
+                $res = $this->councilClient->deleteCommonsFile($id);
+                return !empty($res['success']);
+            } catch (\Throwable $e) {
+                // fall through
+            }
+        }
+
         $sql = "DELETE FROM knowledge_doc WHERE id = ?";
         $stmt = $this->executeQuery($sql, [$id]);
         return $stmt->rowCount() > 0;
