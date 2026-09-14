@@ -375,14 +375,17 @@ class ChatController extends BaseController {
                 }
             } else {
                 // Public Tier: MCP Tool Loop
-                require_once __DIR__ . '/../src/services/McpClientService.php';
                 $tools = [];
                 $mcpClient = null;
-                try {
-                    $mcpClient = new McpClientService();
-                    $tools = $mcpClient->getTools();
-                } catch (\Throwable $e) {
-                    error_log("MCP Init Error: " . $e->getMessage());
+                $mcpServiceFile = __DIR__ . '/../src/services/McpClientService.php';
+                if (file_exists($mcpServiceFile)) {
+                    require_once $mcpServiceFile;
+                    try {
+                        $mcpClient = new McpClientService();
+                        $tools = $mcpClient->getTools();
+                    } catch (\Throwable $e) {
+                        error_log("MCP Init Error: " . $e->getMessage());
+                    }
                 }
 
                 $aiService = AIServiceFactory::create($provider, $apiKey ?? '', $model, $userThink);

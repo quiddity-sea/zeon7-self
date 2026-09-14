@@ -85,7 +85,18 @@ class OllamaService extends BaseService {
             $payload['tools'] = $tools;
         }
         
-        $response = $this->makeRequest($url, $payload);
+        try {
+            $response = $this->makeRequest($url, $payload);
+        } catch (\Throwable $e) {
+            $config = new ConfigService();
+            $geminiKey = $config->getApiKey('gemini');
+            if (!empty($geminiKey)) {
+                require_once __DIR__ . '/GeminiService.php';
+                $fallback = new GeminiService($geminiKey, $config->getModel('gemini') ?: 'gemini-2.5-flash');
+                return $fallback->chat($message, $history, $context, $tools);
+            }
+            throw $e;
+        }
         
         // Check if Ollama decided to call a tool
         if (!empty($response['message']['tool_calls'])) {
@@ -148,7 +159,7 @@ class OllamaService extends BaseService {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json'
         ]);
