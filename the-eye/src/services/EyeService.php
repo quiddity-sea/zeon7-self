@@ -77,29 +77,26 @@ class EyeService extends BaseService {
         $isAuth = !empty($session['user_id']);
         $limit = (int) ($_ENV[$isAuth ? 'EYE_RATE_LIMIT_AUTH' : 'EYE_RATE_LIMIT_PUBLIC'] ?? ($isAuth ? 300 : 120));
 
-        // Check requests in the last 60 seconds
-        $recentCount = $this->fetchOne(
-            "SELECT COUNT(*) as cnt FROM eye_sessions WHERE session_token = ? AND last_seen_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)",
-            [$token]
-        );
-
-        // Simple sliding window: increment and check
-        $this->executeQuery(
-            "UPDATE eye_sessions SET request_count = request_count + 1, last_seen_at = NOW() WHERE session_token = ?",
-            [$token]
-        );
-
-        // Reset counter every minute
-        $lastSeen = strtotime($session['last_seen_at']);
+        // Check if more than 60 seconds have passed since last seen
+        $lastSeen = !empty($session['last_seen_at']) ? strtotime($session['last_seen_at']) : 0;
         if (time() - $lastSeen > 60) {
             $this->executeQuery(
-                "UPDATE eye_sessions SET request_count = 1 WHERE session_token = ?",
+                "UPDATE eye_sessions SET request_count = 1, last_seen_at = NOW() WHERE session_token = ?",
                 [$token]
             );
             return true;
         }
 
-        return ($session['request_count'] < $limit);
+        if ((int)$session['request_count'] >= $limit) {
+            return false;
+        }
+
+        $this->executeQuery(
+            "UPDATE eye_sessions SET request_count = request_count + 1, last_seen_at = NOW() WHERE session_token = ?",
+            [$token]
+        );
+
+        return true;
     }
 
     /**
