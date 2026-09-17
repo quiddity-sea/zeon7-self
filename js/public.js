@@ -66,3 +66,19 @@ const Public = {
             .replace(/'/g, "&#039;");
     }
 };
+
+function openEye(url) {
+    var targetUrl = url || 'https://eye.foreverbox.co.uk';
+    try {
+        var w = window.open(targetUrl, '_blank');
+        if (!w || w.closed || typeof w.closed === 'undefined') {
+            var delim = targetUrl.indexOf('?') === -1 ? '?' : '&';
+            window.location.href = targetUrl + delim + 'embedded=1';
+        }
+    } catch(e) {
+        var delim = targetUrl.indexOf('?') === -1 ? '?' : '&';
+        window.location.href = targetUrl + delim + 'embedded=1';
+    }
+    return false;
+}
+

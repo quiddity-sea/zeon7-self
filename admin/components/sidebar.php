@@ -12,6 +12,7 @@ $logoPath = $agentCtx->getLogoPath();
 // Base navigation common to all agents
 $nav_items = [
     ['label' => 'Dashboard', 'icon' => '⊞', 'href' => 'index.php', 'show' => true],
+    ['label' => 'The Eye', 'icon' => '🌍', 'href' => 'https://eye.foreverbox.co.uk', 'show' => true, 'target' => '_blank', 'onclick' => 'return openEye(this.href)'],
 ];
 
 // Agent-Specific Capabilities
@@ -58,7 +59,7 @@ $nav_items[] = ['label' => 'Settings', 'icon' => '🛠', 'href' => 'settings.php
         <?php foreach ($nav_items as $item): ?>
             <?php if (!empty($item['show'])): ?>
                 <?php $active = ($current_page === $item['href']) ? 'active' : ''; ?>
-                <a href="<?= $item['href'] ?>" class="nav-item <?= $active ?>">
+                <a href="<?= $item['href'] ?>" class="nav-item <?= $active ?>" <?= !empty($item['target']) ? 'target="' . $item['target'] . '" rel="noopener"' : '' ?> <?= !empty($item['onclick']) ? 'onclick="' . $item['onclick'] . '"' : '' ?>>
                     <i><?= $item['icon'] ?></i> <span class="nav-text"><?= $item['label'] ?></span>
                 </a>
             <?php endif; ?>
@@ -83,6 +84,16 @@ $nav_items[] = ['label' => 'Settings', 'icon' => '🛠', 'href' => 'settings.php
 <script src="../js/theme-switcher.js"></script>
 <script src="js/animations.js?v=11.0"></script>
 <script>
+function openEye(url) {
+    var targetUrl = url || 'https://eye.foreverbox.co.uk';
+    var w = window.open(targetUrl, '_blank');
+    if (!w || w.closed || typeof w.closed === 'undefined') {
+        var delim = targetUrl.indexOf('?') === -1 ? '?' : '&';
+        window.location.href = targetUrl + delim + 'embedded=1';
+    }
+    return false;
+}
+
 document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
     e.preventDefault();
     if (confirm('TERMINATE OPERATOR SESSION?')) {

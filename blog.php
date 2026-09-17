@@ -44,6 +44,7 @@
                 <a href="index.php" class="nav-link">HOME</a>
                 <a href="blog.php" class="nav-link active">DISPATCHES</a>
                 <a href="admin/news-desk.php" class="nav-link">NEWS DESK</a>
+                <a href="https://eye.foreverbox.co.uk" target="_blank" rel="noopener" class="nav-link" onclick="return openEye(this.href)">THE EYE</a>
                 <a href="admin/login.php" class="nav-btn-control">
                     <span>MISSION CONTROL</span>
                     <span>↗</span>
@@ -89,6 +90,16 @@
     <script src="js/public.js?v=11.0"></script>
     <script src="js/chat-widget.js?v=17.0"></script>
     <script>
+        function openEye(url) {
+            var targetUrl = url || 'https://eye.foreverbox.co.uk';
+            var w = window.open(targetUrl, '_blank');
+            if (!w || w.closed || typeof w.closed === 'undefined') {
+                var delim = targetUrl.indexOf('?') === -1 ? '?' : '&';
+                window.location.href = targetUrl + delim + 'embedded=1';
+            }
+            return false;
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('posts-grid');
             try {
