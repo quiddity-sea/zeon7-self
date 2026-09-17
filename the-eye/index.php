@@ -4,9 +4,13 @@
  * Entry point. Renders the fullscreen CesiumJS globe.
  */
 
-// Load env and auth from the parent self repo
-require_once __DIR__ . '/../src/config/env.php';
-require_once __DIR__ . '/../src/services/AuthService.php';
+// Load env and auth from either parent dir or self webroot
+$selfRoot = file_exists(__DIR__ . '/../src/config/env.php') 
+    ? dirname(__DIR__) 
+    : '/var/www/vhosts/bjorntyrsson.co.uk/self.foreverbox.co.uk';
+
+require_once $selfRoot . '/src/config/env.php';
+require_once $selfRoot . '/src/services/AuthService.php';
 require_once __DIR__ . '/src/services/EyeService.php';
 
 // Auth check

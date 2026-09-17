@@ -4,7 +4,11 @@
  * Handles rate limiting, curl fetching, caching, and CORS headers.
  */
 
-require_once __DIR__ . '/../../src/config/env.php';
+$selfRoot = file_exists(__DIR__ . '/../../src/config/env.php')
+    ? dirname(__DIR__, 2)
+    : '/var/www/vhosts/bjorntyrsson.co.uk/self.foreverbox.co.uk';
+
+require_once $selfRoot . '/src/config/env.php';
 require_once __DIR__ . '/../src/services/EyeService.php';
 
 class BaseApi {

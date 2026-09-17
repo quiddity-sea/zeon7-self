@@ -7,8 +7,12 @@
  * Auth-gated: returns 401 for unauthenticated users.
  */
 
-require_once __DIR__ . '/../../../src/config/env.php';
-require_once __DIR__ . '/../../../src/services/AuthService.php';
+$selfRoot = file_exists(__DIR__ . '/../../../src/config/env.php')
+    ? dirname(__DIR__, 3)
+    : '/var/www/vhosts/bjorntyrsson.co.uk/self.foreverbox.co.uk';
+
+require_once $selfRoot . '/src/config/env.php';
+require_once $selfRoot . '/src/services/AuthService.php';
 require_once __DIR__ . '/../../src/services/EyeService.php';
 
 header('Content-Type: application/json');

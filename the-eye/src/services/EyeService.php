@@ -4,7 +4,11 @@
  * Extends BaseService for PDO access to zeon7_self_dev.
  */
 
-require_once __DIR__ . '/../../../src/core/BaseService.php';
+$selfRoot = file_exists(__DIR__ . '/../../../src/core/BaseService.php')
+    ? dirname(__DIR__, 3)
+    : '/var/www/vhosts/bjorntyrsson.co.uk/self.foreverbox.co.uk';
+
+require_once $selfRoot . '/src/core/BaseService.php';
 
 class EyeService extends BaseService {
 
