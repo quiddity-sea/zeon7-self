@@ -23,6 +23,9 @@ function renderSidebar(AgentContextService $agentCtx, string $currentPage = ''):
             <a href="index.php" class="nav-item <?= ($currentPage === 'dashboard' || $currentPage === 'index.php') ? 'active' : '' ?>">
                 <i>⊞</i> <span class="nav-text">Dashboard</span>
             </a>
+            <a href="https://eye.foreverbox.co.uk" target="_blank" rel="noopener" class="nav-item" title="The Eye — Geospatial Intelligence" onclick="return openEye(this.href)">
+                <i>🌍</i> <span class="nav-text">The Eye</span>
+            </a>
             <?php if ($agentCtx->hasCapability('news_desk')): ?>
             <a href="news-desk.php" class="nav-item <?= $currentPage === 'news-desk.php' ? 'active' : '' ?>">
                 <i>📰</i> <span class="nav-text">News Desk</span>
@@ -75,5 +78,14 @@ function renderSidebar(AgentContextService $agentCtx, string $currentPage = ''):
             </a>
         </div>
     </nav>
+    <script>
+    function openEye(url) {
+        var w = window.open(url, '_blank');
+        if (!w || w.closed || typeof w.closed === 'undefined') {
+            window.location.href = url + '?embedded=1';
+        }
+        return false;
+    }
+    </script>
     <?php
 }
