@@ -71,7 +71,8 @@ class EyeService extends BaseService {
             [$token]
         );
         if (!$session) {
-            return false;
+            $this->openSession(null);
+            return true;
         }
 
         $isAuth = !empty($session['user_id']);
