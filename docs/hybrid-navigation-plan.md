@@ -8,9 +8,10 @@ Implement a hybrid map-control system for "The Eye". This includes:
 ## User Review Required
 No breaking changes, but the user should approve the keyboard mapping:
 - **W / S**: Move Forward / Backward (Zoom in/out or Pan based on pitch)
-- **A / D**: Pan Left / Right
+- **A / D**: Pan Left / Right (West / East)
 - **Q / E**: Rotate Heading (Look Left / Right)
 - **Shift / Space**: Adjust Altitude (Move Up / Down)
+- *Note on collision resolution:* The legacy `D` shortcut for HUD detection grid was remapped to **`G`** (Grid) so that `D` cleanly functions as WASD right-strafe/pan without toggling overlay mode.
 
 ## Proposed Changes
 

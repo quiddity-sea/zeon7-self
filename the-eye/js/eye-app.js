@@ -41,10 +41,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. HUD refresh loop (every second)
     setInterval(() => window.hud.update(), 1000);
 
-    // 5. Keyboard shortcut: D for detection overlay toggle
+    // 5. Keyboard shortcut: G for detection overlay toggle
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT') return;
-        if (e.key === 'd' || e.key === 'D') {
+        if (e.key === 'g' || e.key === 'G') {
             document.body.classList.toggle('detection-active');
         }
         if (e.key === 'Escape') {

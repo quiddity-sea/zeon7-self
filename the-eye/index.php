@@ -179,8 +179,10 @@ $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
                     <div class="help-section-title">SENSOR OPTICS & COMMANDS</div>
                     <div class="help-grid">
                         <span class="key-badge">1 - 6</span><span>Optic Shader Filters (Normal, CRT, NVG, FLIR...)</span>
-                        <span class="key-badge">D</span><span>Toggle HUD Detection Grid</span>
-                        <span class="key-badge">ESC</span><span>Untrack Entity / Exit Cockpit View</span>
+                        <span class="key-badge">G</span><span>Toggle HUD Detection Grid</span>
+                        <span class="key-badge">H</span><span>Toggle Tactical HUD Overlay</span>
+                        <span class="key-badge">C</span><span>Toggle Entity Cockpit Chase Cam</span>
+                        <span class="key-badge">ESC</span><span>Untrack Entity / Close Popups & Modals</span>
                     </div>
                 </div>
             </div>
