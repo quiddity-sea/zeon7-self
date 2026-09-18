@@ -28,7 +28,7 @@ $cesiumToken = $_ENV['CESIUM_ION_TOKEN'] ?? '';
 $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
 ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en-GB" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -37,7 +37,7 @@ if ($response) {
                 'id'   => $el['id'],
                 'lat'  => (float) $el['lat'],
                 'lon'  => (float) $el['lon'],
-                'name' => $el['tags']['name'] ?? $el['tags']['description'] ?? 'Public Camera',
+                'name' => $el['tags']['name:en'] ?? $el['tags']['int_name'] ?? $el['tags']['name'] ?? $el['tags']['description:en'] ?? $el['tags']['description'] ?? 'Public Camera',
                 'type' => $el['tags']['surveillance:type'] ?? 'camera',
                 'zone' => $el['tags']['surveillance:zone'] ?? 'public',
             ];

@@ -24,16 +24,19 @@ export class EyeGlobe {
             shouldAnimate: true
         });
 
-        // Configure imagery
+        // Configure imagery: Default to English-localized dark tactical base map
+        this.viewer.imageryLayers.removeAll();
+
         if (ionToken) {
-            // Use Cesium Ion default (Bing Maps Aerial with Labels)
-            // Already set as default when Ion token is provided
+            // Cesium Ion default (Bing Maps Aerial with Labels)
         } else {
-            // Fallback to OpenStreetMap
-            this.viewer.imageryLayers.removeAll();
+            // CartoDB Dark Matter — All international country and city labels rendered in English
             this.viewer.imageryLayers.addImageryProvider(
-                new Cesium.OpenStreetMapImageryProvider({
-                    url: 'https://tile.openstreetmap.org/'
+                new Cesium.UrlTemplateImageryProvider({
+                    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+                    subdomains: ['a', 'b', 'c', 'd'],
+                    maximumLevel: 19,
+                    credit: '© OpenStreetMap contributors, © CARTO'
                 })
             );
         }

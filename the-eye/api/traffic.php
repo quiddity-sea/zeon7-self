@@ -53,7 +53,7 @@ if ($response) {
 
             $roads[] = [
                 'id'      => $el['id'],
-                'name'    => $el['tags']['name'] ?? $el['tags']['ref'] ?? 'Unknown',
+                'name'    => $el['tags']['name:en'] ?? $el['tags']['int_name'] ?? $el['tags']['name'] ?? $el['tags']['ref'] ?? 'Road',
                 'type'    => $el['tags']['highway'] ?? '',
                 'coords'  => $coords,
             ];
