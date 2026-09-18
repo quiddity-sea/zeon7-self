@@ -93,6 +93,15 @@ $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
             <div id="sensor-buttons"></div>
         </div>
 
+        <!-- Top-right below optics: Navigation controls -->
+        <div id="navigation-panel" class="glass-panel">
+            <div class="panel-header">NAVIGATION</div>
+            <div class="nav-actions">
+                <button id="btn-reset-view" class="eye-btn-sm" title="Center and reset globe view">⌂ RESET</button>
+                <button id="btn-control-help" class="eye-btn-sm" title="View flight & mouse controls">? MANUAL</button>
+            </div>
+        </div>
+
         <!-- Bottom-left: Contact info card (shown when entity is tracked) -->
         <div id="contact-card" class="glass-panel hidden">
             <div class="panel-header">CONTACT</div>
@@ -140,6 +149,42 @@ $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
             <a href="https://self.foreverbox.co.uk/chat_logs.php" class="eye-menu-link">Chat Logs</a>
             <a href="https://self.foreverbox.co.uk/settings.php" class="eye-menu-link">Settings</a>
         </nav>
+
+        <!-- Controls Manual Modal (hidden by default) -->
+        <div id="eye-help-modal" class="glass-panel hidden">
+            <div class="popup-header">
+                <span>SYSTEM MANUAL // FLIGHT & CONTROLS</span>
+                <button id="close-help-modal" class="eye-btn-sm">✕</button>
+            </div>
+            <div class="help-content">
+                <div class="help-section">
+                    <div class="help-section-title">KEYBOARD FLIGHT (WASD)</div>
+                    <div class="help-grid">
+                        <span class="key-badge">W / S</span><span>Pan Up / Down (or Fly Ahead / Back)</span>
+                        <span class="key-badge">A / D</span><span>Pan West / East (Left / Right)</span>
+                        <span class="key-badge">Q / E</span><span>Rotate Heading (Look Left / Right)</span>
+                        <span class="key-badge">Space</span><span>Ascend / Zoom Out</span>
+                        <span class="key-badge">Shift</span><span>Descend / Zoom In</span>
+                    </div>
+                </div>
+                <div class="help-section">
+                    <div class="help-section-title">MOUSE CONTROLS</div>
+                    <div class="help-grid">
+                        <span class="key-badge">Left Drag</span><span>Orbit & Pan Globe</span>
+                        <span class="key-badge">Right Drag / Scroll</span><span>Zoom Altitude</span>
+                        <span class="key-badge">Middle Drag / Ctrl+Left</span><span>Tilt Horizon / Pitch</span>
+                    </div>
+                </div>
+                <div class="help-section">
+                    <div class="help-section-title">SENSOR OPTICS & COMMANDS</div>
+                    <div class="help-grid">
+                        <span class="key-badge">1 - 6</span><span>Optic Shader Filters (Normal, CRT, NVG, FLIR...)</span>
+                        <span class="key-badge">D</span><span>Toggle HUD Detection Grid</span>
+                        <span class="key-badge">ESC</span><span>Untrack Entity / Exit Cockpit View</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 

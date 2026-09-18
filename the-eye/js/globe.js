@@ -48,6 +48,10 @@ export class EyeGlobe {
 
         // Lazy-load all layer modules
         this.initLayers();
+
+        // Keyboard flight navigation & UI button bindings
+        this.setupKeyboardControls();
+        this.bindUI();
     }
 
     async initLayers() {
@@ -133,6 +137,198 @@ export class EyeGlobe {
             destination: Cesium.Cartesian3.fromDegrees(0, 20, 20000000),
             duration: 2.0,
             orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 }
+        });
+    }
+
+    /** Center and reset globe camera view without clearing active layers. */
+    resetView() {
+        if (window.tracking) window.tracking.untrack();
+        if (window.cockpit) window.cockpit.exit();
+
+        this.viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(0, 20, 20000000),
+            duration: 1.5,
+            orientation: {
+                heading: 0,
+                pitch: Cesium.Math.toRadians(-90),
+                roll: 0
+            }
+        });
+    }
+
+    /** Setup continuous keyboard flight controls (WASD, Q/E, Space/Shift). */
+    setupKeyboardControls() {
+        this.keys = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            rotateLeft: false,
+            rotateRight: false
+        };
+
+        const onKeyDown = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch (e.code) {
+                case 'KeyW':
+                case 'ArrowUp':
+                    this.keys.forward = true;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                    this.keys.backward = true;
+                    break;
+                case 'KeyA':
+                case 'ArrowLeft':
+                    this.keys.left = true;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    this.keys.right = true;
+                    break;
+                case 'KeyQ':
+                    this.keys.rotateLeft = true;
+                    break;
+                case 'KeyE':
+                    this.keys.rotateRight = true;
+                    break;
+                case 'Space':
+                    this.keys.up = true;
+                    e.preventDefault();
+                    break;
+                case 'ShiftLeft':
+                case 'ShiftRight':
+                    this.keys.down = true;
+                    break;
+            }
+        };
+
+        const onKeyUp = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch (e.code) {
+                case 'KeyW':
+                case 'ArrowUp':
+                    this.keys.forward = false;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                    this.keys.backward = false;
+                    break;
+                case 'KeyA':
+                case 'ArrowLeft':
+                    this.keys.left = false;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    this.keys.right = false;
+                    break;
+                case 'KeyQ':
+                    this.keys.rotateLeft = false;
+                    break;
+                case 'KeyE':
+                    this.keys.rotateRight = false;
+                    break;
+                case 'Space':
+                    this.keys.up = false;
+                    break;
+                case 'ShiftLeft':
+                case 'ShiftRight':
+                    this.keys.down = false;
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+
+        // Frame update loop tied to Cesium clock tick
+        this.viewer.clock.onTick.addEventListener(() => {
+            const isMoving = this.keys.forward || this.keys.backward || this.keys.left ||
+                             this.keys.right || this.keys.up || this.keys.down ||
+                             this.keys.rotateLeft || this.keys.rotateRight;
+            if (!isMoving) return;
+
+            const camera = this.viewer.camera;
+            const carto = Cesium.Cartographic.fromCartesian(camera.position);
+            const height = Math.max(carto ? carto.height : 10000000, 100);
+
+            // Dynamic movement rate scaled to current altitude
+            // High orbit = rapid transcontinental traversal; Low orbit = precise tactical panning
+            const moveRate = height * 0.035;
+            const rotateRate = 0.025; // radians
+
+            // Determine if camera is top-down (map mode) or perspective (horizon mode)
+            const isTopDown = Math.abs(camera.pitch) > Cesium.Math.toRadians(60);
+
+            if (this.keys.forward) {
+                if (isTopDown) camera.moveUp(moveRate);
+                else camera.moveForward(moveRate);
+            }
+            if (this.keys.backward) {
+                if (isTopDown) camera.moveDown(moveRate);
+                else camera.moveBackward(moveRate);
+            }
+            if (this.keys.left) camera.moveLeft(moveRate);
+            if (this.keys.right) camera.moveRight(moveRate);
+
+            // Altitude adjustment: Space (ascend / zoom out), Shift (descend / zoom in)
+            if (this.keys.up) {
+                if (isTopDown) camera.moveBackward(moveRate * 0.8);
+                else camera.moveUp(moveRate * 0.8);
+            }
+            if (this.keys.down) {
+                if (isTopDown) camera.moveForward(moveRate * 0.8);
+                else camera.moveDown(moveRate * 0.8);
+            }
+
+            // Heading rotation (Q/E)
+            if (this.keys.rotateLeft) {
+                if (isTopDown) camera.twistRight(rotateRate);
+                else camera.lookLeft(rotateRate);
+            }
+            if (this.keys.rotateRight) {
+                if (isTopDown) camera.twistLeft(rotateRate);
+                else camera.lookRight(rotateRate);
+            }
+        });
+    }
+
+    /** Attach UI button handlers. */
+    bindUI() {
+        // Reset View button
+        const btnReset = document.getElementById('btn-reset-view');
+        if (btnReset) {
+            btnReset.addEventListener('click', () => {
+                this.resetView();
+            });
+        }
+
+        // Controls Manual Modal
+        const btnHelp = document.getElementById('btn-control-help');
+        const modal = document.getElementById('eye-help-modal');
+        const btnClose = document.getElementById('close-help-modal');
+
+        if (btnHelp && modal) {
+            btnHelp.addEventListener('click', () => {
+                modal.classList.toggle('hidden');
+            });
+        }
+
+        if (btnClose && modal) {
+            btnClose.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+        }
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
         });
     }
 
