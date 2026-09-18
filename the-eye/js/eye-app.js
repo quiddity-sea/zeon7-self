@@ -11,7 +11,7 @@ import { Panels } from './ui/panels.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Initialise globe
-    window.eyeGlobe = new EyeGlobe('cesiumContainer', window.EYE_CONFIG.cesiumToken);
+    window.eyeGlobe = new EyeGlobe('cesiumContainer', window.EYE_CONFIG.cesiumToken, window.EYE_CONFIG.cartoKey);
 
     // 2. Initialise controls
     window.tracking = new Tracking(window.eyeGlobe);

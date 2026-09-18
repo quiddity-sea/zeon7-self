@@ -25,6 +25,7 @@ $sessionToken = $eyeService->openSession($userId);
 
 // Config for JS
 $cesiumToken = $_ENV['CESIUM_ION_TOKEN'] ?? '';
+$cartoKey = $_ENV['CARTO_API_KEY'] ?? '';
 $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
 ?>
 <!DOCTYPE html>
@@ -51,6 +52,7 @@ $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
     <script>
         window.EYE_CONFIG = {
             cesiumToken: "<?= htmlspecialchars($cesiumToken, ENT_QUOTES) ?>",
+            cartoKey: "<?= htmlspecialchars($cartoKey, ENT_QUOTES) ?>",
             googleMapsKey: "<?= htmlspecialchars($googleMapsKey, ENT_QUOTES) ?>",
             isAuth: <?= $isAuth ? 'true' : 'false' ?>,
             userId: <?= $userId ? (int) $userId : 'null' ?>,

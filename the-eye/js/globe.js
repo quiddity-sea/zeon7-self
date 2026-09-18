@@ -3,8 +3,11 @@
  * Manages layers, provides methods for agent commands.
  */
 export class EyeGlobe {
-    constructor(containerId, ionToken) {
-        // Configure Cesium Ion token
+    constructor(containerId, ionToken, cartoKey) {
+        this.ionToken = ionToken;
+        this.cartoKey = cartoKey;
+
+        // Configure Cesium Ion token if available
         if (ionToken) {
             Cesium.Ion.defaultAccessToken = ionToken;
         }
@@ -24,21 +27,38 @@ export class EyeGlobe {
             shouldAnimate: true
         });
 
-        // Configure imagery: Default to English-localized dark tactical base map
-        this.viewer.imageryLayers.removeAll();
-
+        // Configure imagery based on configured keys:
         if (ionToken) {
-            // Cesium Ion default (Bing Maps Aerial with Labels)
+            // Option 2: Cesium Ion high-res Bing Aerial satellite with English labels
         } else {
-            // CartoDB Dark Matter — All international country and city labels rendered in English
-            this.viewer.imageryLayers.addImageryProvider(
-                new Cesium.UrlTemplateImageryProvider({
-                    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-                    subdomains: ['a', 'b', 'c', 'd'],
-                    maximumLevel: 19,
-                    credit: '© OpenStreetMap contributors, © CARTO'
-                })
-            );
+            this.viewer.imageryLayers.removeAll();
+
+            if (cartoKey) {
+                // Option 1: CartoDB Dark Matter with authenticated API key (no watermark)
+                this.viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?api_key=${encodeURIComponent(cartoKey)}`,
+                        subdomains: ['a', 'b', 'c', 'd'],
+                        maximumLevel: 19,
+                        credit: '© OpenStreetMap contributors, © CARTO'
+                    })
+                );
+            } else {
+                // Fallback: Pristine Esri Satellite + English Place Labels (zero watermark, free, no key required)
+                this.viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        maximumLevel: 19,
+                        credit: 'Esri World Imagery'
+                    })
+                );
+                this.viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+                        maximumLevel: 19
+                    })
+                );
+            }
         }
 
         // Enable lighting
