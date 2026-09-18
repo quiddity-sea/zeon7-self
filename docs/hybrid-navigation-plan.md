@@ -15,16 +15,21 @@ No breaking changes, but the user should approve the keyboard mapping:
 ## Proposed Changes
 
 ### `the-eye/index.php`
-- **[MODIFY]** Add a new absolute-positioned div container (e.g., `<div class="eye-nav-controls">`) to hold the on-screen buttons.
-- **[MODIFY]** Add two icon buttons inside the container:
-  - `<button id="btn-reset-view">` (Icon: Home/Globe)
-  - `<button id="btn-control-help">` (Icon: Question Mark)
-- **[MODIFY]** Add a hidden modal `<div>` containing a sleek layout explaining the Mouse and Keyboard controls.
+- **[MODIFY]** Integrate the new controls into the unified HUD layout. Under the existing `<div id="sensor-panel">` (Top-Right), add a new panel:
+  ```html
+  <div id="navigation-panel" class="glass-panel">
+      <div class="panel-header">NAVIGATION</div>
+      <div class="nav-actions">
+          <button id="btn-reset-view" class="eye-btn-sm">RESET VIEW</button>
+          <button id="btn-control-help" class="eye-btn-sm">CONTROLS</button>
+      </div>
+  </div>
+  ```
+- **[MODIFY]** Add a hidden modal `<div id="eye-help-modal" class="glass-panel hidden">` in the center of the screen containing a sleek layout explaining the Mouse and Keyboard controls.
 
 ### `the-eye/css/eye.css`
-- **[MODIFY]** Add styling for `.eye-nav-controls` to position it gracefully on the screen (e.g., bottom-right or top-right, out of the way of the sidebar).
-- **[MODIFY]** Add styling for the buttons (glassmorphism/translucent dark background with cyan/amber hover effects to match the `base-layer` theme).
-- **[MODIFY]** Add styling for the `.eye-help-modal`.
+- **[MODIFY]** Add positioning and styling for `#navigation-panel` so it stacks neatly below the `#sensor-panel` on the right side, maintaining the existing margin and glassmorphism spacing.
+- **[MODIFY]** Add styling for the `#eye-help-modal` to center it on the screen with a frosted glass backdrop, matching the existing `.glass-panel` aesthetic.
 
 ### `the-eye/js/globe.js`
 - **[MODIFY]** Create a `setupKeyboardControls()` method inside the `EyeGlobe` class.
