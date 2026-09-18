@@ -31,8 +31,8 @@ export default class MilitaryLayer extends BaseLayer {
                     outlineWidth: 2,
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                     pixelOffset: new Cesium.Cartesian2(12, -4),
-                    scale: 0.9,
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 600000)
+                    scale: 0.85,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
                 }
             }, {
                 callsign: ac.callsign,

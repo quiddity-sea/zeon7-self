@@ -32,7 +32,7 @@ export default class ShipsLayer extends BaseLayer {
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                     pixelOffset: new Cesium.Cartesian2(10, -4),
                     scale: 0.85,
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 200000)
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
                 }
             }, {
                 name: v.name,

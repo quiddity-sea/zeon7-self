@@ -42,9 +42,8 @@ export default class FlightsLayer extends BaseLayer {
                     outlineWidth: 2,
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                     pixelOffset: new Cesium.Cartesian2(12, -4),
-                    scale: 0.9,
-                    showBackground: false,
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 500000)
+                    scale: 0.85,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
                 }
             }, {
                 callsign: callsign,

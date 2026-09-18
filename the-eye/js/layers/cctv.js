@@ -15,7 +15,7 @@ export default class CctvLayer extends BaseLayer {
                     image: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="%2322d3ee" stroke-width="2"/><circle cx="8" cy="8" r="2" fill="%2322d3ee"/></svg>'),
                     width: 16,
                     height: 16,
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 500000)
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
                 }
             }, { name: cam.name, zone: cam.zone, type: 'cctv' });
         });
