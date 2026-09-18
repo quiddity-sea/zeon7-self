@@ -24,7 +24,7 @@ if ($cached) {
 $overpassQuery = '[out:json][timeout:15];node["surveillance"="public"]["surveillance:type"="camera"](around:500000,51.5,-0.1);out body 500;';
 $overpassUrl = 'https://overpass-api.de/api/interpreter?data=' . urlencode($overpassQuery);
 
-$response = BaseApi::fetch($overpassUrl, null, [], 15);
+$response = BaseApi::fetch($overpassUrl, null, ['Accept: application/json'], 15);
 
 $cameras = [];
 

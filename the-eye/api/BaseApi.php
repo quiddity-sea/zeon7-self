@@ -62,12 +62,14 @@ class BaseApi {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
-            CURLOPT_USERAGENT      => 'ForeverBox-TheEye/1.0',
+            // Standard browser UA — many public APIs reject custom bots
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; ForeverBox-TheEye/1.0; +https://eye.foreverbox.co.uk)',
             CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_ENCODING       => 'gzip, deflate',
         ]);
 
         if ($auth) {

@@ -33,7 +33,12 @@ if ($cached) {
 // Fetch major roads from Overpass
 $bbox = "{$south},{$west},{$north},{$east}";
 $query = "[out:json][timeout:10];way[\"highway\"~\"motorway|trunk|primary\"]({$bbox});out geom 200;";
-$response = BaseApi::fetch('https://overpass-api.de/api/interpreter?data=' . urlencode($query), null, [], 12);
+$response = BaseApi::fetch(
+    'https://overpass-api.de/api/interpreter?data=' . urlencode($query),
+    null,
+    ['Accept: application/json'],
+    12
+);
 
 $roads = [];
 
