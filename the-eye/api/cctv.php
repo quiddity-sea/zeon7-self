@@ -21,10 +21,10 @@ if ($cached) {
 
 // Query OpenStreetMap Overpass API for webcam/surveillance nodes
 // This returns real camera positions from OSM data
-$overpassQuery = '[out:json][timeout:15];node["surveillance"="public"]["surveillance:type"="camera"](around:500000,51.5,-0.1);out body 500;';
+$overpassQuery = '[out:json][timeout:25];node["surveillance"="public"]["surveillance:type"="camera"](around:50000,51.5,-0.1);out body 500;';
 $overpassUrl = 'https://overpass-api.de/api/interpreter?data=' . urlencode($overpassQuery);
 
-$response = BaseApi::fetch($overpassUrl, null, ['Accept: application/json'], 15);
+$response = BaseApi::fetch($overpassUrl, null, ['Accept: application/json'], 30);
 
 $cameras = [];
 
@@ -45,6 +45,6 @@ if ($response) {
     }
 }
 
-$output = json_encode(['cameras' => $cameras, 'count' => count($cameras), 'time' => time()]);
+$output = json_encode(['cameras' => $cameras, 'count' => count($cameras), 'time' => time(), 'source' => empty($cameras) ? 'none' : 'overpass']);
 BaseApi::setCache($cacheKey, $output);
 BaseApi::respond($output);

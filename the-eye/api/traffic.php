@@ -61,6 +61,6 @@ if ($response) {
     }
 }
 
-$output = json_encode(['roads' => $roads, 'count' => count($roads), 'time' => time()]);
+$output = json_encode(['roads' => $roads, 'count' => count($roads), 'time' => time(), 'source' => empty($roads) ? 'none' : 'overpass']);
 BaseApi::setCache($cacheKey, $output);
 BaseApi::respond($output);

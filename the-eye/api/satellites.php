@@ -53,27 +53,73 @@ if ($response && ltrim($response)[0] === '[') {
     }
 }
 
-// Fallback: try TLE text format for a smaller, well-known group (ISS + Starlink)
+// Fallback 1: stations (space stations - ISS, CSS, etc.)
 if (empty($satellites)) {
-    // Use stations.txt (ISS, Chinese Space Station, etc.) as a smaller fallback
-    $tleTxt = BaseApi::fetch('https://celestrak.org/NORAD/elements/stations.txt', null, [], 10);
-    if ($tleTxt && strpos($tleTxt, '1 ') !== false) {
-        $lines = array_filter(array_map('trim', explode("\n", trim($tleTxt))));
-        $lines = array_values($lines);
+    $tleTxt = BaseApi::fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle', null, [
+        'Accept: text/plain',
+    ], 12);
+    if ($tleTxt && strlen($tleTxt) > 50 && strpos($tleTxt, '1 ') !== false) {
+        $lines = array_values(array_filter(array_map('trim', explode("\n", trim($tleTxt)))));
         for ($i = 0; $i + 2 < count($lines); $i += 3) {
-            if (strpos($lines[$i + 1], '1 ') === 0 && strpos($lines[$i + 2], '2 ') === 0) {
+            if (strlen($lines[$i + 1]) > 40 && strlen($lines[$i + 2]) > 40) {
                 $satellites[] = [
                     'norad_id'  => trim(substr($lines[$i + 1], 2, 5)),
                     'name'      => trim($lines[$i]),
                     'tle_line1' => $lines[$i + 1],
                     'tle_line2' => $lines[$i + 2],
+                    'mean_motion'    => 0,
+                    'eccentricity'   => 0,
+                    'inclination'    => 0,
+                    'ra_asc_node'    => 0,
+                    'arg_pericenter' => 0,
+                    'mean_anomaly'   => 0,
+                    'bstar'          => 0,
+                    'rev_num'        => 0,
+                    'epoch'          => '',
                 ];
             }
         }
     }
 }
 
-$output = json_encode(['satellites' => $satellites, 'count' => count($satellites), 'time' => time(), 'source' => empty($satellites) ? 'none' : (isset($data) ? 'celestrak-json' : 'celestrak-tle')]);
+// Fallback 2: Try visual satellites (a different endpoint on Celestrak for visible passes)
+// This uses a smaller dataset and is less likely to be rate-limited
+if (empty($satellites)) {
+    $tleTxt = BaseApi::fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle', null, [
+        'Accept: text/plain',
+    ], 12);
+    if ($tleTxt && strlen($tleTxt) > 50 && strpos($tleTxt, '1 ') !== false) {
+        $lines = array_values(array_filter(array_map('trim', explode("\n", trim($tleTxt)))));
+        for ($i = 0; $i + 2 < count($lines); $i += 3) {
+            if (strlen($lines[$i + 1]) > 40 && strlen($lines[$i + 2]) > 40) {
+                $satellites[] = [
+                    'norad_id'  => trim(substr($lines[$i + 1], 2, 5)),
+                    'name'      => trim($lines[$i]),
+                    'tle_line1' => $lines[$i + 1],
+                    'tle_line2' => $lines[$i + 2],
+                    'mean_motion'    => 0,
+                    'eccentricity'   => 0,
+                    'inclination'    => 0,
+                    'ra_asc_node'    => 0,
+                    'arg_pericenter' => 0,
+                    'mean_anomaly'   => 0,
+                    'bstar'          => 0,
+                    'rev_num'        => 0,
+                    'epoch'          => '',
+                ];
+            }
+        }
+    }
+}
+
+$source = 'none';
+if (!empty($satellites)) {
+    if (isset($data)) $source = 'celestrak-json';
+    elseif (!empty($tleTxt) && strpos($tleTxt ?? '', 'ISS') !== false) $source = 'celestrak-stations';
+    else $source = 'celestrak-visual';
+}
+
+$output = json_encode(['satellites' => $satellites, 'count' => count($satellites), 'time' => time(), 'source' => $source]);
 if (!empty($satellites)) {
     BaseApi::setCache($cacheKey, $output);
 }

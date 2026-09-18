@@ -66,8 +66,8 @@ class BaseApi {
             CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
-            // Standard browser UA — many public APIs reject custom bots
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; ForeverBox-TheEye/1.0; +https://eye.foreverbox.co.uk)',
+            // Overpass explicitly blocks 'Mozilla/5.0' and generic bots. Must be descriptive.
+            CURLOPT_USERAGENT      => 'ForeverBox-TheEye/1.0 (contact: eye@foreverbox.co.uk)',
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_ENCODING       => 'gzip, deflate',
         ]);
