@@ -193,6 +193,6 @@ $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
     </div>
 
     <!-- Application JS (loaded as module) -->
-    <script src="js/eye-app.js?v=2.2" type="module"></script>
+    <script src="js/eye-app.js?v=2.3" type="module"></script>
 </body>
 </html>

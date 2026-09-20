@@ -29,7 +29,13 @@ export class EyeGlobe {
 
         // Configure imagery based on configured keys:
         if (ionToken) {
-            // Option 2: Cesium Ion high-res Bing Aerial satellite with English labels
+            // Option 2: Cesium Ion high-res Bing Aerial satellite with English roads, streets, and place names
+            this.viewer.imageryLayers.addImageryProvider(
+                new Cesium.UrlTemplateImageryProvider({
+                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+                    maximumLevel: 19
+                })
+            );
             this.viewer.imageryLayers.addImageryProvider(
                 new Cesium.UrlTemplateImageryProvider({
                     url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
@@ -50,12 +56,18 @@ export class EyeGlobe {
                     })
                 );
             } else {
-                // Fallback: Pristine Esri Satellite + English Place Labels (zero watermark, free, no key required)
+                // Fallback: Pristine Esri Satellite + English Streets & Place Labels (zero watermark, free, no key required)
                 this.viewer.imageryLayers.addImageryProvider(
                     new Cesium.UrlTemplateImageryProvider({
                         url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                         maximumLevel: 19,
                         credit: 'Esri World Imagery'
+                    })
+                );
+                this.viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+                        maximumLevel: 19
                     })
                 );
                 this.viewer.imageryLayers.addImageryProvider(
