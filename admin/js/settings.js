@@ -97,6 +97,8 @@ const Settings = {
             resetBtn.addEventListener('click', () => this.resetSystem());
         }
 
+        this.initEnvTab();
+
         await this.loadSettings();
     },
 
@@ -107,6 +109,15 @@ const Settings = {
         document.querySelectorAll('.settings-tab-pane').forEach(p => {
             p.style.display = (p.id === tabId) ? 'block' : 'none';
         });
+
+        const defaultFooter = document.getElementById('defaultFooterActions');
+        if (defaultFooter) {
+            defaultFooter.style.display = (tabId === 'tab-api-keys') ? 'none' : 'flex';
+        }
+
+        if (tabId === 'tab-api-keys' && !this.envLoaded) {
+            this.loadEnvConfig();
+        }
     },
 
     handleAgentProviderChange() {
@@ -492,5 +503,350 @@ const Settings = {
                 btn.textContent = 'EXECUTE FACTORY SYSTEM RESET';
             }
         }
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // Environment & API Keys Manager (.env)
+    // ─────────────────────────────────────────────────────────────
+    envEntries: [],
+    deletedEnvKeys: new Set(),
+    envLoaded: false,
+
+    initEnvTab() {
+        const reloadBtn = document.getElementById('reloadEnvBtn');
+        if (reloadBtn) {
+            reloadBtn.addEventListener('click', () => this.loadEnvConfig(true));
+        }
+
+        const addBtn = document.getElementById('addEnvKeyBtn');
+        const newKeyCard = document.getElementById('newKeyCard');
+        const cancelNewKeyBtn = document.getElementById('cancelNewKeyBtn');
+        const confirmNewKeyBtn = document.getElementById('confirmNewKeyBtn');
+        const searchInput = document.getElementById('envSearchInput');
+        const saveEnvBtn = document.getElementById('saveEnvBtn');
+
+        if (addBtn && newKeyCard) {
+            addBtn.addEventListener('click', () => {
+                const isHidden = newKeyCard.style.display === 'none' || !newKeyCard.style.display;
+                newKeyCard.style.display = isHidden ? 'block' : 'none';
+                if (isHidden) {
+                    const nameInput = document.getElementById('newKeyName');
+                    if (nameInput) nameInput.focus();
+                }
+            });
+        }
+
+        if (cancelNewKeyBtn && newKeyCard) {
+            cancelNewKeyBtn.addEventListener('click', () => {
+                newKeyCard.style.display = 'none';
+                const nameInput = document.getElementById('newKeyName');
+                const valInput = document.getElementById('newKeyValue');
+                if (nameInput) nameInput.value = '';
+                if (valInput) valInput.value = '';
+            });
+        }
+
+        if (confirmNewKeyBtn) {
+            confirmNewKeyBtn.addEventListener('click', () => this.addNewEnvKey());
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => this.renderEnvFields());
+        }
+
+        if (saveEnvBtn) {
+            saveEnvBtn.addEventListener('click', () => this.saveEnvConfig());
+        }
+    },
+
+    async loadEnvConfig(forceReload = false) {
+        if (this.envLoaded && !forceReload) return;
+
+        const container = document.getElementById('envKeysContainer');
+        const loader = document.getElementById('envLoadingIndicator');
+        const statusBadge = document.getElementById('envStatusBadge');
+        if (loader) {
+            loader.style.display = 'block';
+            loader.textContent = 'SYNCING KEYRING MATRIX...';
+        }
+        if (container) container.innerHTML = '';
+        this.setStatus(statusBadge, 'ENV: SYNCING...', 'neutral');
+
+        this.log('Querying .env Environment Keyring...', 'system');
+
+        try {
+            const res = await fetch('/admin/api/env_handler.php');
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text.trim());
+            } catch (err) {
+                throw new Error('Invalid JSON response: ' + text.substring(0, 80));
+            }
+
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to read environment configuration');
+            }
+
+            this.envEntries = data.entries || [];
+            this.deletedEnvKeys = new Set();
+            this.envLoaded = true;
+
+            if (loader) loader.style.display = 'none';
+            this.renderEnvFields();
+
+            const count = this.envEntries.length;
+            this.setStatus(statusBadge, `ENV: ${count} KEYS SYNCED`, 'success');
+            this.log(`Environment Keyring: ${count} keys loaded from .env (Writable: ${data.writable ? 'YES' : 'NO'})`, 'success');
+
+        } catch (e) {
+            if (loader) {
+                loader.innerHTML = `<span style="color: var(--color-coral); font-weight: bold;">Failed to load .env: ${this.escapeHtml(e.message)}</span>`;
+            }
+            this.setStatus(statusBadge, 'ENV: ERROR', 'error');
+            this.log(`Environment Keyring Error: ${e.message}`, 'error');
+        }
+    },
+
+    renderEnvFields() {
+        const container = document.getElementById('envKeysContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const searchInput = document.getElementById('envSearchInput');
+        const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+        const filtered = this.envEntries.filter(item => {
+            if (query === '') return true;
+            return item.key.toLowerCase().includes(query) || 
+                   (item.comment && item.comment.toLowerCase().includes(query)) ||
+                   (item.value && item.value.toLowerCase().includes(query));
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 4px;">
+                    NO MATCHING KEYS FOUND IN .ENV
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach(item => {
+            const isDeleted = this.deletedEnvKeys.has(item.key);
+            const isSecret = /KEY|PASS|SECRET|TOKEN|CREDENTIAL/i.test(item.key);
+
+            const card = document.createElement('div');
+            card.className = 'env-key-card' + (isDeleted ? ' deleted' : '');
+            card.id = `env-card-${item.key}`;
+
+            const commentHtml = item.comment ? `
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.35rem; font-family: var(--font-mono);">
+                    // ${this.escapeHtml(item.comment)}
+                </div>
+            ` : '';
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-family: var(--font-mono); font-weight: 700; font-size: 0.82rem; color: var(--color-cyan); letter-spacing: 0.05em;">
+                            ${this.escapeHtml(item.key)}
+                        </span>
+                        ${isSecret ? '<span class="hud-badge orange" style="font-size: 0.55rem; padding: 1px 4px;">SECRET</span>' : ''}
+                        ${isDeleted ? '<span class="hud-badge coral" style="font-size: 0.55rem; padding: 1px 4px;">MARKED DELETED</span>' : ''}
+                    </div>
+                    <div style="display: flex; gap: 0.3rem;">
+                        <button type="button" class="env-action-btn copy-btn" title="Copy value to clipboard" data-key="${this.escapeHtml(item.key)}">📋</button>
+                        <button type="button" class="env-action-btn toggle-vis-btn" title="Toggle visibility" data-key="${this.escapeHtml(item.key)}">${isSecret ? '👁️' : '🔒'}</button>
+                        <button type="button" class="env-action-btn delete delete-btn" title="${isDeleted ? 'Restore key' : 'Delete key'}" data-key="${this.escapeHtml(item.key)}">${isDeleted ? '↩️' : '🗑️'}</button>
+                    </div>
+                </div>
+                ${commentHtml}
+                <div style="position: relative;">
+                    <input type="${isSecret ? 'password' : 'text'}" 
+                           class="input-box env-value-input" 
+                           data-key="${this.escapeHtml(item.key)}" 
+                           value="${this.escapeHtml(item.value)}" 
+                           ${isDeleted ? 'disabled' : ''}
+                           style="width: 100%; font-family: var(--font-mono); font-size: 0.8rem; padding-right: 10px;">
+                </div>
+            `;
+
+            // Bind card actions
+            const copyBtn = card.querySelector('.copy-btn');
+            copyBtn.addEventListener('click', () => {
+                const input = card.querySelector('.env-value-input');
+                navigator.clipboard.writeText(input.value).then(() => {
+                    this.log(`Copied ${item.key} value to clipboard`, 'info');
+                    copyBtn.textContent = '✓';
+                    setTimeout(() => copyBtn.textContent = '📋', 1500);
+                }).catch(() => {
+                    input.select();
+                    document.execCommand('copy');
+                    copyBtn.textContent = '✓';
+                    setTimeout(() => copyBtn.textContent = '📋', 1500);
+                });
+            });
+
+            const toggleVisBtn = card.querySelector('.toggle-vis-btn');
+            toggleVisBtn.addEventListener('click', () => {
+                const input = card.querySelector('.env-value-input');
+                const isPass = input.type === 'password';
+                input.type = isPass ? 'text' : 'password';
+                toggleVisBtn.textContent = isPass ? '🔒' : '👁️';
+            });
+
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => {
+                if (this.deletedEnvKeys.has(item.key)) {
+                    this.deletedEnvKeys.delete(item.key);
+                    this.log(`Restored key ${item.key}`, 'info');
+                } else {
+                    this.deletedEnvKeys.add(item.key);
+                    this.log(`Marked key ${item.key} for deletion upon save`, 'info');
+                }
+                this.renderEnvFields();
+            });
+
+            // Live update value in memory
+            const valInput = card.querySelector('.env-value-input');
+            valInput.addEventListener('input', (e) => {
+                item.value = e.target.value;
+            });
+
+            container.appendChild(card);
+        });
+    },
+
+    addNewEnvKey() {
+        const nameInput = document.getElementById('newKeyName');
+        const valInput = document.getElementById('newKeyValue');
+        const rawName = nameInput ? nameInput.value.trim().toUpperCase() : '';
+        const val = valInput ? valInput.value : '';
+
+        if (!rawName) {
+            alert('Please specify a valid Key Identifier');
+            return;
+        }
+
+        // Sanitize key name (must be alphanumeric and underscores)
+        const cleanName = rawName.replace(/[^A-Z0-9_]/g, '');
+        if (!cleanName) {
+            alert('Key identifier must contain only letters, numbers, and underscores');
+            return;
+        }
+
+        // Check if key already exists
+        const existing = this.envEntries.find(i => i.key === cleanName);
+        if (existing) {
+            if (this.deletedEnvKeys.has(cleanName)) {
+                this.deletedEnvKeys.delete(cleanName);
+                existing.value = val;
+            } else {
+                alert(`Key ${cleanName} already exists in .env. You can update its value directly.`);
+                return;
+            }
+        } else {
+            this.envEntries.push({
+                key: cleanName,
+                value: val,
+                comment: 'Added via Admin Keyring Manager'
+            });
+        }
+
+        nameInput.value = '';
+        valInput.value = '';
+        const newKeyCard = document.getElementById('newKeyCard');
+        if (newKeyCard) newKeyCard.style.display = 'none';
+
+        this.renderEnvFields();
+        this.log(`Added key ${cleanName} to pending list. Click UPDATE .ENV KEYRING to save.`, 'info');
+
+        // Scroll to card
+        const cardEl = document.getElementById(`env-card-${cleanName}`);
+        if (cardEl) {
+            cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardEl.style.borderColor = 'var(--color-cyan)';
+        }
+    },
+
+    async saveEnvConfig() {
+        const saveBtn = document.getElementById('saveEnvBtn');
+        const statusBadge = document.getElementById('envStatusBadge');
+
+        // Collect all values from DOM inputs and in-memory entries
+        const inputs = document.querySelectorAll('.env-value-input');
+        const payloadKeys = {};
+        inputs.forEach(inp => {
+            const k = inp.getAttribute('data-key');
+            if (k && !this.deletedEnvKeys.has(k)) {
+                payloadKeys[k] = inp.value;
+            }
+        });
+
+        // Ensure in-memory entries that might have been filtered by search are preserved
+        this.envEntries.forEach(item => {
+            if (!this.deletedEnvKeys.has(item.key) && !(item.key in payloadKeys)) {
+                payloadKeys[item.key] = item.value;
+            }
+        });
+
+        const deletedList = Array.from(this.deletedEnvKeys);
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'COMMITTING .ENV...';
+        }
+        this.setStatus(statusBadge, 'ENV: COMMITTING...', 'neutral');
+        this.log(`Committing updates to .env (${Object.keys(payloadKeys).length} keys, ${deletedList.length} deleted)...`, 'system');
+
+        try {
+            const res = await fetch('/admin/api/env_handler.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    keys: payloadKeys,
+                    deleted: deletedList
+                })
+            });
+
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text.trim());
+            } catch (err) {
+                throw new Error('Invalid server response: ' + text.substring(0, 80));
+            }
+
+            if (data.success) {
+                this.setStatus(statusBadge, 'ENV: COMMITTED', 'success');
+                this.log('Configuration successfully written to .env. Backup saved as .env.backup', 'success');
+                // Reload to sync state
+                await this.loadEnvConfig(true);
+            } else {
+                this.setStatus(statusBadge, 'ENV: WRITE FAILED', 'error');
+                this.log(`Write Failed: ${data.error}`, 'error');
+                alert('Save failed: ' + data.error);
+            }
+        } catch (e) {
+            this.setStatus(statusBadge, 'ENV: ERROR', 'error');
+            this.log(`Save Error: ${e.message}`, 'error');
+            alert('Save error: ' + e.message);
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'UPDATE .ENV KEYRING';
+            }
+        }
+    },
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 };

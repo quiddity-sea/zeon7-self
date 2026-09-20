@@ -50,6 +50,44 @@ AuthMiddleware::enforcePageAuth();
             margin-bottom: 1.25rem;
             border-bottom: 1px solid rgba(34, 211, 238, 0.2);
             padding-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .env-key-card {
+            background: rgba(10, 14, 23, 0.6);
+            border: 1px solid rgba(34, 211, 238, 0.18);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .env-key-card:hover {
+            border-color: rgba(34, 211, 238, 0.4);
+            background: rgba(10, 14, 23, 0.8);
+        }
+        .env-key-card.deleted {
+            opacity: 0.4;
+            border-color: rgba(244, 63, 94, 0.4);
+            background: rgba(244, 63, 94, 0.05);
+            text-decoration: line-through;
+        }
+        .env-action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .env-action-btn:hover {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: var(--color-cyan);
+            color: var(--color-cyan);
+        }
+        .env-action-btn.delete:hover {
+            background: rgba(244, 63, 94, 0.2);
+            border-color: var(--color-coral);
+            color: var(--color-coral);
         }
         .settings-tab-btn {
             background: rgba(10, 14, 23, 0.6);
@@ -114,7 +152,7 @@ AuthMiddleware::enforcePageAuth();
                 </div>
                 
                 <form id="settingsForm">
-                    <!-- 3-TAB NAVIGATION -->
+                    <!-- 4-TAB NAVIGATION -->
                     <div class="settings-tabs">
                         <button type="button" class="settings-tab-btn active" data-tab="tab-defaults" id="tabBtnDefaults">
                             <span>⚙️</span> DEFAULTS
@@ -124,6 +162,9 @@ AuthMiddleware::enforcePageAuth();
                         </button>
                         <button type="button" class="settings-tab-btn" data-tab="tab-auth" id="tabBtnAuth">
                             <span>🔐</span> AUTHENTICATED
+                        </button>
+                        <button type="button" class="settings-tab-btn" data-tab="tab-api-keys" id="tabBtnApiKeys">
+                            <span>🔑</span> APIS &amp; KEYS
                         </button>
                     </div>
 
@@ -323,8 +364,68 @@ AuthMiddleware::enforcePageAuth();
                         </div>
                     </div>
 
+                    <!-- TAB 4: APIS & KEYS (.ENV) -->
+                    <div class="settings-tab-pane" id="tab-api-keys" style="display: none;">
+                        <div style="margin-bottom: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--color-cyan); display: block;">
+                                    // ENVIRONMENT KEYRING &amp; INTEGRATION VAULT (.ENV)
+                                </span>
+                                <div style="display: flex; gap: 0.4rem;">
+                                    <button type="button" class="btn btn-secondary" id="reloadEnvBtn" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">
+                                        🔄 RELOAD
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="addEnvKeyBtn" style="padding: 0.3rem 0.6rem; font-size: 0.7rem; border-color: var(--color-cyan); color: var(--color-cyan);">
+                                        ➕ ADD KEY
+                                    </button>
+                                </div>
+                            </div>
+                            <span class="helper-text">
+                                Dynamically synced with <code>.env</code>. Edit, add, or delete keys on mobile or desktop. Changes update the environment configuration directly while preserving formatting and comments.
+                            </span>
+                        </div>
+
+                        <!-- Filter / Search Bar -->
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <input type="text" id="envSearchInput" class="input-box" placeholder="🔍 Filter keys (e.g. CARTO, CESIUM, TOMTOM, DB)..." style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">
+                        </div>
+
+                        <!-- Add Key Inline Card (Hidden by default) -->
+                        <div id="newKeyCard" style="display: none; border: 1px dashed var(--color-cyan); padding: 1rem; border-radius: 4px; background: rgba(34, 211, 238, 0.04); margin-bottom: 1.25rem;">
+                            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--color-cyan); display: block; margin-bottom: 0.75rem;">
+                                ➕ REGISTER NEW CONFIGURATION KEY
+                            </span>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label for="newKeyName">Key Identifier (Monospace Uppercase)</label>
+                                <input type="text" id="newKeyName" class="input-box" placeholder="e.g. NEW_SERVICE_API_KEY" style="font-family: var(--font-mono); text-transform: uppercase;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label for="newKeyValue">Key Value</label>
+                                <input type="text" id="newKeyValue" class="input-box" placeholder="e.g. secret_token_value">
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                                <button type="button" class="btn btn-secondary" id="cancelNewKeyBtn" style="padding: 0.35rem 0.75rem; font-size: 0.72rem;">CANCEL</button>
+                                <button type="button" class="btn btn-primary" id="confirmNewKeyBtn" style="padding: 0.35rem 0.75rem; font-size: 0.72rem;">INSERT KEY</button>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Keys Container -->
+                        <div id="envLoadingIndicator" style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem;">
+                            SYNCING KEYRING MATRIX...
+                        </div>
+                        <div id="envKeysContainer" style="display: flex; flex-direction: column; gap: 0.85rem;"></div>
+
+                        <!-- Save Actions within Tab -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <span id="envStatusBadge" class="hud-badge" style="font-size: 0.65rem;">ENV: READY</span>
+                            <button type="button" class="btn btn-primary" id="saveEnvBtn" style="min-width: 170px;">
+                                UPDATE .ENV KEYRING
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- FOOTER ACTIONS (COMMON TO ALL TABS) -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div id="defaultFooterActions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
                         <button type="button" class="btn btn-secondary" id="testAiBtn">TEST CONNECTION</button>
                         <button type="submit" class="btn btn-primary" id="saveBtn">UPDATE SYSTEM PROTOCOLS</button>
                     </div>
@@ -359,7 +460,7 @@ AuthMiddleware::enforcePageAuth();
 </div>
 
 <script src="js/app.js"></script>
-<script src="js/settings.js?v=2.4"></script>
+<script src="js/settings.js?v=2.5"></script>
 <script>
     if (typeof App !== 'undefined') App.requireAuth();
     document.addEventListener('DOMContentLoaded', () => {
