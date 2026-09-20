@@ -178,9 +178,19 @@ $googleMapsKey = $_ENV['GOOGLE_MAPS_API_KEY'] ?? '';
                     </div>
                 </div>
                 <div class="help-section">
-                    <div class="help-section-title">SENSOR OPTICS & COMMANDS</div>
+                    <div class="help-section-title">SURVEILLANCE OPTICS MODES (KEYS 1 - 6)</div>
                     <div class="help-grid">
-                        <span class="key-badge">1 - 6</span><span>Optic Shader Filters (Normal, CRT, NVG, FLIR...)</span>
+                        <span class="key-badge">1 NORMAL</span><span>Natural optical sensor. Unfiltered high-res imagery & true-color ground feed.</span>
+                        <span class="key-badge">2 CRT</span><span>Tactical CRT monitor. Green phosphor tint, scanlines, RGB aberration & curved vignette.</span>
+                        <span class="key-badge">3 NVG</span><span>Night Vision Goggles. Monochromatic high-gain phosphor green with dynamic analog sensor grain.</span>
+                        <span class="key-badge">4 FLIR</span><span>Forward-Looking Infrared (Ironbow). Thermal heat mapping: cold blue/purple → orange → hot white.</span>
+                        <span class="key-badge">5 NOIR</span><span>High-contrast monochrome. Desaturated shadows and highlights for structural & road reconnaissance.</span>
+                        <span class="key-badge">6 SNOW</span><span>Polar relief & contour. High-key whiteout with GPU edge-detection highlighting terrain ridgelines.</span>
+                    </div>
+                </div>
+                <div class="help-section">
+                    <div class="help-section-title">TACTICAL COMMANDS</div>
+                    <div class="help-grid">
                         <span class="key-badge">G</span><span>Toggle HUD Detection Grid</span>
                         <span class="key-badge">H</span><span>Toggle Tactical HUD Overlay</span>
                         <span class="key-badge">C</span><span>Toggle Entity Cockpit Chase Cam</span>
