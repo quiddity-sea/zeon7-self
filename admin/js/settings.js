@@ -511,12 +511,87 @@ const Settings = {
     envEntries: [],
     deletedEnvKeys: new Set(),
     envLoaded: false,
+    currentEnvCategory: 'all',
+
+    categorizeEnvKey(key) {
+        const k = (key || '').toUpperCase();
+        
+        // 1. The Eye Geospatial Intelligence
+        if (k.startsWith('CESIUM_') || 
+            k.startsWith('CARTO_') || 
+            k.startsWith('GOOGLE_MAPS_') || 
+            k.startsWith('OPENSKY_') || 
+            k.startsWith('ADSB_') || 
+            k.startsWith('NASA_') || 
+            k.startsWith('ROCKET_') || 
+            k.startsWith('AISSTREAM_') || 
+            k.startsWith('BARENTSWATCH_') || 
+            k.startsWith('TOMTOM_') || 
+            k.startsWith('EYE_')) {
+            return 'eye';
+        }
+
+        // 2. Auth & Security
+        if (k === 'ADMIN_PASSWORD' || 
+            k === 'APP_KEY' || 
+            k.startsWith('GOOGLE_CLIENT_') || 
+            k.startsWith('SESSION_') || 
+            k.startsWith('RATE_LIMIT_')) {
+            return 'auth';
+        }
+
+        // 3. Council & Chat Backends
+        if (k.startsWith('COUNCIL_') || 
+            k === 'MEMORY_BACKEND' || 
+            k === 'KNOWLEDGE_BACKEND' || 
+            k === 'SOUL_BACKEND' || 
+            k === 'CONVERSATION_BACKEND' || 
+            k === 'FOREVERBOX_DATA_PATH') {
+            return 'council';
+        }
+
+        // 4. Default: System & Database
+        return 'system';
+    },
+
+    updateCategoryCounters() {
+        const counts = { all: 0, eye: 0, auth: 0, council: 0, system: 0 };
+        this.envEntries.forEach(item => {
+            if (!this.deletedEnvKeys.has(item.key)) {
+                counts.all++;
+                const cat = this.categorizeEnvKey(item.key);
+                if (counts[cat] !== undefined) counts[cat]++;
+            }
+        });
+
+        for (const [cat, count] of Object.entries(counts)) {
+            const el = document.getElementById(`count-${cat}`);
+            if (el) el.textContent = count;
+        }
+    },
+
+    setCategory(category) {
+        this.currentEnvCategory = category || 'all';
+        document.querySelectorAll('.env-cat-pill').forEach(btn => {
+            const isActive = btn.getAttribute('data-category') === this.currentEnvCategory;
+            btn.classList.toggle('active', isActive);
+        });
+        this.renderEnvFields();
+    },
 
     initEnvTab() {
         const reloadBtn = document.getElementById('reloadEnvBtn');
         if (reloadBtn) {
             reloadBtn.addEventListener('click', () => this.loadEnvConfig(true));
         }
+
+        const catPills = document.querySelectorAll('.env-cat-pill');
+        catPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                const cat = pill.getAttribute('data-category');
+                this.setCategory(cat);
+            });
+        });
 
         const addBtn = document.getElementById('addEnvKeyBtn');
         const newKeyCard = document.getElementById('newKeyCard');
@@ -593,6 +668,7 @@ const Settings = {
             this.envLoaded = true;
 
             if (loader) loader.style.display = 'none';
+            this.updateCategoryCounters();
             this.renderEnvFields();
 
             const count = this.envEntries.length;
@@ -615,8 +691,16 @@ const Settings = {
         container.innerHTML = '';
         const searchInput = document.getElementById('envSearchInput');
         const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        const activeCategory = this.currentEnvCategory || 'all';
 
         const filtered = this.envEntries.filter(item => {
+            // Category sub-tab filter
+            if (activeCategory !== 'all') {
+                const itemCat = this.categorizeEnvKey(item.key);
+                if (itemCat !== activeCategory) return false;
+            }
+
+            // Text search query filter
             if (query === '') return true;
             return item.key.toLowerCase().includes(query) || 
                    (item.comment && item.comment.toLowerCase().includes(query)) ||
@@ -626,7 +710,7 @@ const Settings = {
         if (filtered.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 4px;">
-                    NO MATCHING KEYS FOUND IN .ENV
+                    NO MATCHING KEYS IN THIS CATEGORY
                 </div>
             `;
             return;
@@ -705,6 +789,7 @@ const Settings = {
                     this.deletedEnvKeys.add(item.key);
                     this.log(`Marked key ${item.key} for deletion upon save`, 'info');
                 }
+                this.updateCategoryCounters();
                 this.renderEnvFields();
             });
 
@@ -759,6 +844,7 @@ const Settings = {
         const newKeyCard = document.getElementById('newKeyCard');
         if (newKeyCard) newKeyCard.style.display = 'none';
 
+        this.updateCategoryCounters();
         this.renderEnvFields();
         this.log(`Added key ${cleanName} to pending list. Click UPDATE .ENV KEYRING to save.`, 'info');
 

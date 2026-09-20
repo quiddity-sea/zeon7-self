@@ -89,6 +89,63 @@ AuthMiddleware::enforcePageAuth();
             border-color: var(--color-coral);
             color: var(--color-coral);
         }
+        .env-category-tabs {
+            display: flex;
+            gap: 0.35rem;
+            margin-bottom: 0.85rem;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 0.4rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(34, 211, 238, 0.3) transparent;
+        }
+        .env-category-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        .env-category-tabs::-webkit-scrollbar-thumb {
+            background: rgba(34, 211, 238, 0.3);
+            border-radius: 2px;
+        }
+        .env-cat-pill {
+            background: rgba(10, 14, 23, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 0.35rem 0.65rem;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .env-cat-pill:hover {
+            border-color: rgba(34, 211, 238, 0.4);
+            color: #ffffff;
+        }
+        .env-cat-pill.active {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: var(--color-cyan);
+            color: var(--color-cyan);
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.25);
+        }
+        .env-cat-pill .cat-count {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border-radius: 10px;
+            margin-left: 0.15rem;
+        }
+        .env-cat-pill.active .cat-count {
+            background: rgba(34, 211, 238, 0.25);
+            color: var(--color-cyan);
+            font-weight: 700;
+        }
         .settings-tab-btn {
             background: rgba(10, 14, 23, 0.6);
             border: 1px solid rgba(34, 211, 238, 0.2);
@@ -385,6 +442,25 @@ AuthMiddleware::enforcePageAuth();
                             </span>
                         </div>
 
+                        <!-- Domain Sub-Tabs / Category Filter Pills -->
+                        <div class="env-category-tabs" id="envCategoryTabs">
+                            <button type="button" class="env-cat-pill active" data-category="all" id="pill-all">
+                                <span>🌐</span> ALL <span class="cat-count" id="count-all">0</span>
+                            </button>
+                            <button type="button" class="env-cat-pill" data-category="eye" id="pill-eye">
+                                <span>👁️</span> THE EYE <span class="cat-count" id="count-eye">0</span>
+                            </button>
+                            <button type="button" class="env-cat-pill" data-category="auth" id="pill-auth">
+                                <span>🔐</span> AUTH &amp; SECURITY <span class="cat-count" id="count-auth">0</span>
+                            </button>
+                            <button type="button" class="env-cat-pill" data-category="council" id="pill-council">
+                                <span>🧠</span> COUNCIL &amp; CHAT <span class="cat-count" id="count-council">0</span>
+                            </button>
+                            <button type="button" class="env-cat-pill" data-category="system" id="pill-system">
+                                <span>⚙️</span> SYSTEM &amp; DB <span class="cat-count" id="count-system">0</span>
+                            </button>
+                        </div>
+
                         <!-- Filter / Search Bar -->
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <input type="text" id="envSearchInput" class="input-box" placeholder="🔍 Filter keys (e.g. CARTO, CESIUM, TOMTOM, DB)..." style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">
@@ -460,7 +536,7 @@ AuthMiddleware::enforcePageAuth();
 </div>
 
 <script src="js/app.js"></script>
-<script src="js/settings.js?v=2.5"></script>
+<script src="js/settings.js?v=2.6"></script>
 <script>
     if (typeof App !== 'undefined') App.requireAuth();
     document.addEventListener('DOMContentLoaded', () => {
