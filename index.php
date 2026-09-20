@@ -279,9 +279,14 @@ $agentAccent = $agentCtx->getThemeAccent();
         </div>
     </footer>
 
+    <!-- Hardware-Accelerated GLSL Shaders -->
+    <script src="js/glsl-core.js?v=1.0"></script>
+    <script src="js/cyber-grid.js?v=1.0"></script>
+    <script src="js/hud-glitch.js?v=1.0"></script>
+
     <!-- Scripts -->
     <script src="js/theme-switcher.js"></script>
-    <script src="js/chat-widget.js?v=3.1"></script>
+    <script src="js/chat-widget.js?v=3.2"></script>
     <script src="js/public.js?v=3.0"></script>
     <script>
         function openEye(url) {

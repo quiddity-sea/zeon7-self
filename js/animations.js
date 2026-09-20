@@ -24,6 +24,11 @@
                 return;
             }
 
+            // Trigger hardware-accelerated WebGL holographic glitch if available
+            if (typeof HUDGlitch !== 'undefined' && HUDGlitch.trigger) {
+                HUDGlitch.trigger(320, 0.85);
+            }
+
             const tl = gsap.timeline({
                 defaults: { ease: "power3.out" },
                 onComplete: () => {

@@ -13,12 +13,84 @@ const ChatWidget = {
     activeAgent: 'zeon7',
     activeAgentName: 'Zeon7',
     availableAgents: [],
+    coreGlsl: null,
 
     init() {
         this.sessionId = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
         this.render();
+        this.initCoreShader();
         this.bindEvents();
         this.fetchInitialStatus();
+    },
+
+    initCoreShader() {
+        const canvas = document.getElementById('agent-core-canvas');
+        if (!canvas) return;
+
+        const CORE_FRAGMENT_SHADER = `
+            precision highp float;
+            uniform float u_time;
+            uniform vec2 u_resolution;
+            uniform float u_intensity;
+            uniform vec3 u_accent;
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
+                float d = length(uv);
+
+                // Rotating harmonic plasma
+                float angle = atan(uv.y, uv.x) + u_time * (1.6 * u_intensity);
+                float wave = sin(angle * 3.0 + u_time * 2.5) * 0.12;
+                wave += sin(angle * 6.0 - u_time * 4.0) * (0.06 * u_intensity);
+
+                float r = 0.44 + wave + sin(u_time * 3.5 * u_intensity) * 0.04;
+                float core = smoothstep(r + 0.08, r - 0.08, d);
+                float glow = 0.09 / (max(d - r * 0.6, 0.01) + 0.02) * (0.8 + 0.5 * u_intensity);
+
+                vec3 col = mix(u_accent * 0.6, vec3(1.0), core * 0.85);
+                col += u_accent * glow;
+
+                float alpha = clamp(core + glow * 0.75, 0.0, 1.0);
+                if (d > 0.98) alpha = 0.0;
+
+                gl_FragColor = vec4(col, alpha);
+            }
+        `;
+
+        const setup = () => {
+            if (typeof GLSLCanvas === 'undefined') return;
+            this.coreGlsl = new GLSLCanvas(canvas, CORE_FRAGMENT_SHADER, {
+                autoResize: false,
+                trackMouse: false,
+                intensity: 1.0
+            });
+            this.updateCoreAccent();
+        };
+
+        if (typeof GLSLCanvas !== 'undefined') {
+            setup();
+        } else {
+            const s = document.createElement('script');
+            s.src = 'js/glsl-core.js';
+            s.onload = setup;
+            document.head.appendChild(s);
+        }
+    },
+
+    updateCoreAccent() {
+        if (!this.coreGlsl) return;
+        let hex = '#22d3ee';
+        const agentObj = this.availableAgents.find(a => a.id === this.activeAgent);
+        if (agentObj && agentObj.accent) hex = agentObj.accent;
+
+        let c = hex.replace('#', '');
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        const num = parseInt(c, 16);
+        const r = ((num >> 16) & 255) / 255;
+        const g = ((num >> 8) & 255) / 255;
+        const b = (num & 255) / 255;
+
+        this.coreGlsl.setUniform('u_accent', '3f', r, g, b);
     },
 
     async fetchInitialStatus() {
@@ -111,7 +183,8 @@ const ChatWidget = {
                 <div id="chat-window" class="chat-window hidden">
                     <!-- Header -->
                     <div class="chat-header">
-                        <div class="header-info">
+                        <div class="header-info" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <canvas id="agent-core-canvas" width="48" height="48" class="agent-core-orb" title="Agent Cognitive Core (GLSL Active)"></canvas>
                             <span class="status-dot" id="chat-status-dot"></span>
                             <span class="title" id="chat-header-title">ZEON7 NEURAL LINK</span>
                         </div>
@@ -194,6 +267,14 @@ const ChatWidget = {
                 0% { transform: scale(0.95); opacity: 0.8; }
                 50% { transform: scale(1.15); opacity: 0; }
                 100% { transform: scale(0.95); opacity: 0; }
+            }
+            .agent-core-orb {
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                vertical-align: middle;
+                flex-shrink: 0;
+                filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.7));
             }
             .chat-window {
                 position: absolute;
@@ -590,6 +671,9 @@ const ChatWidget = {
     toggleThinkMode() {
         this.isThinking = !this.isThinking;
         this.updateThinkBadge();
+        if (this.coreGlsl) {
+            this.coreGlsl.setIntensity(this.isThinking ? 1.6 : 1.0);
+        }
         
         const modeLabel = this.isThinking ? 'THINKING: ON (Deep Reasoning Enabled)' : 'THINKING: OFF (--think=false Enforced)';
         this.appendSystemNotice(`[MODE TOGGLE] ${modeLabel}`);
@@ -729,6 +813,9 @@ const ChatWidget = {
         if (btn) {
             btn.disabled = isLoading;
             btn.textContent = isLoading ? '...' : 'EXEC';
+        }
+        if (this.coreGlsl) {
+            this.coreGlsl.setIntensity(isLoading ? 3.5 : (this.isThinking ? 1.6 : 1.0));
         }
     }
 };
