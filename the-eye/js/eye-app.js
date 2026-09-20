@@ -2,7 +2,7 @@
  * The Eye — Main Application Entry Point
  * Initialises the globe, layers, controls, and agent integration.
  */
-import { EyeGlobe } from './globe.js?v=2.1';
+import { EyeGlobe } from './globe.js?v=2.2';
 import { Tracking } from './controls/tracking.js';
 import { Sensors } from './controls/sensors.js';
 import { Hud } from './controls/hud.js';

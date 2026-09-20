@@ -30,6 +30,12 @@ export class EyeGlobe {
         // Configure imagery based on configured keys:
         if (ionToken) {
             // Option 2: Cesium Ion high-res Bing Aerial satellite with English labels
+            this.viewer.imageryLayers.addImageryProvider(
+                new Cesium.UrlTemplateImageryProvider({
+                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+                    maximumLevel: 19
+                })
+            );
         } else {
             this.viewer.imageryLayers.removeAll();
 
