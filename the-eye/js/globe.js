@@ -37,7 +37,7 @@ export class EyeGlobe {
                 // Option 1: CartoDB Dark Matter with authenticated API key (no watermark)
                 this.viewer.imageryLayers.addImageryProvider(
                     new Cesium.UrlTemplateImageryProvider({
-                        url: `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?api_key=${encodeURIComponent(cartoKey)}`,
+                        url: `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${encodeURIComponent(cartoKey)}&api_key=${encodeURIComponent(cartoKey)}`,
                         subdomains: ['a', 'b', 'c', 'd'],
                         maximumLevel: 19,
                         credit: '© OpenStreetMap contributors, © CARTO'
