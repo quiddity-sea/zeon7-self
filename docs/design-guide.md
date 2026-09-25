@@ -603,6 +603,22 @@ The interface leverages **GSAP 3.12** (`js/animations.js`) and **Zeon7 Cyberneti
   - `@media (max-width: 900px)`: Responsive flex stacking of Centaur cards, fluid font scaling, and simplified navigation.
   - `@media (max-width: 600px)`: Full-screen mobile chat overlay in `js/chat-widget.js` (`position: fixed !important; top: 0; bottom: 0; left: 0; right: 0; width: 100% !important; border-radius: 0;`).
 
+### Hardware-Accelerated Pure GLSL WebGL Fragment Shaders
+
+The interface features a zero-dependency WebGL2/WebGL fragment shader suite (`js/glsl-core.js`) running directly on the GPU at native 60–144 FPS without JavaScript animation overhead:
+
+1. **Lightweight Engine (`GLSLCanvas`)**:
+   - Compiles standard vertex quad and custom GLSL fragment shaders onto any element or background canvas.
+   - Standard uniforms provided: `u_time` (elapsed seconds), `u_resolution` (viewport dimensions), `u_mouse` (normalized coordinate tracking), `u_intensity` (dynamic gain), and `u_accent` (agent theme RGB).
+   - **Power Conservation**: Automatically suspends its `requestAnimationFrame` loop via `IntersectionObserver` when canvases are scrolled out of view or hidden.
+   - **Accessibility**: Automatically disables or simplifies motion when `prefers-reduced-motion: reduce` is detected.
+
+2. **Component Registry**:
+   - **Agent Cognitive Core Orb (`js/chat-widget.js`)**: An animated WebGL retina orb (`#agent-core-canvas`) in the chat header rendering a harmonic plasma core pulsing in the active agent's theme accent color. Automatically surges to `3.5x` intensity with coronal flairs during model reasoning or token generation.
+   - **Full-Screen 3D Cybernetic Grid (`js/cyber-grid.js`)**: Infinite 3D perspective cyber-grid on `index.php` using GPU screen-space derivatives (`fwidth`) for anti-aliasing, atmospheric horizon fog, and smooth cursor parallax tracking.
+   - **Holographic Glitch & Transition Overlay (`js/hud-glitch.js`)**: Global `HUDGlitch.trigger()` performing chromatic RGB lateral channel separation, scanline jitter, and static discharge bursts during HUD boot sequences and system actions.
+   - **Vision Studio Multi-Spectrum Optics (`admin/js/vision-optics.js`)**: Real-time surveillance fragment filters (**NORMAL**, **CRT**, **NVG**, **FLIR Thermal Ironbow**, **NOIR**, and **SNOW**) applied dynamically to image textures in `admin/vision.php`.
+
 ---
 
 ## Accessibility
@@ -713,8 +729,12 @@ Always test on:
 ### Client Scripts & Animations
 
 - `js/animations.js` - GSAP 3.12 kinetic animation & HUD crosshairs
-- `js/chat-widget.js` - Responsive floating/fullscreen chat widget
+- `js/chat-widget.js` - Responsive floating/fullscreen chat widget + Agent Cognitive Core Orb
 - `js/theme-switcher.js` - Dynamic theme toggling & persistence
+- `js/glsl-core.js` - Zero-dependency WebGL2/WebGL fragment shader engine (`GLSLCanvas`)
+- `js/cyber-grid.js` - Full-screen 3D perspective cyber-grid background shader
+- `js/hud-glitch.js` - Holographic glitch & transition overlay (`HUDGlitch.trigger`)
+- `admin/js/vision-optics.js` - Multi-spectrum surveillance optics inspector (FLIR, NVG, CRT, Noir, Snow)
 
 ### External Tools
 
@@ -724,6 +744,6 @@ Always test on:
 
 ---
 
-**Last Updated:** 2026-09-03  
+**Last Updated:** 2026-09-25  
 **Maintained by:** Merrill Leo & The Foreverbox Initiative  
 **Questions?** Refer to `hermes-integrate-v2.md` and `hermes-integrate-v2-implementation-plan.md` for architecture context.

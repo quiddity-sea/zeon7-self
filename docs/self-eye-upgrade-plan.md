@@ -4429,3 +4429,29 @@ curl -s https://self.foreverbox.co.uk/ | grep -o "The Eye"
 8. Type "fly to London" in agent bar → globe should animate to London
 9. Check `eye_sessions` table — should have a row for your session
 10. Check `eye_agent_queries` table — should have a row for "fly to London"
+
+---
+
+## 10.4 Post-Launch Mapping, Imagery & Optics Refinements (Completed September 2026)
+
+### 1. CartoDB Raster Tile API Key Parameter
+- Corrected URL query parameter from `?api_key=` to `?key=` in `the-eye/js/globe.js`.
+- Resolves authentication against CartoDB CDN, removing the "Trial Evaluation" watermark on Dark Matter base tiles.
+
+### 2. Cesium Ion High-Resolution Satellite Imagery
+- Linked active `CESIUM_ION_TOKEN` from `.env` directly into `the-eye/index.php` and `the-eye/js/globe.js`.
+- Activated Cesium Ion Asset 3 (Bing Maps Aerial Imagery) globally, enabling high-resolution satellite imagery across all zoom levels.
+
+### 3. Dual English Road & Street-Level Reference Overlays
+- Injected Esri `World_Transportation` and `World_Boundaries_and_Places` reference layers above satellite tiles:
+  - Automatically manifests motorways, B-roads, street names, and administrative boundaries in clean English.
+  - Active and legible when zooming below ~1,500m altitude.
+
+### 4. Surveillance Optics Modes & HUD Manual
+- Documented all 6 real-time WebGL post-process fragment shaders (`the-eye/js/controls/sensors.js`) directly in the `#eye-help-modal`:
+  - `1 NORMAL`: Unfiltered true-color optical feed.
+  - `2 CRT`: Vintage bunker monitor with green phosphor tint, scanlines, and curved barrel vignette.
+  - `3 NVG`: Night Vision Goggles with high-gain light amplification and dynamic analog sensor grain.
+  - `4 FLIR`: Forward-Looking Infrared mapping optical luminance to the Ironbow thermal heat spectrum.
+  - `5 NOIR`: High-contrast desaturated monochrome for runway and structural footprint analysis.
+  - `6 SNOW`: Polar relief mode using WebGL GPU derivatives (`dFdx`/`dFdy`) to accentuate mountain ridgelines and elevation contours.

@@ -74,6 +74,42 @@ Hosted at [`https://self.foreverbox.co.uk`](https://self.foreverbox.co.uk), the 
 - **Extended Server Timeout**: Configured Nginx `fastcgi_read_timeout 300s` and `proxy_read_timeout 300s` globally to prevent 504 Gateway Timeouts during deep agent reasoning loops.
 - **Strict No-Composer Architecture**: Entire stack is built with pure, self-contained vanilla PHP 8.3 with zero vendor bloat or external package manager overhead.
 
+### 6. Dynamic APIs & Keys Management Engine (Admin Settings)
+- **Direct Non-Destructive `.env` Manager (`admin/api/env_handler.php`)**:
+  - Provides a secure web interface for editing environment variables directly from `admin/settings.php` without SSH or terminal access.
+  - Preserves all human comments, section headers, and blank line formatting across writes.
+  - Automatically creates atomic timestamps backups (`.env.backup`) prior to applying mutations.
+  - Enforces Prime Operator role validation and BCrypt session verification.
+- **Domain Sub-Tab Matrix (Phase 1 & Phase 2)**:
+  - Organizes variables into functional system domains: **ALL**, **THE EYE**, **AUTH & SECURITY**, **COUNCIL & CHAT**, and **SYSTEM & DB**.
+  - Dynamic badge counters indicate the number of active keys in each domain in real time.
+  - Quick-filters keys on keystroke with instant DOM reactivity.
+
+### 7. The Eye — Sovereign Geospatial Intelligence & Optics Engine
+- **Independent Sovereign Micro-UI (`the-eye/`)**:
+  - Hosted at [`https://eye.foreverbox.co.uk`](https://eye.foreverbox.co.uk) with dark cybernetic CesiumJS globe visualization.
+  - Live data layers: OpenSky ADS-B flights, AIS maritime vessels, Space-Track satellites, USGS earthquakes, NASA FIRMS active fires, CCTV traffic cams, and upcoming orbital rocket launches.
+- **High-Resolution Satellite & Street Overlay**:
+  - **CartoDB Vector Integration**: Corrected raster tile API key parameter syntax (`?key=`), eliminating evaluation watermarks.
+  - **Cesium Ion Token Link**: Activated high-resolution Bing Aerial global satellite imagery via `CESIUM_ION_TOKEN`.
+  - **Dual English Road & Street Reference Layers**: Embedded Esri `World_Transportation` and `World_Boundaries_and_Places` overlays, rendering motorways, B-roads, and residential street names when descending below 1,500m altitude.
+- **6 Post-Process GLSL Surveillance Shaders**:
+  - Real-time GPU fragment filters: `1 NORMAL` (True-Color), `2 CRT` (Tactical Scanlines), `3 NVG` (Night Vision Goggles), `4 FLIR` (Thermal Ironbow), `5 NOIR` (High-Contrast Recon), `6 SNOW` (Polar Relief).
+  - Fully referenced in the HUD System Manual modal.
+
+### 8. Hardware-Accelerated Pure GLSL WebGL Fragment Shader Suite
+- **Lightweight Zero-Dependency WebGL Engine (`js/glsl-core.js`)**:
+  - Reusable `GLSLCanvas` class compiling arbitrary GLSL shaders to standard full-screen or element canvases with auto-resize, device pixel ratio scaling, and power-saving `IntersectionObserver` pause hooks.
+- **Agent Cognitive Core Orb (`js/chat-widget.js`)**:
+  - WebGL retina orb embedded in the chat widget header that renders a harmonic plasma core pulsing in the active agent's accent color (cyan for Zeon7, purple for Wolf, amber for Leon).
+  - Automatically ramps rotational frequency and coronal energy flares to `3.5x` during model reasoning or token streaming.
+- **Full-Screen 3D Cybernetic Grid Background (`js/cyber-grid.js`)**:
+  - Infinite 3D perspective cyber-grid on `index.php` featuring GPU screen-space derivatives (`fwidth`) for crisp anti-aliasing, atmospheric horizon fog, and smooth cursor parallax tracking.
+- **Holographic Glitch & Transition Overlay (`js/hud-glitch.js`)**:
+  - Global `HUDGlitch.trigger()` utility executing chromatic RGB separation, scanline jitter, and static discharge bursts during HUD boot sequences and system actions.
+- **Multi-Spectrum Vision Studio Inspector (`admin/vision.php`, `admin/js/vision-optics.js`)**:
+  - Optical inspection desk allowing real-time thermal (FLIR), night vision (NVG), CRT, and Noir analysis of visual assets and uploaded photos with gain sliders.
+
 ---
 
 ## 📁 Repository Directory Structure
@@ -81,11 +117,19 @@ Hosted at [`https://self.foreverbox.co.uk`](https://self.foreverbox.co.uk), the 
 ```
 /var/www/self/
 ├── admin/                         # Cybernetic Admin Cockpit
+│   ├── api/                       # Admin Async Endpoints
+│   │   ├── chat_logs.php          # Session Log Data
+│   │   ├── env_handler.php        # Dynamic .env CRUD & Backup Engine
+│   │   └── system-reset.php       # System State Purge Controller
 │   ├── components/                # Modular HUD Panels (Header, Sidebar, Token Counter)
 │   ├── css/                       # Cockpit Stylesheets & Scanline Overlays
-│   ├── js/                        # Async Controllers (App, Settings, Users, Lore, Knowledge, News)
+│   ├── js/                        # Async Controllers
+│   │   ├── animations.js          # HUD Boot Sequences & Glitch Hooks
+│   │   ├── app.js                 # Admin Auth & Toast Handlers
+│   │   ├── settings.js            # Model Selector & Domain Sub-Tabs
+│   │   ├── vision-optics.js       # WebGL Multi-Spectrum Optical Inspector
+│   │   └── ...                    # Users, Lore, Knowledge, News Controllers
 │   ├── chat_logs.php              # Session Telemetry Overview
-│   ├── chat_logs_view.php         # Transcript Bubble Viewer
 │   ├── index.php                  # Mission Control Dashboard
 │   ├── instructions.php           # System Prompt Version Control
 │   ├── knowledge.php              # Unified Quiddity Lore Sea Ingestion Desk
@@ -93,33 +137,40 @@ Hosted at [`https://self.foreverbox.co.uk`](https://self.foreverbox.co.uk), the 
 │   ├── lore.php                   # Memory Bank & Factual Anchors
 │   ├── news-desk.php              # AI Grounded News Curation
 │   ├── posts.php                  # Blog Post Management & Publishing
-│   ├── settings.php               # System Configuration & AI Model Selector
+│   ├── settings.php               # System Configuration & Dynamic .env Manager
 │   ├── users.php                  # Operator Management & IP Audit Matrix
-│   └── vision.php                 # Multimodal Image Analysis Desk
+│   └── vision.php                 # Multimodal Image Analysis & Optics Studio
 │
 ├── api/                           # REST API Controllers
 │   ├── ai/                        # Generative AI & Multimodal Endpoints
 │   ├── auth/                      # Session Auth (Login, Logout, Check, OAuth)
 │   ├── config/                    # Config Management & Connection Testing
-│   │   ├── get.php                # Fetch Active Configuration
-│   │   ├── test_connection.php    # Live Connection Test with Form Overrides
-│   │   └── update.php             # Save AI Provider & Model Settings
 │   ├── instruction/               # Prompt Versioning & History APIs
 │   ├── knowledge/                 # Unified Document Ingestion & Reingest APIs
-│   │   ├── upload.php             # Multipart Forwarder to Council Commons
-│   │   ├── reingest.php           # Re-indexing & Embedding Trigger
-│   │   ├── delete.php             # Cascaded Filesystem & Vector Deletion
-│   │   └── list.php               # Quiddity Lore Sea Document Catalogue
 │   ├── lore/                      # Memory Bank CRUD APIs
 │   ├── posts/                     # Blog Publishing & Post Management APIs
 │   ├── users/                     # Operator CRUD & IP Telemetry APIs
 │   └── chat.php                   # Dual-Tier AI Chat Controller (Admin vs Public MCP)
 │
 ├── assets/                        # Branding, Icons, Diagrams & Holograms
-├── css/                           # Core Theme Stylesheets (zeon7-theme.css)
-├── js/                            # Client Scripts (Chat Widget, Animations, Public UI)
-│   ├── chat-widget.js             # Public / Admin Floating Chat Interface
-│   └── animations.js              # GSAP Kinetic Animation Engine
+├── css/                           # Core Theme Stylesheets (zeon7-theme.css, theme-cybernetic.css)
+├── js/                            # Client Scripts & WebGL Engines
+│   ├── animations.js              # GSAP Kinetic Animation Engine & HUD Boot
+│   ├── chat-widget.js             # Responsive Chat Widget + Agent Cognitive Core Orb
+│   ├── cyber-grid.js              # Full-Screen 3D WebGL Perspective Grid
+│   ├── glsl-core.js               # Reusable Lightweight WebGL GLSL Engine
+│   ├── hud-glitch.js              # Holographic Glitch & Transition Overlay
+│   ├── public.js                  # Landing Page Controllers
+│   └── theme-switcher.js          # Dynamic Multi-Theme Switcher
+│
+├── the-eye/                       # Sovereign Geospatial Intelligence Viewer
+│   ├── index.php                  # Full-Viewport Cesium Globe Interface
+│   ├── css/                       # The Eye Cybernetic HUD & Controls Styles
+│   ├── js/                        # Cesium Engine, Layers & Sensor Shaders
+│   │   ├── globe.js               # CesiumJS Viewer Core & Esri Reference Overlays
+│   │   ├── eye-app.js             # Layer Management & Controller Coordinator
+│   │   └── controls/sensors.js    # GLSL Post-Process Shaders (FLIR, NVG, CRT...)
+│   └── api/                       # Geospatial Feed Proxies (Flights, AIS, FIRMS...)
 │
 ├── scripts/                       # Maintenance & MCP Tool Scripts
 │   ├── public_mcp_server.py       # Python Tavily Search MCP Server
@@ -130,16 +181,6 @@ Hosted at [`https://self.foreverbox.co.uk`](https://self.foreverbox.co.uk), the 
 │   ├── core/                      # BaseController, BaseService, Exceptions
 │   ├── middleware/                # AuthGuard, CsrfMiddleware, RateLimitMiddleware
 │   └── services/                  # Business Logic Services
-│       ├── AIServiceFactory.php   # Provider Abstraction Factory
-│       ├── AuthService.php        # Session & Operator Authentication
-│       ├── ConfigService.php      # Provider & Model Settings Manager
-│       ├── CouncilClient.php      # Council Commons & Sanctum Memory API Client
-│       ├── GeminiService.php      # Google Gemini API & Tool Handler
-│       ├── KnowledgeService.php   # RAG Document & Vector Commons Bridge
-│       ├── LoreService.php        # Memory Bank Data Access
-│       ├── McpClientService.php   # Native PHP stdio MCP Client
-│       ├── OllamaService.php      # Local / Remote Ollama Integration
-│       └── OpenRouterService.php  # OpenRouter API Integration
 │
 ├── tests/                         # Verification Suites
 │   └── test_unified_pipeline.php  # 9-Point Regression Test Suite
